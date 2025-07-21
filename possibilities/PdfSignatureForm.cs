@@ -18,32 +18,45 @@ namespace Possibilities
 
         public PdfSignatureForm()
         {
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            this.fileUpload = new FileUpload();
+            this.btnUpload = new Button();
+            this.panelImages = new Panel();
+            this.btnSaveSignature = new Button();
+
+            // Form
             this.Text = "PDF İmza Seçimi";
             this.Size = new Size(900, 700);
 
-            fileUpload = new FileUpload();
-            fileUpload.Location = new Point(20, 20);
-            fileUpload.Width = 300;
-            this.Controls.Add(fileUpload);
+            // fileUpload
+            this.fileUpload.Location = new Point(20, 20);
+            this.fileUpload.Width = 300;
 
-            btnUpload = new Button();
-            btnUpload.Text = "PDF Yükle";
-            btnUpload.Location = new Point(340, 20);
-            btnUpload.Click += BtnUpload_Click;
-            this.Controls.Add(btnUpload);
+            // btnUpload
+            this.btnUpload.Text = "PDF Yükle";
+            this.btnUpload.Location = new Point(340, 20);
+            this.btnUpload.Click += BtnUpload_Click;
 
-            panelImages = new Panel();
-            panelImages.Location = new Point(20, 60);
-            panelImages.Size = new Size(800, 500);
-            panelImages.AutoScroll = true;
-            this.Controls.Add(panelImages);
+            // panelImages
+            this.panelImages.Location = new Point(20, 60);
+            this.panelImages.Size = new Size(800, 500);
+            this.panelImages.AutoScroll = true;
 
-            btnSaveSignature = new Button();
-            btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
-            btnSaveSignature.Location = new Point(20, 580);
-            btnSaveSignature.Click += BtnSaveSignature_Click;
-            btnSaveSignature.Enabled = false;
-            this.Controls.Add(btnSaveSignature);
+            // btnSaveSignature
+            this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
+            this.btnSaveSignature.Location = new Point(20, 580);
+            this.btnSaveSignature.Click += BtnSaveSignature_Click;
+            this.btnSaveSignature.Enabled = false;
+
+            // Controls
+            this.Controls.Add(this.fileUpload);
+            this.Controls.Add(this.btnUpload);
+            this.Controls.Add(this.panelImages);
+            this.Controls.Add(this.btnSaveSignature);
         }
 
         private void BtnUpload_Click(object sender, EventArgs e)
