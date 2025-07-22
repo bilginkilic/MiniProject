@@ -2,39 +2,42 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using PdfiumViewer;
+using Aspose.Pdf;
+using Aspose.Pdf.Devices;
 
 namespace Possibilities
 {
     public class PdfToImageAndCrop
     {
-        // PDF'i sayfa sayfa resimlere çevirir ve cdn klasörüne kaydeder
+        // PDF'i sayfa sayfa resimlere çevirir ve cdn klasörüne kaydeder (Aspose ile)
         public static void ConvertPdfToImages(string pdfPath, string cdnFolder)
         {
-            using (var document = PdfDocument.Load(pdfPath))
+            using (var pdfDocument = new Document(pdfPath))
             {
-                for (int i = 0; i < document.PageCount; i++)
+                for (int pageCount = 1; pageCount <= pdfDocument.Pages.Count; pageCount++)
                 {
-                    using (var image = document.Render(i, 300, 300, true))
+                    string imagePath = Path.Combine(cdnFolder, $"page_{pageCount}.png");
+                    using (FileStream imageStream = new FileStream(imagePath, FileMode.Create))
                     {
-                        string imagePath = Path.Combine(cdnFolder, $"page_{i + 1}.png");
-                        image.Save(imagePath, ImageFormat.Png);
-                        Console.WriteLine($"Saved: {imagePath}");
+                        // 300 DPI, PNG formatında render
+                        var resolution = new Resolution(300);
+                        var pngDevice = new PngDevice(resolution);
+                        pngDevice.Process(pdfDocument.Pages[pageCount], imageStream);
+                        imageStream.Close();
                     }
                 }
             }
         }
 
         // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
-        public static void CropImageAndSave(string imagePath, Rectangle cropArea, string outputImagePath)
+        public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
         {
             using (var sourceImage = Image.FromFile(imagePath))
-            using (var bmp = new Bitmap(cropArea.Width, cropArea.Height))
+            using (var bmp = new Bitmap(section.Width, section.Height))
             using (var g = Graphics.FromImage(bmp))
             {
-                g.DrawImage(sourceImage, 0, 0, cropArea, GraphicsUnit.Pixel);
+                g.DrawImage(sourceImage, 0, 0, section, GraphicsUnit.Pixel);
                 bmp.Save(outputImagePath, ImageFormat.Png);
-                Console.WriteLine($"Cropped and saved: {outputImagePath}");
             }
         }
 
