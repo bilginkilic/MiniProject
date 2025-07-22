@@ -86,6 +86,7 @@ namespace Possibilities
                 pb.MouseDown += Pb_MouseDown;
                 pb.MouseMove += Pb_MouseMove;
                 pb.MouseUp += Pb_MouseUp;
+                pb.Paint += Pb_Paint;
                 pb.Tag = imgPath;
                 panelImages.Controls.Add(pb);
                 y += pb.Height + 20;
@@ -122,10 +123,10 @@ namespace Possibilities
             selectedPictureBox.Invalidate();
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        private void Pb_Paint(object sender, PaintEventArgs e)
         {
-            base.OnPaint(e);
-            if (selectedPictureBox != null && selectionRect.Width > 0 && selectionRect.Height > 0)
+            var pb = sender as PictureBox;
+            if (pb == selectedPictureBox && selectionRect.Width > 0 && selectionRect.Height > 0)
             {
                 using (Pen pen = new Pen(Color.Red, 2))
                 {
