@@ -16,6 +16,7 @@ namespace Possibilities
         private Point selectionStart;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
+        private System.Drawing.Image originalDisplayImage; // Orijinal resmi tutacak alan
 
         public PdfSignatureForm()
         {
@@ -31,32 +32,32 @@ namespace Possibilities
 
             // Form
             this.Text = "PDF İmza Seçimi";
-            this.Size = new Size(900, 700);
+            this.Size = new System.Drawing.Size(900, 700);
 
             // uploadControl
-            this.uploadControl.Location = new Point(20, 20);
+            this.uploadControl.Location = new System.Drawing.Point(20, 20);
             this.uploadControl.Width = 300;
             this.uploadControl.UploadComplete += UploadControl_UploadComplete;
 
             // btnShowPdf
             this.btnShowPdf.Text = "PDF'i Göster";
-            this.btnShowPdf.Location = new Point(340, 20);
+            this.btnShowPdf.Location = new System.Drawing.Point(340, 20);
             this.btnShowPdf.Click += BtnShowPdf_Click;
             this.btnShowPdf.Enabled = false;
 
             // pictureBoxPdfPage
-            this.pictureBoxPdfPage.Location = new Point(20, 60);
-            this.pictureBoxPdfPage.Size = new Size(800, 500);
+            this.pictureBoxPdfPage.Location = new System.Drawing.Point(20, 60);
+            this.pictureBoxPdfPage.Size = new System.Drawing.Size(800, 500);
             this.pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
             this.pictureBoxPdfPage.BorderStyle = BorderStyle.FixedSingle;
             this.pictureBoxPdfPage.MouseDown += PictureBox_MouseDown;
             this.pictureBoxPdfPage.MouseMove += PictureBox_MouseMove;
             this.pictureBoxPdfPage.MouseUp += PictureBox_MouseUp;
-            this.pictureBoxPdfPage.Paint += PictureBox_Paint;
+            // this.pictureBoxPdfPage.Paint += PictureBox_Paint; // Bu satırı kaldırıyoruz!
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
-            this.btnSaveSignature.Location = new Point(20, 580);
+            this.btnSaveSignature.Location = new System.Drawing.Point(20, 580);
             this.btnSaveSignature.Click += BtnSaveSignature_Click;
             this.btnSaveSignature.Enabled = false;
 
@@ -69,7 +70,6 @@ namespace Possibilities
 
         private void UploadControl_UploadComplete(object sender, UploadCompleteEventArgs e)
         {
-            // Dosya başarıyla yüklendiğinde path'i kaydet
             lastUploadedPdfPath = e.FilePath;
             btnShowPdf.Enabled = true;
             MessageBox.Show("PDF başarıyla yüklendi. Şimdi göster butonuna basabilirsiniz.");
@@ -79,17 +79,17 @@ namespace Possibilities
         {
             if (!string.IsNullOrEmpty(lastUploadedPdfPath))
             {
-                // Sadece ilk sayfayı resme çevir
                 string cdnFolder = "possibilities/cdn";
-                Directory.CreateDirectory(cdnFolder);
-                string imagePath = Path.Combine(cdnFolder, "page_1.png");
+                System.IO.Directory.CreateDirectory(cdnFolder);
+                string imagePath = System.IO.Path.Combine(cdnFolder, "page_1.png");
                 PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, cdnFolder);
-                if (File.Exists(imagePath))
+                if (System.IO.File.Exists(imagePath))
                 {
-                    pictureBoxPdfPage.Image = Image.FromFile(imagePath);
+                    originalDisplayImage = System.Drawing.Image.FromFile(imagePath);
+                    pictureBoxPdfPage.Image = (System.Drawing.Image)originalDisplayImage.Clone(); // Orijinal resmi klonla ve göster
                     lastRenderedImagePath = imagePath;
                     btnSaveSignature.Enabled = false;
-                    selectionRect = Rectangle.Empty;
+                    selectionRect = System.Drawing.Rectangle.Empty;
                 }
                 else
                 {
@@ -103,21 +103,35 @@ namespace Possibilities
             if (pictureBoxPdfPage.Image == null) return;
             isSelecting = true;
             selectionStart = e.Location;
-            selectionRect = new Rectangle(e.Location, new Size(0, 0));
+            selectionRect = new System.Drawing.Rectangle(e.Location, new System.Drawing.Size(0, 0));
             btnSaveSignature.Enabled = false;
-            pictureBoxPdfPage.Invalidate();
+            // Seçime başlarken resmi orijinal haline geri döndür
+            pictureBoxPdfPage.Image = (System.Drawing.Image)originalDisplayImage.Clone();
         }
 
         private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {
             if (isSelecting && pictureBoxPdfPage.Image != null)
             {
-                int x = Math.Min(selectionStart.X, e.X);
-                int y = Math.Min(selectionStart.Y, e.Y);
-                int w = Math.Abs(selectionStart.X - e.X);
-                int h = Math.Abs(selectionStart.Y - e.Y);
-                selectionRect = new Rectangle(x, y, w, h);
-                pictureBoxPdfPage.Invalidate();
+                int x = System.Math.Min(selectionStart.X, e.X);
+                int y = System.Math.Min(selectionStart.Y, e.Y);
+                int w = System.Math.Abs(selectionStart.X - e.X);
+                int h = System.Math.Abs(selectionStart.Y - e.Y);
+                selectionRect = new System.Drawing.Rectangle(x, y, w, h);
+
+                // Orijinal resim üzerine çizim yap ve yeni resmi PictureBox'a ata
+                if (originalDisplayImage != null)
+                {
+                    System.Drawing.Image tempImage = (System.Drawing.Image)originalDisplayImage.Clone();
+                    using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(tempImage))
+                    {
+                        using (System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
+                        {
+                            g.DrawRectangle(pen, selectionRect);
+                        }
+                    }
+                    pictureBoxPdfPage.Image = tempImage;
+                }
             }
         }
 
@@ -125,9 +139,23 @@ namespace Possibilities
         {
             isSelecting = false;
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
-            pictureBoxPdfPage.Invalidate();
+            // Seçim bittiğinde son dikdörtgeni çizili olarak bırak
+            if (originalDisplayImage != null)
+            {
+                System.Drawing.Image tempImage = (System.Drawing.Image)originalDisplayImage.Clone();
+                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(tempImage))
+                {
+                    using (System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
+                    {
+                        g.DrawRectangle(pen, selectionRect);
+                    }
+                }
+                pictureBoxPdfPage.Image = tempImage;
+            }
         }
-
+        
+        // PictureBox_Paint metodunu kaldırıyoruz, çünkü artık Paint eventini kullanmıyoruz.
+        /*
         private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
             if (pictureBoxPdfPage.Image != null && selectionRect.Width > 0 && selectionRect.Height > 0)
@@ -138,25 +166,27 @@ namespace Possibilities
                 }
             }
         }
+        */
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(lastRenderedImagePath) && selectionRect.Width > 0 && selectionRect.Height > 0)
             {
                 // Orijinal resmin boyutuna göre seçim oranını hesapla
-                using (var img = Image.FromFile(lastRenderedImagePath))
+                using (var img = System.Drawing.Image.FromFile(lastRenderedImagePath))
                 {
                     float scaleX = (float)img.Width / pictureBoxPdfPage.Width;
                     float scaleY = (float)img.Height / pictureBoxPdfPage.Height;
-                    Rectangle cropRect = new Rectangle(
+                    System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(
                         (int)(selectionRect.X * scaleX),
                         (int)(selectionRect.Y * scaleY),
                         (int)(selectionRect.Width * scaleX),
                         (int)(selectionRect.Height * scaleY)
                     );
-                    string outputPath = Path.Combine("possibilities/cdn", $"signature_{DateTime.Now.Ticks}.png");
+                    string outputPath = System.IO.Path.Combine("possibilities/cdn", $"signature_{System.DateTime.Now.Ticks}.png");
                     PdfToImageAndCrop.CropImageAndSave(lastRenderedImagePath, cropRect, outputPath);
-                    MessageBox.Show("Seçim imza olarak kaydedildi!\n" + outputPath);
+                    MessageBox.Show("Seçim imza olarak kaydedildi!
+" + outputPath);
                 }
             }
         }
