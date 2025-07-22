@@ -29,19 +29,31 @@ namespace Possibilities
         }
 
         // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
-        public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
+        public static void CropImageAndSave(string imagePath, System.Drawing.Rectangle section, string outputImagePath)
         {
+            // System.Drawing.Image.FromFile kullanıyoruz
             using (var sourceImage = System.Drawing.Image.FromFile(imagePath))
-            using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
-            using (var g = System.Drawing.Graphics.FromImage(bmp))
             {
-                g.DrawImage(
-                    sourceImage,
-                    new Rectangle(0, 0, section.Width, section.Height),
-                    section.X, section.Y, section.Width, section.Height,
-                    System.Drawing.GraphicsUnit.Pixel
-                );
-                bmp.Save(outputImagePath, System.Drawing.Imaging.ImageFormat.Png);
+                // Bitmap constructor'ı için 3. parametre olarak PixelFormat.Format32bppArgb belirtiyoruz.
+                // Bu, .NET Framework 4.5.2'de geçerli bir constructor'dır.
+                using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                {
+                    // Graphics nesnesini System.Drawing.Graphics.FromImage ile alıyoruz
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    {
+                        // DrawImage metodunu 7 parametreli overload ile kullanıyoruz
+                        // destination rectangle (nereye çizileceği): (0,0) konumunda, kırpılan alanın genişliği ve yüksekliği kadar
+                        // source rectangle (nereden alınacağı): section.X, section.Y konumundan section.Width, section.Height kadar
+                        g.DrawImage(
+                            sourceImage,
+                            new System.Drawing.Rectangle(0, 0, section.Width, section.Height), // Hedef dikdörtgen
+                            section.X, section.Y, section.Width, section.Height, // Kaynak dikdörtgen parametreleri
+                            System.Drawing.GraphicsUnit.Pixel // Ölçü birimi
+                        );
+                    }
+                    // Resimi PNG formatında kaydediyoruz
+                    bmp.Save(outputImagePath, System.Drawing.Imaging.ImageFormat.Png);
+                }
             }
         }
 
