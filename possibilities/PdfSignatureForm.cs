@@ -7,14 +7,15 @@ namespace Possibilities
 {
     public class PdfSignatureForm : Form
     {
-        private FileUpload fileUpload;
-        private Button btnUpload;
-        private Panel panelImages;
+        private UploadControl uploadControl;
+        private Button btnShowPdf;
+        private PictureBox pictureBoxPdfPage;
         private Button btnSaveSignature;
-        private PictureBox selectedPictureBox;
         private Rectangle selectionRect;
         private bool isSelecting = false;
         private Point selectionStart;
+        private string lastUploadedPdfPath;
+        private string lastRenderedImagePath;
 
         public PdfSignatureForm()
         {
@@ -23,28 +24,35 @@ namespace Possibilities
 
         private void InitializeComponent()
         {
-            this.fileUpload = new FileUpload();
-            this.btnUpload = new Button();
-            this.panelImages = new Panel();
+            this.uploadControl = new UploadControl();
+            this.btnShowPdf = new Button();
+            this.pictureBoxPdfPage = new PictureBox();
             this.btnSaveSignature = new Button();
 
             // Form
             this.Text = "PDF İmza Seçimi";
             this.Size = new Size(900, 700);
 
-            // fileUpload
-            this.fileUpload.Location = new Point(20, 20);
-            this.fileUpload.Width = 300;
+            // uploadControl
+            this.uploadControl.Location = new Point(20, 20);
+            this.uploadControl.Width = 300;
+            this.uploadControl.UploadComplete += UploadControl_UploadComplete;
 
-            // btnUpload
-            this.btnUpload.Text = "PDF Yükle";
-            this.btnUpload.Location = new Point(340, 20);
-            this.btnUpload.Click += BtnUpload_Click;
+            // btnShowPdf
+            this.btnShowPdf.Text = "PDF'i Göster";
+            this.btnShowPdf.Location = new Point(340, 20);
+            this.btnShowPdf.Click += BtnShowPdf_Click;
+            this.btnShowPdf.Enabled = false;
 
-            // panelImages
-            this.panelImages.Location = new Point(20, 60);
-            this.panelImages.Size = new Size(800, 500);
-            this.panelImages.AutoScroll = true;
+            // pictureBoxPdfPage
+            this.pictureBoxPdfPage.Location = new Point(20, 60);
+            this.pictureBoxPdfPage.Size = new Size(800, 500);
+            this.pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+            this.pictureBoxPdfPage.BorderStyle = BorderStyle.FixedSingle;
+            this.pictureBoxPdfPage.MouseDown += PictureBox_MouseDown;
+            this.pictureBoxPdfPage.MouseMove += PictureBox_MouseMove;
+            this.pictureBoxPdfPage.MouseUp += PictureBox_MouseUp;
+            this.pictureBoxPdfPage.Paint += PictureBox_Paint;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -53,80 +61,76 @@ namespace Possibilities
             this.btnSaveSignature.Enabled = false;
 
             // Controls
-            this.Controls.Add(this.fileUpload);
-            this.Controls.Add(this.btnUpload);
-            this.Controls.Add(this.panelImages);
+            this.Controls.Add(this.uploadControl);
+            this.Controls.Add(this.btnShowPdf);
+            this.Controls.Add(this.pictureBoxPdfPage);
             this.Controls.Add(this.btnSaveSignature);
         }
 
-        private void BtnUpload_Click(object sender, EventArgs e)
+        private void UploadControl_UploadComplete(object sender, UploadCompleteEventArgs e)
         {
-            if (fileUpload.HasFile)
+            // Dosya başarıyla yüklendiğinde path'i kaydet
+            lastUploadedPdfPath = e.FilePath;
+            btnShowPdf.Enabled = true;
+            MessageBox.Show("PDF başarıyla yüklendi. Şimdi göster butonuna basabilirsiniz.");
+        }
+
+        private void BtnShowPdf_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(lastUploadedPdfPath))
             {
-                string pdfPath = Path.Combine("possibilities/cdn", Path.GetFileName(fileUpload.FileName));
-                fileUpload.SaveAs(pdfPath);
-                // PDF'i resimlere çevir
-                PdfToImageAndCrop.ConvertPdfToImages(pdfPath, "possibilities/cdn");
-                ShowImages();
+                // Sadece ilk sayfayı resme çevir
+                string cdnFolder = "possibilities/cdn";
+                Directory.CreateDirectory(cdnFolder);
+                string imagePath = Path.Combine(cdnFolder, "page_1.png");
+                PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, cdnFolder);
+                if (File.Exists(imagePath))
+                {
+                    pictureBoxPdfPage.Image = Image.FromFile(imagePath);
+                    lastRenderedImagePath = imagePath;
+                    btnSaveSignature.Enabled = false;
+                    selectionRect = Rectangle.Empty;
+                }
+                else
+                {
+                    MessageBox.Show("PDF'den resim oluşturulamadı.");
+                }
             }
         }
 
-        private void ShowImages()
+        private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
-            panelImages.Controls.Clear();
-            string[] images = Directory.GetFiles("possibilities/cdn", "page_*.png");
-            int y = 10;
-            foreach (var imgPath in images)
-            {
-                PictureBox pb = new PictureBox();
-                pb.Image = Image.FromFile(imgPath);
-                pb.SizeMode = PictureBoxSizeMode.AutoSize;
-                pb.Location = new Point(10, y);
-                pb.BorderStyle = BorderStyle.FixedSingle;
-                pb.MouseDown += Pb_MouseDown;
-                pb.MouseMove += Pb_MouseMove;
-                pb.MouseUp += Pb_MouseUp;
-                pb.Paint += Pb_Paint;
-                pb.Tag = imgPath;
-                panelImages.Controls.Add(pb);
-                y += pb.Height + 20;
-            }
-        }
-
-        private void Pb_MouseDown(object sender, MouseEventArgs e)
-        {
-            selectedPictureBox = sender as PictureBox;
+            if (pictureBoxPdfPage.Image == null) return;
             isSelecting = true;
             selectionStart = e.Location;
             selectionRect = new Rectangle(e.Location, new Size(0, 0));
             btnSaveSignature.Enabled = false;
-            selectedPictureBox.Invalidate();
+            pictureBoxPdfPage.Invalidate();
         }
 
-        private void Pb_MouseMove(object sender, MouseEventArgs e)
+        private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isSelecting && selectedPictureBox != null)
+            if (isSelecting && pictureBoxPdfPage.Image != null)
             {
                 int x = Math.Min(selectionStart.X, e.X);
                 int y = Math.Min(selectionStart.Y, e.Y);
                 int w = Math.Abs(selectionStart.X - e.X);
                 int h = Math.Abs(selectionStart.Y - e.Y);
                 selectionRect = new Rectangle(x, y, w, h);
-                selectedPictureBox.Invalidate();
+                pictureBoxPdfPage.Invalidate();
             }
         }
 
-        private void Pb_MouseUp(object sender, MouseEventArgs e)
+        private void PictureBox_MouseUp(object sender, MouseEventArgs e)
         {
             isSelecting = false;
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
-            selectedPictureBox.Invalidate();
+            pictureBoxPdfPage.Invalidate();
         }
 
-        private void Pb_Paint(object sender, PaintEventArgs e)
+        private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
-            var pb = sender as PictureBox;
-            if (pb == selectedPictureBox && selectionRect.Width > 0 && selectionRect.Height > 0)
+            if (pictureBoxPdfPage.Image != null && selectionRect.Width > 0 && selectionRect.Height > 0)
             {
                 using (Pen pen = new Pen(Color.Red, 2))
                 {
@@ -137,12 +141,23 @@ namespace Possibilities
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            if (selectedPictureBox != null && selectionRect.Width > 0 && selectionRect.Height > 0)
+            if (!string.IsNullOrEmpty(lastRenderedImagePath) && selectionRect.Width > 0 && selectionRect.Height > 0)
             {
-                string imgPath = selectedPictureBox.Tag as string;
-                string outputPath = Path.Combine("possibilities/cdn", $"signature_{DateTime.Now.Ticks}.png");
-                PdfToImageAndCrop.CropImageAndSave(imgPath, selectionRect, outputPath);
-                MessageBox.Show("Seçim imza olarak kaydedildi!\n" + outputPath);
+                // Orijinal resmin boyutuna göre seçim oranını hesapla
+                using (var img = Image.FromFile(lastRenderedImagePath))
+                {
+                    float scaleX = (float)img.Width / pictureBoxPdfPage.Width;
+                    float scaleY = (float)img.Height / pictureBoxPdfPage.Height;
+                    Rectangle cropRect = new Rectangle(
+                        (int)(selectionRect.X * scaleX),
+                        (int)(selectionRect.Y * scaleY),
+                        (int)(selectionRect.Width * scaleX),
+                        (int)(selectionRect.Height * scaleY)
+                    );
+                    string outputPath = Path.Combine("possibilities/cdn", $"signature_{DateTime.Now.Ticks}.png");
+                    PdfToImageAndCrop.CropImageAndSave(lastRenderedImagePath, cropRect, outputPath);
+                    MessageBox.Show("Seçim imza olarak kaydedildi!\n" + outputPath);
+                }
             }
         }
     }
