@@ -32,21 +32,16 @@ namespace Possibilities
         public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
         {
             using (var sourceImage = System.Drawing.Image.FromFile(imagePath))
+            using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            using (var g = System.Drawing.Graphics.FromImage(bmp))
             {
-                using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height))
-                {
-                    using (var g = System.Drawing.Graphics.FromImage(bmp))
-                    {
-                        // DrawImage(image, destX, destY, srcX, srcY, srcWidth, srcHeight, GraphicsUnit)
-                        g.DrawImage(
-                            sourceImage,
-                            new Rectangle(0, 0, section.Width, section.Height),
-                            section.X, section.Y, section.Width, section.Height,
-                            GraphicsUnit.Pixel
-                        );
-                    }
-                    bmp.Save(outputImagePath, ImageFormat.Png);
-                }
+                g.DrawImage(
+                    sourceImage,
+                    new Rectangle(0, 0, section.Width, section.Height),
+                    section.X, section.Y, section.Width, section.Height,
+                    System.Drawing.GraphicsUnit.Pixel
+                );
+                bmp.Save(outputImagePath, System.Drawing.Imaging.ImageFormat.Png);
             }
         }
 
