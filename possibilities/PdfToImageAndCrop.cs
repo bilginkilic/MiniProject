@@ -19,7 +19,6 @@ namespace Possibilities
                     string imagePath = Path.Combine(cdnFolder, $"page_{pageCount}.png");
                     using (FileStream imageStream = new FileStream(imagePath, FileMode.Create))
                     {
-                        // 300 DPI, PNG formatında render
                         var resolution = new Resolution(300);
                         var pngDevice = new PngDevice(resolution);
                         pngDevice.Process(pdfDocument.Pages[pageCount], imageStream);
@@ -32,12 +31,22 @@ namespace Possibilities
         // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
         public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
         {
-            using (var sourceImage = Image.FromFile(imagePath))
-            using (var bmp = new Bitmap(section.Width, section.Height))
-            using (var g = Graphics.FromImage(bmp))
+            using (var sourceImage = System.Drawing.Image.FromFile(imagePath))
             {
-                g.DrawImage(sourceImage, 0, 0, section, GraphicsUnit.Pixel);
-                bmp.Save(outputImagePath, ImageFormat.Png);
+                using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    {
+                        // DrawImage(image, destX, destY, srcX, srcY, srcWidth, srcHeight, GraphicsUnit)
+                        g.DrawImage(
+                            sourceImage,
+                            new Rectangle(0, 0, section.Width, section.Height),
+                            section.X, section.Y, section.Width, section.Height,
+                            GraphicsUnit.Pixel
+                        );
+                    }
+                    bmp.Save(outputImagePath, ImageFormat.Png);
+                }
             }
         }
 
