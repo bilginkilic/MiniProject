@@ -71,12 +71,12 @@ namespace Possibilities
         {
             if (e.Error != null)
             {
-                Logger.Instance.Debug($"[UploadControl_UploadComplete] Yükleme Hatası: {e.Error.Message}");
+                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] Yükleme Hatası: {0}", e.Error.Message));
                 if (e.Error.StackTrace != null)
                 {
-                    Logger.Instance.Debug($"[UploadControl_UploadComplete] StackTrace: {e.Error.StackTrace}");
+                    Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] StackTrace: {0}", e.Error.StackTrace));
                 }
-                MessageBox.Show($"Dosya yüklenirken hata oluştu:\n{e.Error.Message}", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(string.Format("Dosya yüklenirken hata oluştu:\n{0}", e.Error.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lastUploadedPdfPath = null;
                 btnShowPdf.Enabled = false;
             }
@@ -85,29 +85,29 @@ namespace Possibilities
                 lastUploadedPdfPath = e.FilePath;
                 btnShowPdf.Enabled = true;
                 MessageBox.Show("PDF başarıyla yüklendi. Şimdi göster butonuna basabilirsiniz.");
-                Logger.Instance.Debug($"[UploadControl_UploadComplete] PDF başarıyla yüklendi: {lastUploadedPdfPath}");
+                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] PDF başarıyla yüklendi: {0}", lastUploadedPdfPath));
             }
         }
 
         private void BtnShowPdf_Click(object sender, EventArgs e)
         {
-            Logger.Instance.Debug($"[BtnShowPdf_Click] PDF gösterme işlemi başlatıldı. Yüklenen PDF yolu: {lastUploadedPdfPath}");
+            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF gösterme işlemi başlatıldı. Yüklenen PDF yolu: {0}", lastUploadedPdfPath));
             if (!string.IsNullOrEmpty(lastUploadedPdfPath))
             {
                 string cdnFolder = @"\\trrfap2034\files\cdn";
-                Logger.Instance.Debug($"[BtnShowPdf_Click] CDN klasör yolu: {cdnFolder}");
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] CDN klasör yolu: {0}", cdnFolder));
 
                 try
                 {
                     System.IO.Directory.CreateDirectory(cdnFolder);
                     string imagePath = System.IO.Path.Combine(cdnFolder, "page_1.png");
-                    Logger.Instance.Debug($"[BtnShowPdf_Click] PDF'i resme çeviriliyor. Hedef resim yolu: {imagePath}");
+                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF'i resme çeviriliyor. Hedef resim yolu: {0}", imagePath));
 
                     PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, cdnFolder);
 
                     if (System.IO.File.Exists(imagePath))
                     {
-                        Logger.Instance.Debug($"[BtnShowPdf_Click] Resim dosyası bulundu: {imagePath}. Resim yükleniyor.");
+                        Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim dosyası bulundu: {0}. Resim yükleniyor.", imagePath));
                         
                         // Doğrudan UNC yolunu ImageLocation olarak kullan
                         pictureBoxPdfPage.ImageLocation = imagePath;
@@ -120,26 +120,26 @@ namespace Possibilities
                     }
                     else
                     {
-                        Logger.Instance.Debug($"[BtnShowPdf_Click] Hata: Resim dosyası oluşturulamadı veya bulunamadı: {imagePath}");
+                        Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: Resim dosyası oluşturulamadı veya bulunamadı: {0}", imagePath));
                         MessageBox.Show("PDF'den resim oluşturulamadı.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance.Debug($"[BtnShowPdf_Click] PDF gösterme işleminde genel hata: {ex.Message}");
-                    Logger.Instance.Debug($"[BtnShowPdf_Click] StackTrace: {ex.StackTrace}");
-                    MessageBox.Show($"PDF gösterilirken bir hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF gösterme işleminde genel hata: {0}", ex.Message));
+                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] StackTrace: {0}", ex.StackTrace));
+                    MessageBox.Show(string.Format("PDF gösterilirken bir hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                Logger.Instance.Debug($"[BtnShowPdf_Click] Hata: Yüklenen PDF yolu boş.");
+                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Yüklenen PDF yolu boş.");
             }
         }
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
-            Logger.Instance.Debug($"[PictureBox_MouseDown] MouseDown olayı tetiklendi. Konum: {e.Location}");
+            Logger.Instance.Debug(string.Format("[PictureBox_MouseDown] MouseDown olayı tetiklendi. Konum: {0}", e.Location));
             if (pictureBoxPdfPage.Image == null) return;
             isSelecting = true;
             selectionStart = e.Location;
@@ -164,13 +164,13 @@ namespace Possibilities
         {
             isSelecting = false;
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
-            Logger.Instance.Debug($"[PictureBox_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {selectionRect}. Kaydet butonu aktif: {btnSaveSignature.Enabled}");
+            Logger.Instance.Debug(string.Format("[PictureBox_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", selectionRect, btnSaveSignature.Enabled));
             pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
         }
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {lastRenderedImagePath}. Seçim dikdörtgeni: {selectionRect}");
+            Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {0}. Seçim dikdörtgeni: {1}", lastRenderedImagePath, selectionRect));
             if (!string.IsNullOrEmpty(lastRenderedImagePath) && selectionRect.Width > 0 && selectionRect.Height > 0)
             {
                 try
@@ -185,26 +185,26 @@ namespace Possibilities
                             (int)(selectionRect.Width * scaleX),
                             (int)(selectionRect.Height * scaleY)
                         );
-                        string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", $"signature_{System.DateTime.Now.Ticks}.png");
+                        string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
                         
-                        Logger.Instance.Debug($"[BtnSaveSignature_Click] Crop edilecek alan (orijinal boyutlara göre): {cropRect}");
-                        Logger.Instance.Debug($"[BtnSaveSignature_Click] Kaydedilecek imza yolu: {outputPath}");
+                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Crop edilecek alan (orijinal boyutlara göre): {0}", cropRect));
+                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Kaydedilecek imza yolu: {0}", outputPath));
 
                         PdfToImageAndCrop.CropImageAndSave(lastRenderedImagePath, cropRect, outputPath);
-                        MessageBox.Show("Seçim imza olarak kaydedildi!\n" + outputPath);
-                        Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza başarıyla kaydedildi: {outputPath}");
+                        MessageBox.Show(string.Format("Seçim imza olarak kaydedildi!\n{0}", outputPath));
+                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza başarıyla kaydedildi: {0}", outputPath));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza kaydetme işleminde hata: {ex.Message}");
-                    Logger.Instance.Debug($"[BtnSaveSignature_Click] StackTrace: {ex.StackTrace}");
-                    MessageBox.Show($"İmza kaydedilirken bir hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işleminde hata: {0}", ex.Message));
+                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] StackTrace: {0}", ex.StackTrace));
+                    MessageBox.Show(string.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                Logger.Instance.Debug($"[BtnSaveSignature_Click] Hata: Render edilmiş resim yolu boş veya seçim alanı geçersiz.");
+                Logger.Instance.Debug("[BtnSaveSignature_Click] Hata: Render edilmiş resim yolu boş veya seçim alanı geçersiz.");
             }
         }
     }
