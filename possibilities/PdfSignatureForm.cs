@@ -5,7 +5,7 @@ using Gizmox.WebGUI.Forms;
 
 namespace Possibilities
 {
-    public class PdfSignatureForm : Form // IDisposable kaldırıldı
+    public class PdfSignatureForm : Form
     {
         private UploadControl uploadControl;
         private Button btnShowPdf;
@@ -16,8 +16,6 @@ namespace Possibilities
         private Point selectionStart;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
-        private System.Drawing.Image originalDisplayImage; // Orijinal resmi tutacak alan
-        // private bool disposed = false; // Dispose durumunu takip etmek için - kaldırıldı
 
         public PdfSignatureForm()
         {
@@ -55,7 +53,6 @@ namespace Possibilities
             this.pictureBoxPdfPage.MouseDown += PictureBox_MouseDown;
             this.pictureBoxPdfPage.MouseMove += PictureBox_MouseMove;
             this.pictureBoxPdfPage.MouseUp += PictureBox_MouseUp;
-            // this.pictureBoxPdfPage.Paint += PictureBox_Paint; // Bu satırı kaldırıyoruz!
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -72,7 +69,7 @@ namespace Possibilities
 
         private void UploadControl_UploadComplete(object sender, UploadCompleteEventArgs e)
         {
-            if (e.Error != null) // Yükleme sırasında hata oluştuysa
+            if (e.Error != null)
             {
                 Logger.Instance.Debug($"[UploadControl_UploadComplete] Yükleme Hatası: {e.Error.Message}");
                 if (e.Error.StackTrace != null)
@@ -80,8 +77,8 @@ namespace Possibilities
                     Logger.Instance.Debug($"[UploadControl_UploadComplete] StackTrace: {e.Error.StackTrace}");
                 }
                 MessageBox.Show($"Dosya yüklenirken hata oluştu:\n{e.Error.Message}", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                lastUploadedPdfPath = null; 
-                btnShowPdf.Enabled = false; 
+                lastUploadedPdfPath = null;
+                btnShowPdf.Enabled = false;
             }
             else
             {
@@ -97,7 +94,7 @@ namespace Possibilities
             Logger.Instance.Debug($"[BtnShowPdf_Click] PDF gösterme işlemi başlatıldı. Yüklenen PDF yolu: {lastUploadedPdfPath}");
             if (!string.IsNullOrEmpty(lastUploadedPdfPath))
             {
-                string cdnFolder = @"\\trrfap2034\files\cdn"; 
+                string cdnFolder = @"\\trrfap2034\files\cdn";
                 Logger.Instance.Debug($"[BtnShowPdf_Click] CDN klasör yolu: {cdnFolder}");
 
                 try
@@ -110,19 +107,11 @@ namespace Possibilities
 
                     if (System.IO.File.Exists(imagePath))
                     {
-                        Logger.Instance.Debug($"[BtnShowPdf_Click] Resim dosyası bulundu: {imagePath}. Belleğe yükleniyor.");
-                        // originalDisplayImage null kontrolü kaldırıldı, Dispose metodu olmadığı için
-                        // originalDisplayImage.Dispose(); // Kaldırıldı
-                        // originalDisplayImage = null; // Kaldırıldı
-                        // Logger.Instance.Debug($"[BtnShowPdf_Click] Önceki originalDisplayImage dispose edildi."); // Kaldırıldı
-
-                        using (var tempImage = System.Drawing.Image.FromFile(imagePath))
-                        {
-                            originalDisplayImage = new System.Drawing.Bitmap(tempImage); 
-                            Logger.Instance.Debug($"[BtnShowPdf_Click] Resim Bitmap olarak belleğe kopyalandı.");
-                        }
-                        pictureBoxPdfPage.Image = (System.Drawing.Image)originalDisplayImage.Clone(); 
-                        Logger.Instance.Debug($"[BtnShowPdf_Click] Resim PictureBox'a atandı.");
+                        Logger.Instance.Debug($"[BtnShowPdf_Click] Resim dosyası bulundu: {imagePath}. Resim yükleniyor.");
+                        
+                        // Doğrudan UNC yolunu ImageLocation olarak kullan
+                        pictureBoxPdfPage.ImageLocation = imagePath;
+                        pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
                         
                         lastRenderedImagePath = imagePath;
                         btnSaveSignature.Enabled = false;
@@ -156,16 +145,10 @@ namespace Possibilities
             selectionStart = e.Location;
             selectionRect = new System.Drawing.Rectangle(e.Location, new System.Drawing.Size(0, 0));
             btnSaveSignature.Enabled = false;
-            if (originalDisplayImage != null) 
-            {
-                pictureBoxPdfPage.Image = (System.Drawing.Image)originalDisplayImage.Clone();
-                Logger.Instance.Debug($"[PictureBox_MouseDown] PictureBox görüntüsü orijinal haline döndürüldü.");
-            }
         }
 
         private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {
-            // Çok sık tetiklendiği için sadece isSelecting true ise loglayalım
             if (isSelecting && pictureBoxPdfPage.Image != null)
             {
                 int x = System.Math.Min(selectionStart.X, e.X);
@@ -173,21 +156,7 @@ namespace Possibilities
                 int w = System.Math.Abs(selectionStart.X - e.X);
                 int h = System.Math.Abs(selectionStart.Y - e.Y);
                 selectionRect = new System.Drawing.Rectangle(x, y, w, h);
-
-                if (originalDisplayImage != null)
-                {
-                    System.Drawing.Image tempImage = (System.Drawing.Image)originalDisplayImage.Clone();
-                    using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(tempImage))
-                    {
-                        using (System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
-                        {
-                            g.DrawRectangle(pen, selectionRect);
-                            // Sadece önemli hareketlerde logla
-                            // Logger.Instance.Debug($"[PictureBox_MouseMove] Seçim dikdörtgeni çizildi: {selectionRect}");
-                        }
-                    }
-                    pictureBoxPdfPage.Image = tempImage;
-                }
+                pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
             }
         }
 
@@ -196,33 +165,8 @@ namespace Possibilities
             isSelecting = false;
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
             Logger.Instance.Debug($"[PictureBox_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {selectionRect}. Kaydet butonu aktif: {btnSaveSignature.Enabled}");
-            if (originalDisplayImage != null)
-            {
-                System.Drawing.Image tempImage = (System.Drawing.Image)originalDisplayImage.Clone();
-                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(tempImage))
-                {
-                    using (System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
-                    {
-                        g.DrawRectangle(pen, selectionRect);
-                    }
-                }
-                pictureBoxPdfPage.Image = tempImage;
-            }
+            pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
         }
-        
-        // PictureBox_Paint metodunu kaldırıyoruz, çünkü artık Paint eventini kullanmıyoruz.
-        /*
-        private void PictureBox_Paint(object sender, PaintEventArgs e)
-        {
-            if (pictureBoxPdfPage.Image != null && selectionRect.Width > 0 && selectionRect.Height > 0)
-            {
-                using (Pen pen = new Pen(Color.Red, 2))
-                {
-                    e.Graphics.DrawRectangle(pen, selectionRect);
-                }
-            }
-        }
-        */
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
@@ -241,7 +185,7 @@ namespace Possibilities
                             (int)(selectionRect.Width * scaleX),
                             (int)(selectionRect.Height * scaleY)
                         );
-                        string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", $"signature_{System.DateTime.Now.Ticks}.png"); 
+                        string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", $"signature_{System.DateTime.Now.Ticks}.png");
                         
                         Logger.Instance.Debug($"[BtnSaveSignature_Click] Crop edilecek alan (orijinal boyutlara göre): {cropRect}");
                         Logger.Instance.Debug($"[BtnSaveSignature_Click] Kaydedilecek imza yolu: {outputPath}");
@@ -263,48 +207,5 @@ namespace Possibilities
                 Logger.Instance.Debug($"[BtnSaveSignature_Click] Hata: Render edilmiş resim yolu boş veya seçim alanı geçersiz.");
             }
         }
-
-        // IDisposable implementasyonu kaldırıldı
-        /*
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    Logger.Instance.Debug($"[PdfSignatureForm.Dispose] Yönetilen kaynaklar serbest bırakılıyor. disposing = true");
-                    if (originalDisplayImage != null)
-                    {
-                        originalDisplayImage.Dispose();
-                        originalDisplayImage = null;
-                        Logger.Instance.Debug($"[PdfSignatureForm.Dispose] originalDisplayImage dispose edildi.");
-                    }
-                    if (pictureBoxPdfPage.Image != null)
-                    {
-                        pictureBoxPdfPage.Image.Dispose();
-                        pictureBoxPdfPage.Image = null;
-                        Logger.Instance.Debug($"[PdfSignatureForm.Dispose] pictureBoxPdfPage.Image dispose edildi.");
-                    }
-                }
-                else
-                {
-                    Logger.Instance.Debug($"[PdfSignatureForm.Dispose] Yönetilmeyen kaynaklar serbest bırakılıyor. disposing = false");
-                }
-                disposed = true;
-            }
-        }
-
-        // Finalizer (varsa yönetilmeyen kaynaklar için)
-        ~PdfSignatureForm()
-        {
-            Dispose(false);
-        }
-        */
     }
 } 
