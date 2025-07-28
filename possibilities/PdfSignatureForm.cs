@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Threading;
 using Gizmox.WebGUI.Forms;
 
 namespace Possibilities
@@ -158,10 +159,39 @@ namespace Possibilities
                                 return;
                             }
                             
-                            pictureBoxPdfPage.Image = loadedImage;
-                            pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] loadedImage başarıyla oluşturuldu. Boyut: {0}x{1}", loadedImage.Width, loadedImage.Height));
                             
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim başarıyla yüklendi. Boyut: {0}x{1}", loadedImage.Width, loadedImage.Height));
+                            // Thread-safe image assignment
+                            if (this.InvokeRequired)
+                            {
+                                this.Invoke(new Action(() => {
+                                    pictureBoxPdfPage.Image = loadedImage;
+                                    pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                                    Logger.Instance.Debug("[BtnShowPdf_Click] Image thread-safe olarak atandı.");
+                                }));
+                            }
+                            else
+                            {
+                                pictureBoxPdfPage.Image = loadedImage;
+                                pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                                Logger.Instance.Debug("[BtnShowPdf_Click] Image doğrudan atandı.");
+                            }
+                            
+                            // Atama sonrası kontrol
+                            System.Threading.Thread.Sleep(100); // Kısa bekleme
+                            if (pictureBoxPdfPage.Image == null)
+                            {
+                                Logger.Instance.Debug("[BtnShowPdf_Click] UYARI: Atama sonrası PictureBox.Image hala null!");
+                                // Alternatif yöntem dene
+                                pictureBoxPdfPage.Image = loadedImage;
+                                pictureBoxPdfPage.Refresh();
+                                Logger.Instance.Debug("[BtnShowPdf_Click] Alternatif atama yapıldı.");
+                            }
+                            else
+                            {
+                                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PictureBox.Image başarıyla atandı. Boyut: {0}x{1}", 
+                                    pictureBoxPdfPage.Image.Width, pictureBoxPdfPage.Image.Height));
+                            }
                             
                             lastRenderedImagePath = imagePath;
                             btnSaveSignature.Enabled = false;
