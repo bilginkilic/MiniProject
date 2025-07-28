@@ -15,11 +15,8 @@ namespace BtmuApps.UI.Forms.SIGN
         private Button btnShowPdf;
         private HtmlBox imageBox;
         private Button btnSaveSignature;
-        private bool isSelecting = false;
-        private Point selectionStart;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
-        private Rectangle currentSelection;
 
         public PdfSignatureForm()
         {
@@ -63,9 +60,6 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.Size = new System.Drawing.Size(800, 500);
             this.imageBox.BorderStyle = BorderStyle.FixedSingle;
             this.imageBox.BackColor = Color.White;
-            this.imageBox.MouseDown += ImageBox_MouseDown;
-            this.imageBox.MouseMove += ImageBox_MouseMove;
-            this.imageBox.MouseUp += ImageBox_MouseUp;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -123,33 +117,38 @@ namespace BtmuApps.UI.Forms.SIGN
                         
                         try
                         {
-                            // HTML içeriğini oluştur
+                            // HTML içeriğini oluştur - iframe kullanarak
                             string imageUrl = VirtualPathUtility.ToAbsolute("~/cdn/page_1.png");
                             string html = $@"
-                                <div style='width:100%;height:100%;position:relative;'>
-                                    <img src='{imageUrl}' style='max-width:100%;max-height:100%;' />
-                                    <div id='selection' style='position:absolute;border:2px solid red;display:none;'></div>
-                                </div>
-                                <script>
-                                    var isSelecting = false;
-                                    var startX, startY;
-                                    
-                                    function updateSelection(x, y, w, h) {{
-                                        var sel = document.getElementById('selection');
-                                        sel.style.left = x + 'px';
-                                        sel.style.top = y + 'px';
-                                        sel.style.width = w + 'px';
-                                        sel.style.height = h + 'px';
-                                        sel.style.display = 'block';
-                                    }}
-                                </script>";
+                                <html>
+                                <head>
+                                    <meta http-equiv='Content-Type' content='application/png' />
+                                    <style>
+                                        body {{ 
+                                            margin: 0; 
+                                            padding: 0; 
+                                            overflow: hidden; 
+                                            width: 100%; 
+                                            height: 100%; 
+                                        }}
+                                        iframe {{ 
+                                            width: 100%; 
+                                            height: 100%; 
+                                            border: none;
+                                            display: block;
+                                        }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <iframe src='{imageUrl}' type='application/png'></iframe>
+                                </body>
+                                </html>";
                             
                             imageBox.Html = html;
                             lastRenderedImagePath = imagePath;
-                            currentSelection = Rectangle.Empty;
-                            btnSaveSignature.Enabled = false;
+                            btnSaveSignature.Enabled = true;
                             
-                            MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor. Seçim yapabilirsiniz.");
+                            MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor.");
                             Logger.Instance.Debug("[BtnShowPdf_Click] Resim başarıyla yüklendi ve gösterildi.");
                         }
                         catch (Exception loadEx)
@@ -177,79 +176,22 @@ namespace BtmuApps.UI.Forms.SIGN
             }
         }
 
-        private void ImageBox_MouseDown(object sender, MouseEventArgs e)
-        {
-            isSelecting = true;
-            selectionStart = e.Location;
-            currentSelection = Rectangle.Empty;
-            btnSaveSignature.Enabled = false;
-            
-            // JavaScript ile seçim başlat
-            imageBox.EvalScript($"startX = {e.X}; startY = {e.Y}; isSelecting = true;");
-        }
-
-        private void ImageBox_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (isSelecting)
-            {
-                int x = Math.Min(selectionStart.X, e.X);
-                int y = Math.Min(selectionStart.Y, e.Y);
-                int w = Math.Abs(selectionStart.X - e.X);
-                int h = Math.Abs(selectionStart.Y - e.Y);
-                
-                currentSelection = new Rectangle(x, y, w, h);
-                
-                // JavaScript ile seçim güncelle
-                imageBox.EvalScript($"updateSelection({x}, {y}, {w}, {h});");
-            }
-        }
-
-        private void ImageBox_MouseUp(object sender, MouseEventArgs e)
-        {
-            isSelecting = false;
-            btnSaveSignature.Enabled = currentSelection.Width > 0 && currentSelection.Height > 0;
-            Logger.Instance.Debug(string.Format("[ImageBox_MouseUp] Seçim tamamlandı. Seçim dikdörtgeni: {0}", currentSelection));
-        }
-
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {0}. Seçim dikdörtgeni: {1}", 
-                lastRenderedImagePath, currentSelection));
-                
-            if (!string.IsNullOrEmpty(lastRenderedImagePath) && currentSelection.Width > 0 && currentSelection.Height > 0)
+            if (!string.IsNullOrEmpty(lastRenderedImagePath))
             {
                 try
                 {
-                    using (var img = System.Drawing.Image.FromFile(lastRenderedImagePath))
-                    {
-                        float scaleX = (float)img.Width / imageBox.Width;
-                        float scaleY = (float)img.Height / imageBox.Height;
-                        System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(
-                            (int)(currentSelection.X * scaleX),
-                            (int)(currentSelection.Y * scaleY),
-                            (int)(currentSelection.Width * scaleX),
-                            (int)(currentSelection.Height * scaleY)
-                        );
-                        string outputPath = System.IO.Path.Combine(_cdn, string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
-                        
-                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Crop edilecek alan (orijinal boyutlara göre): {0}", cropRect));
-                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Kaydedilecek imza yolu: {0}", outputPath));
-
-                        PdfToImageAndCrop.CropImageAndSave(lastRenderedImagePath, cropRect, outputPath);
-                        MessageBox.Show(string.Format("Seçim imza olarak kaydedildi!\n{0}", outputPath));
-                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza başarıyla kaydedildi: {0}", outputPath));
-                    }
+                    string outputPath = System.IO.Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
+                    System.IO.File.Copy(lastRenderedImagePath, outputPath);
+                    MessageBox.Show(string.Format("Resim kaydedildi!\n{0}", outputPath));
+                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Resim başarıyla kaydedildi: {0}", outputPath));
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işleminde hata: {0}", ex.Message));
-                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] StackTrace: {0}", ex.StackTrace));
-                    MessageBox.Show(string.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Kaydetme hatası: {0}", ex.Message));
+                    MessageBox.Show(string.Format("Resim kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-            }
-            else
-            {
-                Logger.Instance.Debug("[BtnSaveSignature_Click] Hata: Render edilmiş resim yolu boş veya seçim alanı geçersiz.");
             }
         }
     }
