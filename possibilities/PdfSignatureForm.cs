@@ -79,8 +79,8 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             if (e.Error != null)
             {
-                Logger.Instance.Debug($"[UploadControl_UploadComplete] Yükleme Hatası: {e.Error.Message}");
-                MessageBox.Show($"İmza sirkülerini yüklerken hata oluştu:\n{e.Error.Message}", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] Yükleme Hatası: {0}", e.Error.Message));
+                MessageBox.Show(string.Format("İmza sirkülerini yüklerken hata oluştu:\n{0}", e.Error.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lastUploadedPdfPath = null;
                 btnShowPdf.Enabled = false;
             }
@@ -89,7 +89,7 @@ namespace BtmuApps.UI.Forms.SIGN
                 lastUploadedPdfPath = e.FilePath;
                 btnShowPdf.Enabled = true;
                 MessageBox.Show("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
-                Logger.Instance.Debug($"[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {lastUploadedPdfPath}");
+                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {0}", lastUploadedPdfPath));
             }
         }
 
@@ -121,7 +121,7 @@ namespace BtmuApps.UI.Forms.SIGN
                         base64Image = Convert.ToBase64String(imageBytes);
                     }
 
-                    string html = $@"
+                    string html = string.Format(@"
                         <html>
                         <head>
                             <style>
@@ -162,7 +162,7 @@ namespace BtmuApps.UI.Forms.SIGN
                         <body>
                             <div class='container'>
                                 <div class='image-wrapper'>
-                                    <img src='data:image/png;base64,{base64Image}' alt='İmza Sirkülerini' />
+                                    <img src='data:image/png;base64,{0}' alt='İmza Sirkülerini' />
                                     <div id='selection'></div>
                                 </div>
                             </div>
@@ -239,7 +239,7 @@ namespace BtmuApps.UI.Forms.SIGN
                                 }};
                             </script>
                         </body>
-                        </html>";
+                        </html>", base64Image);
 
                     imageBox.Html = html;
                     lastRenderedImagePath = imagePath;
@@ -257,11 +257,11 @@ namespace BtmuApps.UI.Forms.SIGN
                             selectionRect = new Rectangle(x, y, width, height);
                             btnSaveSignature.Enabled = width > 10 && height > 10;
                             
-                            Logger.Instance.Debug($"[BtnShowPdf_Click] Yeni seçim: X={x}, Y={y}, W={width}, H={height}");
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
                         }
                         catch (Exception ex)
                         {
-                            Logger.Instance.Debug($"[BtnShowPdf_Click] Seçim verisi işlenirken hata: {ex.Message}");
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Seçim verisi işlenirken hata: {0}", ex.Message));
                         }
                     }
 
@@ -274,8 +274,8 @@ namespace BtmuApps.UI.Forms.SIGN
             }
             catch (Exception ex)
             {
-                Logger.Instance.Debug($"[BtnShowPdf_Click] Hata: {ex.Message}");
-                MessageBox.Show($"İmza sirkülerini görüntülerken hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(string.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -311,18 +311,18 @@ namespace BtmuApps.UI.Forms.SIGN
                                       cropRect, GraphicsUnit.Pixel);
                         }
 
-                        string outputPath = Path.Combine(_cdn, $"signature_{DateTime.Now.Ticks}.png");
+                        string outputPath = Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
                         cropImage.Save(outputPath, ImageFormat.Png);
 
-                        MessageBox.Show($"İmza başarıyla kaydedildi:\n{outputPath}");
-                        Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza kaydedildi: {outputPath}");
+                        MessageBox.Show(string.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
+                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydedildi: {0}", outputPath));
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Instance.Debug($"[BtnSaveSignature_Click] Hata: {ex.Message}");
-                MessageBox.Show($"İmza kaydedilirken hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(string.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
