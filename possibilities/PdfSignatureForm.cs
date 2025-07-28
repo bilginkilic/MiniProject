@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using Gizmox.WebGUI.Forms;
 using Gizmox.WebGUI.Common;
-using Gizmox.WebGUI.Forms.Skins;
+using System.Drawing.Imaging;
 
 namespace BtmuApps.UI.Forms.SIGN
 {
@@ -18,8 +18,6 @@ namespace BtmuApps.UI.Forms.SIGN
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
         private Rectangle selectionRect;
-        private bool isSelecting;
-        private Point startPoint;
 
         public PdfSignatureForm()
         {
@@ -113,7 +111,16 @@ namespace BtmuApps.UI.Forms.SIGN
 
                 if (File.Exists(imagePath))
                 {
-                    string imageUrl = VirtualPathUtility.ToAbsolute("~/cdn/signature_page.png");
+                    // Resmi base64'e çevir
+                    string base64Image = "";
+                    using (Image image = Image.FromFile(imagePath))
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        image.Save(ms, ImageFormat.Png);
+                        byte[] imageBytes = ms.ToArray();
+                        base64Image = Convert.ToBase64String(imageBytes);
+                    }
+
                     string html = $@"
                         <html>
                         <head>
@@ -134,6 +141,8 @@ namespace BtmuApps.UI.Forms.SIGN
                                 .image-wrapper {{
                                     position: relative;
                                     display: inline-block;
+                                    max-width: 95%;
+                                    max-height: 95%;
                                 }}
                                 img {{
                                     max-width: 100%;
@@ -149,6 +158,14 @@ namespace BtmuApps.UI.Forms.SIGN
                                     display: none;
                                 }}
                             </style>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <div class='image-wrapper'>
+                                    <img src='data:image/png;base64,{base64Image}' alt='İmza Sirkülerini' />
+                                    <div id='selection'></div>
+                                </div>
+                            </div>
                             <script>
                                 var isSelecting = false;
                                 var startX, startY;
@@ -185,9 +202,29 @@ namespace BtmuApps.UI.Forms.SIGN
                                     sel.style.top = y + 'px';
                                     sel.style.width = w + 'px';
                                     sel.style.height = h + 'px';
+
+                                    // Seçim bilgilerini form ile gönder
+                                    var formData = new FormData();
+                                    formData.append('x', x);
+                                    formData.append('y', y);
+                                    formData.append('width', w);
+                                    formData.append('height', h);
+
+                                    // Form submit
+                                    var form = document.createElement('form');
+                                    form.method = 'POST';
+                                    form.style.display = 'none';
                                     
-                                    // Seçim koordinatlarını C# tarafına gönder
-                                    window.external.SendSelectionToServer(x, y, w, h);
+                                    for(var key of formData.keys()) {{
+                                        var input = document.createElement('input');
+                                        input.type = 'hidden';
+                                        input.name = key;
+                                        input.value = formData.get(key);
+                                        form.appendChild(input);
+                                    }}
+                                    
+                                    document.body.appendChild(form);
+                                    form.submit();
                                 }}
                                 
                                 function endSelection() {{
@@ -201,23 +238,33 @@ namespace BtmuApps.UI.Forms.SIGN
                                     img.addEventListener('mouseup', endSelection);
                                 }};
                             </script>
-                        </head>
-                        <body>
-                            <div class='container'>
-                                <div class='image-wrapper'>
-                                    <img src='{imageUrl}' alt='İmza Sirkülerini' />
-                                    <div id='selection'></div>
-                                </div>
-                            </div>
                         </body>
                         </html>";
 
                     imageBox.Html = html;
                     lastRenderedImagePath = imagePath;
-                    
-                    // JavaScript'ten gelen seçim koordinatlarını almak için event handler ekle
-                    imageBox.AttachEvent("SendSelectionToServer", OnSelectionUpdate);
-                    
+
+                    // Form verilerini kontrol et
+                    if (Context.Request.Form["x"] != null)
+                    {
+                        try
+                        {
+                            int x = Convert.ToInt32(Context.Request.Form["x"]);
+                            int y = Convert.ToInt32(Context.Request.Form["y"]);
+                            int width = Convert.ToInt32(Context.Request.Form["width"]);
+                            int height = Convert.ToInt32(Context.Request.Form["height"]);
+
+                            selectionRect = new Rectangle(x, y, width, height);
+                            btnSaveSignature.Enabled = width > 10 && height > 10;
+                            
+                            Logger.Instance.Debug($"[BtnShowPdf_Click] Yeni seçim: X={x}, Y={y}, W={width}, H={height}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Debug($"[BtnShowPdf_Click] Seçim verisi işlenirken hata: {ex.Message}");
+                        }
+                    }
+
                     MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
                 }
                 else
@@ -229,22 +276,6 @@ namespace BtmuApps.UI.Forms.SIGN
             {
                 Logger.Instance.Debug($"[BtnShowPdf_Click] Hata: {ex.Message}");
                 MessageBox.Show($"İmza sirkülerini görüntülerken hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void OnSelectionUpdate(object sender, EventArgs e)
-        {
-            // JavaScript'ten gelen seçim koordinatlarını al
-            var args = e as CallBackEventArgs;
-            if (args != null && args.Parameters.Length >= 4)
-            {
-                int x = Convert.ToInt32(args.Parameters[0]);
-                int y = Convert.ToInt32(args.Parameters[1]);
-                int width = Convert.ToInt32(args.Parameters[2]);
-                int height = Convert.ToInt32(args.Parameters[3]);
-
-                selectionRect = new Rectangle(x, y, width, height);
-                btnSaveSignature.Enabled = width > 10 && height > 10; // Minimum seçim boyutu kontrolü
             }
         }
 
@@ -281,7 +312,7 @@ namespace BtmuApps.UI.Forms.SIGN
                         }
 
                         string outputPath = Path.Combine(_cdn, $"signature_{DateTime.Now.Ticks}.png");
-                        cropImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+                        cropImage.Save(outputPath, ImageFormat.Png);
 
                         MessageBox.Show($"İmza başarıyla kaydedildi:\n{outputPath}");
                         Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza kaydedildi: {outputPath}");
