@@ -15,10 +15,10 @@ namespace BtmuApps.UI.Forms.SIGN
         private Button btnShowPdf;
         private HtmlBox imageBox;
         private Button btnSaveSignature;
+        private Button btnUpdateSelection;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
         private Rectangle selectionRect;
-        private HiddenField selectionDataField;
 
         public PdfSignatureForm()
         {
@@ -40,7 +40,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.btnShowPdf = new Button();
             this.imageBox = new HtmlBox();
             this.btnSaveSignature = new Button();
-            this.selectionDataField = new HiddenField();
+            this.btnUpdateSelection = new Button();
 
             // Form
             this.Text = "İmza Sirkülerinden İmza Seçimi";
@@ -64,9 +64,10 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.BorderStyle = BorderStyle.FixedSingle;
             this.imageBox.BackColor = Color.White;
 
-            // selectionDataField
-            this.selectionDataField.ID = "selectionData";
-            this.selectionDataField.TextChanged += SelectionDataField_TextChanged;
+            // btnUpdateSelection - gizli buton
+            this.btnUpdateSelection.ID = "btnUpdateSelection";
+            this.btnUpdateSelection.Visible = false;
+            this.btnUpdateSelection.Click += BtnUpdateSelection_Click;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçilen İmzayı Kaydet";
@@ -79,7 +80,35 @@ namespace BtmuApps.UI.Forms.SIGN
             this.Controls.Add(this.btnShowPdf);
             this.Controls.Add(this.imageBox);
             this.Controls.Add(this.btnSaveSignature);
-            this.Controls.Add(this.selectionDataField);
+            this.Controls.Add(this.btnUpdateSelection);
+        }
+
+        private void BtnUpdateSelection_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string selectionData = Context.Request.Params["selectionData"];
+                if (!string.IsNullOrEmpty(selectionData))
+                {
+                    string[] parts = selectionData.Split(',');
+                    if (parts.Length >= 4)
+                    {
+                        int x = Convert.ToInt32(parts[0]);
+                        int y = Convert.ToInt32(parts[1]);
+                        int width = Convert.ToInt32(parts[2]);
+                        int height = Convert.ToInt32(parts[3]);
+
+                        selectionRect = new Rectangle(x, y, width, height);
+                        btnSaveSignature.Enabled = width > 10 && height > 10;
+                        
+                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Seçim verisi işlenirken hata: {0}", ex.Message));
+            }
         }
 
         private void UploadControl_UploadComplete(object sender, UploadCompleteEventArgs e)
@@ -97,30 +126,6 @@ namespace BtmuApps.UI.Forms.SIGN
                 btnShowPdf.Enabled = true;
                 MessageBox.Show("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
                 Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {0}", lastUploadedPdfPath));
-            }
-        }
-
-        private void SelectionDataField_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                string[] parts = selectionDataField.Text.Split(',');
-                if (parts.Length >= 4)
-                {
-                    int x = Convert.ToInt32(parts[0]);
-                    int y = Convert.ToInt32(parts[1]);
-                    int width = Convert.ToInt32(parts[2]);
-                    int height = Convert.ToInt32(parts[3]);
-
-                    selectionRect = new Rectangle(x, y, width, height);
-                    btnSaveSignature.Enabled = width > 10 && height > 10;
-                    
-                    Logger.Instance.Debug(string.Format("[SelectionDataField_TextChanged] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Debug(string.Format("[SelectionDataField_TextChanged] Seçim verisi işlenirken hata: {0}", ex.Message));
             }
         }
 
@@ -202,7 +207,6 @@ namespace BtmuApps.UI.Forms.SIGN
                                 var isSelecting = false;
                                 var startX, startY;
                                 var selectionBox = document.getElementById('selection');
-                                var hiddenField = document.getElementById('{1}');
                                 
                                 function startSelection(e) {{
                                     isSelecting = true;
@@ -250,9 +254,27 @@ namespace BtmuApps.UI.Forms.SIGN
                                     var w = Math.abs(currentX - startX);
                                     var h = Math.abs(currentY - startY);
                                     
-                                    // Seçim verilerini hidden field'a gönder
+                                    // Seçim verilerini gizli butona gönder
                                     var selectionData = [x, y, w, h].join(',');
-                                    __doPostBack('{1}', selectionData);
+                                    var form = document.createElement('form');
+                                    form.method = 'POST';
+                                    form.style.display = 'none';
+
+                                    var input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = 'selectionData';
+                                    input.value = selectionData;
+                                    form.appendChild(input);
+
+                                    // Gizli butonu tetikle
+                                    var btnId = '{1}';
+                                    var btn = document.createElement('input');
+                                    btn.type = 'submit';
+                                    btn.name = btnId;
+                                    form.appendChild(btn);
+
+                                    document.body.appendChild(form);
+                                    btn.click();
                                 }}
                                 
                                 window.onload = function() {{
@@ -268,7 +290,7 @@ namespace BtmuApps.UI.Forms.SIGN
                                 }};
                             </script>
                         </body>
-                        </html>", base64Image, selectionDataField.ID);
+                        </html>", base64Image, btnUpdateSelection.ID);
 
                     imageBox.Html = html;
                     lastRenderedImagePath = imagePath;
@@ -334,4 +356,5 @@ namespace BtmuApps.UI.Forms.SIGN
             }
         }
     }
+} 
 } 
