@@ -3,48 +3,23 @@ using System.Drawing;
 using System.IO;
 using System.Threading;
 using Gizmox.WebGUI.Forms;
+using Gizmox.WebGUI.Common;
+using Gizmox.WebGUI.Forms.Skins;
 
 namespace BtmuApps.UI.Forms.SIGN
 {
-    public class CustomImagePanel : Panel
-    {
-        private Rectangle _selectionRect;
-        
-        public Rectangle SelectionRect
-        {
-            get => _selectionRect;
-            set
-            {
-                _selectionRect = value;
-                this.Refresh();
-            }
-        }
-
-        protected override void RenderAttributes(IContext context)
-        {
-            base.RenderAttributes(context);
-            
-            if (_selectionRect.Width > 0 && _selectionRect.Height > 0)
-            {
-                using (var pen = new Pen(Color.Red, 2))
-                {
-                    context.Graphics.DrawRectangle(pen, _selectionRect);
-                }
-            }
-        }
-    }
-
     public class PdfSignatureForm : Form
     {
         private readonly string _cdn = @"\\trrgap3027\files\circular\cdn";
         private UploadControl uploadControl;
         private Button btnShowPdf;
-        private CustomImagePanel imagePanel;
+        private HtmlBox imageBox;
         private Button btnSaveSignature;
         private bool isSelecting = false;
         private Point selectionStart;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
+        private Rectangle currentSelection;
 
         public PdfSignatureForm()
         {
@@ -55,11 +30,7 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             if (disposing)
             {
-                if (imagePanel != null && imagePanel.BackgroundImage != null)
-                {
-                    imagePanel.BackgroundImage.Dispose();
-                    imagePanel.BackgroundImage = null;
-                }
+                // Cleanup if needed
             }
             base.Dispose(disposing);
         }
@@ -68,7 +39,7 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             this.uploadControl = new UploadControl();
             this.btnShowPdf = new Button();
-            this.imagePanel = new CustomImagePanel();
+            this.imageBox = new HtmlBox();
             this.btnSaveSignature = new Button();
 
             // Form
@@ -87,14 +58,14 @@ namespace BtmuApps.UI.Forms.SIGN
             this.btnShowPdf.Click += BtnShowPdf_Click;
             this.btnShowPdf.Enabled = false;
 
-            // imagePanel
-            this.imagePanel.Location = new System.Drawing.Point(20, 60);
-            this.imagePanel.Size = new System.Drawing.Size(800, 500);
-            this.imagePanel.BackgroundImageLayout = ImageLayout.Zoom;
-            this.imagePanel.BorderStyle = BorderStyle.FixedSingle;
-            this.imagePanel.MouseDown += Panel_MouseDown;
-            this.imagePanel.MouseMove += Panel_MouseMove;
-            this.imagePanel.MouseUp += Panel_MouseUp;
+            // imageBox
+            this.imageBox.Location = new System.Drawing.Point(20, 60);
+            this.imageBox.Size = new System.Drawing.Size(800, 500);
+            this.imageBox.BorderStyle = BorderStyle.FixedSingle;
+            this.imageBox.BackColor = Color.White;
+            this.imageBox.MouseDown += ImageBox_MouseDown;
+            this.imageBox.MouseMove += ImageBox_MouseMove;
+            this.imageBox.MouseUp += ImageBox_MouseUp;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -105,7 +76,7 @@ namespace BtmuApps.UI.Forms.SIGN
             // Controls
             this.Controls.Add(this.uploadControl);
             this.Controls.Add(this.btnShowPdf);
-            this.Controls.Add(this.imagePanel);
+            this.Controls.Add(this.imageBox);
             this.Controls.Add(this.btnSaveSignature);
         }
 
@@ -152,74 +123,34 @@ namespace BtmuApps.UI.Forms.SIGN
                         
                         try
                         {
-                            // Önceki resmi dispose et
-                            if (imagePanel.BackgroundImage != null)
-                            {
-                                imagePanel.BackgroundImage.Dispose();
-                                imagePanel.BackgroundImage = null;
-                            }
+                            // HTML içeriğini oluştur
+                            string imageUrl = VirtualPathUtility.ToAbsolute("~/cdn/page_1.png");
+                            string html = $@"
+                                <div style='width:100%;height:100%;position:relative;'>
+                                    <img src='{imageUrl}' style='max-width:100%;max-height:100%;' />
+                                    <div id='selection' style='position:absolute;border:2px solid red;display:none;'></div>
+                                </div>
+                                <script>
+                                    var isSelecting = false;
+                                    var startX, startY;
+                                    
+                                    function updateSelection(x, y, w, h) {{
+                                        var sel = document.getElementById('selection');
+                                        sel.style.left = x + 'px';
+                                        sel.style.top = y + 'px';
+                                        sel.style.width = w + 'px';
+                                        sel.style.height = h + 'px';
+                                        sel.style.display = 'block';
+                                    }}
+                                </script>";
                             
-                            // Dosya boyutunu kontrol et
-                            var fileInfo = new System.IO.FileInfo(imagePath);
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Dosya boyutu: {0} bytes", fileInfo.Length));
-                            
-                            if (fileInfo.Length == 0)
-                            {
-                                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Dosya boş!");
-                                MessageBox.Show("Oluşturulan resim dosyası boş!", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                return;
-                            }
-                            
-                            // Resmi doğrudan yükle
-                            System.Drawing.Image loadedImage = null;
-                            using (var stream = new System.IO.FileStream(imagePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                            {
-                                loadedImage = System.Drawing.Image.FromStream(stream);
-                            }
-                            
-                            if (loadedImage == null)
-                            {
-                                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Image.FromStream null döndü!");
-                                MessageBox.Show("Resim yüklenemedi - dosya formatı desteklenmiyor olabilir.", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                return;
-                            }
-                            
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] loadedImage başarıyla oluşturuldu. Boyut: {0}x{1}", loadedImage.Width, loadedImage.Height));
-                            
-                            // Thread-safe image assignment
-                            if (this.InvokeRequired)
-                            {
-                                this.Invoke(new Action(() => {
-                                    imagePanel.BackgroundImage = loadedImage;
-                                    Logger.Instance.Debug("[BtnShowPdf_Click] Image thread-safe olarak atandı.");
-                                }));
-                            }
-                            else
-                            {
-                                imagePanel.BackgroundImage = loadedImage;
-                                Logger.Instance.Debug("[BtnShowPdf_Click] Image doğrudan atandı.");
-                            }
-                            
-                            // Atama sonrası kontrol
-                            System.Threading.Thread.Sleep(100); // Kısa bekleme
-                            if (imagePanel.BackgroundImage == null)
-                            {
-                                Logger.Instance.Debug("[BtnShowPdf_Click] UYARI: Atama sonrası Panel.BackgroundImage hala null!");
-                                // Alternatif yöntem dene
-                                imagePanel.BackgroundImage = loadedImage;
-                                imagePanel.Refresh();
-                                Logger.Instance.Debug("[BtnShowPdf_Click] Alternatif atama yapıldı.");
-                            }
-                            else
-                            {
-                                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Panel.BackgroundImage başarıyla atandı. Boyut: {0}x{1}", 
-                                    imagePanel.BackgroundImage.Width, imagePanel.BackgroundImage.Height));
-                            }
-                            
+                            imageBox.Html = html;
                             lastRenderedImagePath = imagePath;
+                            currentSelection = Rectangle.Empty;
                             btnSaveSignature.Enabled = false;
-                            imagePanel.SelectionRect = Rectangle.Empty;
+                            
                             MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor. Seçim yapabilirsiniz.");
+                            Logger.Instance.Debug("[BtnShowPdf_Click] Resim başarıyla yüklendi ve gösterildi.");
                         }
                         catch (Exception loadEx)
                         {
@@ -246,53 +177,58 @@ namespace BtmuApps.UI.Forms.SIGN
             }
         }
 
-        private void Panel_MouseDown(object sender, MouseEventArgs e)
+        private void ImageBox_MouseDown(object sender, MouseEventArgs e)
         {
-            Logger.Instance.Debug(string.Format("[Panel_MouseDown] MouseDown olayı tetiklendi. Konum: {0}", e.Location));
-            if (imagePanel.BackgroundImage == null) return;
             isSelecting = true;
             selectionStart = e.Location;
-            imagePanel.SelectionRect = new Rectangle(e.Location, new Size(0, 0));
+            currentSelection = Rectangle.Empty;
             btnSaveSignature.Enabled = false;
+            
+            // JavaScript ile seçim başlat
+            imageBox.EvalScript($"startX = {e.X}; startY = {e.Y}; isSelecting = true;");
         }
 
-        private void Panel_MouseMove(object sender, MouseEventArgs e)
+        private void ImageBox_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isSelecting && imagePanel.BackgroundImage != null)
+            if (isSelecting)
             {
                 int x = Math.Min(selectionStart.X, e.X);
                 int y = Math.Min(selectionStart.Y, e.Y);
                 int w = Math.Abs(selectionStart.X - e.X);
                 int h = Math.Abs(selectionStart.Y - e.Y);
-                imagePanel.SelectionRect = new Rectangle(x, y, w, h);
+                
+                currentSelection = new Rectangle(x, y, w, h);
+                
+                // JavaScript ile seçim güncelle
+                imageBox.EvalScript($"updateSelection({x}, {y}, {w}, {h});");
             }
         }
 
-        private void Panel_MouseUp(object sender, MouseEventArgs e)
+        private void ImageBox_MouseUp(object sender, MouseEventArgs e)
         {
             isSelecting = false;
-            btnSaveSignature.Enabled = imagePanel.SelectionRect.Width > 0 && imagePanel.SelectionRect.Height > 0;
-            Logger.Instance.Debug(string.Format("[Panel_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", 
-                imagePanel.SelectionRect, btnSaveSignature.Enabled));
+            btnSaveSignature.Enabled = currentSelection.Width > 0 && currentSelection.Height > 0;
+            Logger.Instance.Debug(string.Format("[ImageBox_MouseUp] Seçim tamamlandı. Seçim dikdörtgeni: {0}", currentSelection));
         }
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
             Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {0}. Seçim dikdörtgeni: {1}", 
-                lastRenderedImagePath, imagePanel.SelectionRect));
-            if (!string.IsNullOrEmpty(lastRenderedImagePath) && imagePanel.SelectionRect.Width > 0 && imagePanel.SelectionRect.Height > 0)
+                lastRenderedImagePath, currentSelection));
+                
+            if (!string.IsNullOrEmpty(lastRenderedImagePath) && currentSelection.Width > 0 && currentSelection.Height > 0)
             {
                 try
                 {
                     using (var img = System.Drawing.Image.FromFile(lastRenderedImagePath))
                     {
-                        float scaleX = (float)img.Width / imagePanel.Width;
-                        float scaleY = (float)img.Height / imagePanel.Height;
+                        float scaleX = (float)img.Width / imageBox.Width;
+                        float scaleY = (float)img.Height / imageBox.Height;
                         System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(
-                            (int)(imagePanel.SelectionRect.X * scaleX),
-                            (int)(imagePanel.SelectionRect.Y * scaleY),
-                            (int)(imagePanel.SelectionRect.Width * scaleX),
-                            (int)(imagePanel.SelectionRect.Height * scaleY)
+                            (int)(currentSelection.X * scaleX),
+                            (int)(currentSelection.Y * scaleY),
+                            (int)(currentSelection.Width * scaleX),
+                            (int)(currentSelection.Height * scaleY)
                         );
                         string outputPath = System.IO.Path.Combine(_cdn, string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
                         
