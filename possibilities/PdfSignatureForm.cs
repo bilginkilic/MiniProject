@@ -22,6 +22,20 @@ namespace Possibilities
             InitializeComponent();
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // PictureBox'taki resmi dispose et
+                if (pictureBoxPdfPage != null && pictureBoxPdfPage.Image != null)
+                {
+                    pictureBoxPdfPage.Image.Dispose();
+                    pictureBoxPdfPage.Image = null;
+                }
+            }
+            base.Dispose(disposing);
+        }
+
         private void InitializeComponent()
         {
             this.uploadControl = new UploadControl();
@@ -53,6 +67,7 @@ namespace Possibilities
             this.pictureBoxPdfPage.MouseDown += PictureBox_MouseDown;
             this.pictureBoxPdfPage.MouseMove += PictureBox_MouseMove;
             this.pictureBoxPdfPage.MouseUp += PictureBox_MouseUp;
+            this.pictureBoxPdfPage.Paint += PictureBox_Paint;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -109,14 +124,33 @@ namespace Possibilities
                     {
                         Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim dosyası bulundu: {0}. Resim yükleniyor.", imagePath));
                         
-                        // Doğrudan UNC yolunu ImageLocation olarak kullan
-                        pictureBoxPdfPage.ImageLocation = imagePath;
-                        pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
-                        
-                        lastRenderedImagePath = imagePath;
-                        btnSaveSignature.Enabled = false;
-                        selectionRect = System.Drawing.Rectangle.Empty;
-                        MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor. Seçim yapabilirsiniz.");
+                        try
+                        {
+                            // Önceki resmi dispose et
+                            if (pictureBoxPdfPage.Image != null)
+                            {
+                                pictureBoxPdfPage.Image.Dispose();
+                                pictureBoxPdfPage.Image = null;
+                            }
+                            
+                            // Resmi doğrudan yükle
+                            using (var stream = new System.IO.FileStream(imagePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                            {
+                                pictureBoxPdfPage.Image = System.Drawing.Image.FromStream(stream);
+                            }
+                            
+                            pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                            
+                            lastRenderedImagePath = imagePath;
+                            btnSaveSignature.Enabled = false;
+                            selectionRect = System.Drawing.Rectangle.Empty;
+                            MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor. Seçim yapabilirsiniz.");
+                        }
+                        catch (Exception loadEx)
+                        {
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim yükleme hatası: {0}", loadEx.Message));
+                            MessageBox.Show(string.Format("Resim yüklenirken hata oluştu: {0}", loadEx.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     }
                     else
                     {
@@ -166,6 +200,18 @@ namespace Possibilities
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
             Logger.Instance.Debug(string.Format("[PictureBox_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", selectionRect, btnSaveSignature.Enabled));
             pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
+        }
+
+        private void PictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            // Seçim dikdörtgenini çiz
+            if (selectionRect.Width > 0 && selectionRect.Height > 0)
+            {
+                using (var pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
+                {
+                    e.Graphics.DrawRectangle(pen, selectionRect);
+                }
+            }
         }
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
