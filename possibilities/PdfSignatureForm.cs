@@ -10,7 +10,7 @@ namespace Possibilities
     {
         private UploadControl uploadControl;
         private Button btnShowPdf;
-        private PictureBox pictureBoxPdfPage;
+        private Panel imagePanel;
         private Button btnSaveSignature;
         private Rectangle selectionRect;
         private bool isSelecting = false;
@@ -27,11 +27,11 @@ namespace Possibilities
         {
             if (disposing)
             {
-                // PictureBox'taki resmi dispose et
-                if (pictureBoxPdfPage != null && pictureBoxPdfPage.Image != null)
+                // Panel'deki resmi dispose et
+                if (imagePanel != null && imagePanel.BackgroundImage != null)
                 {
-                    pictureBoxPdfPage.Image.Dispose();
-                    pictureBoxPdfPage.Image = null;
+                    imagePanel.BackgroundImage.Dispose();
+                    imagePanel.BackgroundImage = null;
                 }
             }
             base.Dispose(disposing);
@@ -41,7 +41,7 @@ namespace Possibilities
         {
             this.uploadControl = new UploadControl();
             this.btnShowPdf = new Button();
-            this.pictureBoxPdfPage = new PictureBox();
+            this.imagePanel = new Panel();
             this.btnSaveSignature = new Button();
 
             // Form
@@ -60,15 +60,15 @@ namespace Possibilities
             this.btnShowPdf.Click += BtnShowPdf_Click;
             this.btnShowPdf.Enabled = false;
 
-            // pictureBoxPdfPage
-            this.pictureBoxPdfPage.Location = new System.Drawing.Point(20, 60);
-            this.pictureBoxPdfPage.Size = new System.Drawing.Size(800, 500);
-            this.pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
-            this.pictureBoxPdfPage.BorderStyle = BorderStyle.FixedSingle;
-            this.pictureBoxPdfPage.MouseDown += PictureBox_MouseDown;
-            this.pictureBoxPdfPage.MouseMove += PictureBox_MouseMove;
-            this.pictureBoxPdfPage.MouseUp += PictureBox_MouseUp;
-            this.pictureBoxPdfPage.Paint += PictureBox_Paint;
+            // imagePanel
+            this.imagePanel.Location = new System.Drawing.Point(20, 60);
+            this.imagePanel.Size = new System.Drawing.Size(800, 500);
+            this.imagePanel.BackgroundImageLayout = ImageLayout.Zoom;
+            this.imagePanel.BorderStyle = BorderStyle.FixedSingle;
+            this.imagePanel.MouseDown += Panel_MouseDown;
+            this.imagePanel.MouseMove += Panel_MouseMove;
+            this.imagePanel.MouseUp += Panel_MouseUp;
+            this.imagePanel.Paint += Panel_Paint;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -79,7 +79,7 @@ namespace Possibilities
             // Controls
             this.Controls.Add(this.uploadControl);
             this.Controls.Add(this.btnShowPdf);
-            this.Controls.Add(this.pictureBoxPdfPage);
+            this.Controls.Add(this.imagePanel);
             this.Controls.Add(this.btnSaveSignature);
         }
 
@@ -128,10 +128,10 @@ namespace Possibilities
                         try
                         {
                             // Önceki resmi dispose et
-                            if (pictureBoxPdfPage.Image != null)
+                            if (imagePanel.BackgroundImage != null)
                             {
-                                pictureBoxPdfPage.Image.Dispose();
-                                pictureBoxPdfPage.Image = null;
+                                imagePanel.BackgroundImage.Dispose();
+                                imagePanel.BackgroundImage = null;
                             }
                             
                             // Dosya boyutunu kontrol et
@@ -145,7 +145,7 @@ namespace Possibilities
                                 return;
                             }
                             
-                            // Resmi doğrudan yükle - stream'i kapatmadan önce Image'i oluştur
+                            // Resmi doğrudan yükle
                             System.Drawing.Image loadedImage = null;
                             using (var stream = new System.IO.FileStream(imagePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                             {
@@ -165,32 +165,30 @@ namespace Possibilities
                             if (this.InvokeRequired)
                             {
                                 this.Invoke(new Action(() => {
-                                    pictureBoxPdfPage.Image = loadedImage;
-                                    pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                                    imagePanel.BackgroundImage = loadedImage;
                                     Logger.Instance.Debug("[BtnShowPdf_Click] Image thread-safe olarak atandı.");
                                 }));
                             }
                             else
                             {
-                                pictureBoxPdfPage.Image = loadedImage;
-                                pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                                imagePanel.BackgroundImage = loadedImage;
                                 Logger.Instance.Debug("[BtnShowPdf_Click] Image doğrudan atandı.");
                             }
                             
                             // Atama sonrası kontrol
                             System.Threading.Thread.Sleep(100); // Kısa bekleme
-                            if (pictureBoxPdfPage.Image == null)
+                            if (imagePanel.BackgroundImage == null)
                             {
-                                Logger.Instance.Debug("[BtnShowPdf_Click] UYARI: Atama sonrası PictureBox.Image hala null!");
+                                Logger.Instance.Debug("[BtnShowPdf_Click] UYARI: Atama sonrası Panel.BackgroundImage hala null!");
                                 // Alternatif yöntem dene
-                                pictureBoxPdfPage.Image = loadedImage;
-                                pictureBoxPdfPage.Refresh();
+                                imagePanel.BackgroundImage = loadedImage;
+                                imagePanel.Refresh();
                                 Logger.Instance.Debug("[BtnShowPdf_Click] Alternatif atama yapıldı.");
                             }
                             else
                             {
-                                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PictureBox.Image başarıyla atandı. Boyut: {0}x{1}", 
-                                    pictureBoxPdfPage.Image.Width, pictureBoxPdfPage.Image.Height));
+                                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Panel.BackgroundImage başarıyla atandı. Boyut: {0}x{1}", 
+                                    imagePanel.BackgroundImage.Width, imagePanel.BackgroundImage.Height));
                             }
                             
                             lastRenderedImagePath = imagePath;
@@ -223,38 +221,38 @@ namespace Possibilities
             }
         }
 
-        private void PictureBox_MouseDown(object sender, MouseEventArgs e)
+        private void Panel_MouseDown(object sender, MouseEventArgs e)
         {
-            Logger.Instance.Debug(string.Format("[PictureBox_MouseDown] MouseDown olayı tetiklendi. Konum: {0}", e.Location));
-            if (pictureBoxPdfPage.Image == null) return;
+            Logger.Instance.Debug(string.Format("[Panel_MouseDown] MouseDown olayı tetiklendi. Konum: {0}", e.Location));
+            if (imagePanel.BackgroundImage == null) return;
             isSelecting = true;
             selectionStart = e.Location;
             selectionRect = new System.Drawing.Rectangle(e.Location, new System.Drawing.Size(0, 0));
             btnSaveSignature.Enabled = false;
         }
 
-        private void PictureBox_MouseMove(object sender, MouseEventArgs e)
+        private void Panel_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isSelecting && pictureBoxPdfPage.Image != null)
+            if (isSelecting && imagePanel.BackgroundImage != null)
             {
                 int x = System.Math.Min(selectionStart.X, e.X);
                 int y = System.Math.Min(selectionStart.Y, e.Y);
                 int w = System.Math.Abs(selectionStart.X - e.X);
                 int h = System.Math.Abs(selectionStart.Y - e.Y);
                 selectionRect = new System.Drawing.Rectangle(x, y, w, h);
-                pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
+                imagePanel.Invalidate(); // Yeniden çizim için
             }
         }
 
-        private void PictureBox_MouseUp(object sender, MouseEventArgs e)
+        private void Panel_MouseUp(object sender, MouseEventArgs e)
         {
             isSelecting = false;
             btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
-            Logger.Instance.Debug(string.Format("[PictureBox_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", selectionRect, btnSaveSignature.Enabled));
-            pictureBoxPdfPage.Invalidate(); // Yeniden çizim için
+            Logger.Instance.Debug(string.Format("[Panel_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", selectionRect, btnSaveSignature.Enabled));
+            imagePanel.Invalidate(); // Yeniden çizim için
         }
 
-        private void PictureBox_Paint(object sender, PaintEventArgs e)
+        private void Panel_Paint(object sender, PaintEventArgs e)
         {
             // Seçim dikdörtgenini çiz
             if (selectionRect.Width > 0 && selectionRect.Height > 0)
@@ -275,8 +273,8 @@ namespace Possibilities
                 {
                     using (var img = System.Drawing.Image.FromFile(lastRenderedImagePath))
                     {
-                        float scaleX = (float)img.Width / pictureBoxPdfPage.Width;
-                        float scaleY = (float)img.Height / pictureBoxPdfPage.Height;
+                        float scaleX = (float)img.Width / imagePanel.Width;
+                        float scaleY = (float)img.Height / imagePanel.Height;
                         System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(
                             (int)(selectionRect.X * scaleX),
                             (int)(selectionRect.Y * scaleY),
