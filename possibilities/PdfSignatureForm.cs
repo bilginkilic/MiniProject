@@ -17,6 +17,9 @@ namespace BtmuApps.UI.Forms.SIGN
         private Button btnSaveSignature;
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
+        private Rectangle selectionRect;
+        private bool isSelecting;
+        private Point startPoint;
 
         public PdfSignatureForm()
         {
@@ -40,7 +43,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.btnSaveSignature = new Button();
 
             // Form
-            this.Text = "PDF İmza Seçimi";
+            this.Text = "İmza Sirkülerinden İmza Seçimi";
             this.Size = new System.Drawing.Size(900, 700);
 
             // uploadControl
@@ -50,7 +53,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.uploadControl.UploadFilePath = _cdn;
 
             // btnShowPdf
-            this.btnShowPdf.Text = "PDF'i Göster";
+            this.btnShowPdf.Text = "İmza Sirküleri Göster";
             this.btnShowPdf.Location = new System.Drawing.Point(340, 20);
             this.btnShowPdf.Click += BtnShowPdf_Click;
             this.btnShowPdf.Enabled = false;
@@ -62,7 +65,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.BackColor = Color.White;
 
             // btnSaveSignature
-            this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
+            this.btnSaveSignature.Text = "Seçilen İmzayı Kaydet";
             this.btnSaveSignature.Location = new System.Drawing.Point(20, 580);
             this.btnSaveSignature.Click += BtnSaveSignature_Click;
             this.btnSaveSignature.Enabled = false;
@@ -78,12 +81,8 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             if (e.Error != null)
             {
-                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] Yükleme Hatası: {0}", e.Error.Message));
-                if (e.Error.StackTrace != null)
-                {
-                    Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] StackTrace: {0}", e.Error.StackTrace));
-                }
-                MessageBox.Show(string.Format("Dosya yüklenirken hata oluştu:\n{0}", e.Error.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug($"[UploadControl_UploadComplete] Yükleme Hatası: {e.Error.Message}");
+                MessageBox.Show($"İmza sirkülerini yüklerken hata oluştu:\n{e.Error.Message}", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lastUploadedPdfPath = null;
                 btnShowPdf.Enabled = false;
             }
@@ -91,107 +90,208 @@ namespace BtmuApps.UI.Forms.SIGN
             {
                 lastUploadedPdfPath = e.FilePath;
                 btnShowPdf.Enabled = true;
-                MessageBox.Show("PDF başarıyla yüklendi. Şimdi göster butonuna basabilirsiniz.");
-                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] PDF başarıyla yüklendi: {0}", lastUploadedPdfPath));
+                MessageBox.Show("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
+                Logger.Instance.Debug($"[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {lastUploadedPdfPath}");
             }
         }
 
         private void BtnShowPdf_Click(object sender, EventArgs e)
         {
-            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF gösterme işlemi başlatıldı. Yüklenen PDF yolu: {0}", lastUploadedPdfPath));
-            if (!string.IsNullOrEmpty(lastUploadedPdfPath))
+            if (string.IsNullOrEmpty(lastUploadedPdfPath))
             {
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] CDN klasör yolu: {0}", _cdn));
+                MessageBox.Show("Lütfen önce bir imza sirkülerini yükleyin.");
+                return;
+            }
 
-                try
+            try
+            {
+                Directory.CreateDirectory(_cdn);
+                string imagePath = Path.Combine(_cdn, "signature_page.png");
+                
+                // PDF'yi yüksek kalitede PNG'ye çevir
+                PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn, 300); // 300 DPI kalite
+
+                if (File.Exists(imagePath))
                 {
-                    System.IO.Directory.CreateDirectory(_cdn);
-                    string imagePath = System.IO.Path.Combine(_cdn, "page_1.png");
-                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF'i resme çeviriliyor. Hedef resim yolu: {0}", imagePath));
+                    string imageUrl = VirtualPathUtility.ToAbsolute("~/cdn/signature_page.png");
+                    string html = $@"
+                        <html>
+                        <head>
+                            <style>
+                                body {{ 
+                                    margin: 0; 
+                                    padding: 0; 
+                                    overflow: hidden;
+                                    background-color: #f0f0f0;
+                                }}
+                                .container {{
+                                    width: 100%;
+                                    height: 100%;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                }}
+                                .image-wrapper {{
+                                    position: relative;
+                                    display: inline-block;
+                                }}
+                                img {{
+                                    max-width: 100%;
+                                    max-height: 100%;
+                                    border: 1px solid #ccc;
+                                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                                }}
+                                #selection {{
+                                    position: absolute;
+                                    border: 2px solid red;
+                                    background-color: rgba(255,0,0,0.1);
+                                    pointer-events: none;
+                                    display: none;
+                                }}
+                            </style>
+                            <script>
+                                var isSelecting = false;
+                                var startX, startY;
+                                
+                                function startSelection(e) {{
+                                    isSelecting = true;
+                                    var rect = e.target.getBoundingClientRect();
+                                    startX = e.clientX - rect.left;
+                                    startY = e.clientY - rect.top;
+                                    
+                                    var sel = document.getElementById('selection');
+                                    sel.style.left = startX + 'px';
+                                    sel.style.top = startY + 'px';
+                                    sel.style.width = '0px';
+                                    sel.style.height = '0px';
+                                    sel.style.display = 'block';
+                                }}
+                                
+                                function updateSelection(e) {{
+                                    if (!isSelecting) return;
+                                    
+                                    var img = document.querySelector('.image-wrapper img');
+                                    var rect = img.getBoundingClientRect();
+                                    var currentX = e.clientX - rect.left;
+                                    var currentY = e.clientY - rect.top;
+                                    
+                                    var x = Math.min(startX, currentX);
+                                    var y = Math.min(startY, currentY);
+                                    var w = Math.abs(currentX - startX);
+                                    var h = Math.abs(currentY - startY);
+                                    
+                                    var sel = document.getElementById('selection');
+                                    sel.style.left = x + 'px';
+                                    sel.style.top = y + 'px';
+                                    sel.style.width = w + 'px';
+                                    sel.style.height = h + 'px';
+                                    
+                                    // Seçim koordinatlarını C# tarafına gönder
+                                    window.external.SendSelectionToServer(x, y, w, h);
+                                }}
+                                
+                                function endSelection() {{
+                                    isSelecting = false;
+                                }}
+                                
+                                window.onload = function() {{
+                                    var img = document.querySelector('.image-wrapper img');
+                                    img.addEventListener('mousedown', startSelection);
+                                    img.addEventListener('mousemove', updateSelection);
+                                    img.addEventListener('mouseup', endSelection);
+                                }};
+                            </script>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <div class='image-wrapper'>
+                                    <img src='{imageUrl}' alt='İmza Sirkülerini' />
+                                    <div id='selection'></div>
+                                </div>
+                            </div>
+                        </body>
+                        </html>";
 
-                    PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn);
-
-                    if (System.IO.File.Exists(imagePath))
-                    {
-                        Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim dosyası bulundu: {0}. Resim yükleniyor.", imagePath));
-                        
-                        try
-                        {
-                            // HTML içeriğini oluştur - iframe kullanarak
-                            string imageUrl = VirtualPathUtility.ToAbsolute("~/cdn/page_1.png");
-                            string html = $@"
-                                <html>
-                                <head>
-                                    <meta http-equiv='Content-Type' content='application/png' />
-                                    <style>
-                                        body {{ 
-                                            margin: 0; 
-                                            padding: 0; 
-                                            overflow: hidden; 
-                                            width: 100%; 
-                                            height: 100%; 
-                                        }}
-                                        iframe {{ 
-                                            width: 100%; 
-                                            height: 100%; 
-                                            border: none;
-                                            display: block;
-                                        }}
-                                    </style>
-                                </head>
-                                <body>
-                                    <iframe src='{imageUrl}' type='application/png'></iframe>
-                                </body>
-                                </html>";
-                            
-                            imageBox.Html = html;
-                            lastRenderedImagePath = imagePath;
-                            btnSaveSignature.Enabled = true;
-                            
-                            MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor.");
-                            Logger.Instance.Debug("[BtnShowPdf_Click] Resim başarıyla yüklendi ve gösterildi.");
-                        }
-                        catch (Exception loadEx)
-                        {
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim yükleme hatası: {0}", loadEx.Message));
-                            MessageBox.Show(string.Format("Resim yüklenirken hata oluştu: {0}", loadEx.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                    else
-                    {
-                        Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: Resim dosyası oluşturulamadı veya bulunamadı: {0}", imagePath));
-                        MessageBox.Show("PDF'den resim oluşturulamadı.");
-                    }
+                    imageBox.Html = html;
+                    lastRenderedImagePath = imagePath;
+                    
+                    // JavaScript'ten gelen seçim koordinatlarını almak için event handler ekle
+                    imageBox.AttachEvent("SendSelectionToServer", OnSelectionUpdate);
+                    
+                    MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF gösterme işleminde genel hata: {0}", ex.Message));
-                    Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] StackTrace: {0}", ex.StackTrace));
-                    MessageBox.Show(string.Format("PDF gösterilirken bir hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("İmza sirkülerini görüntülenemedi. Lütfen dosyanın PDF formatında olduğundan emin olun.");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Yüklenen PDF yolu boş.");
+                Logger.Instance.Debug($"[BtnShowPdf_Click] Hata: {ex.Message}");
+                MessageBox.Show($"İmza sirkülerini görüntülerken hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnSelectionUpdate(object sender, EventArgs e)
+        {
+            // JavaScript'ten gelen seçim koordinatlarını al
+            var args = e as CallBackEventArgs;
+            if (args != null && args.Parameters.Length >= 4)
+            {
+                int x = Convert.ToInt32(args.Parameters[0]);
+                int y = Convert.ToInt32(args.Parameters[1]);
+                int width = Convert.ToInt32(args.Parameters[2]);
+                int height = Convert.ToInt32(args.Parameters[3]);
+
+                selectionRect = new Rectangle(x, y, width, height);
+                btnSaveSignature.Enabled = width > 10 && height > 10; // Minimum seçim boyutu kontrolü
             }
         }
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(lastRenderedImagePath))
+            if (string.IsNullOrEmpty(lastRenderedImagePath) || selectionRect.IsEmpty)
             {
-                try
+                MessageBox.Show("Lütfen önce bir imza seçin.");
+                return;
+            }
+
+            try
+            {
+                using (var sourceImage = Image.FromFile(lastRenderedImagePath))
                 {
-                    string outputPath = System.IO.Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
-                    System.IO.File.Copy(lastRenderedImagePath, outputPath);
-                    MessageBox.Show(string.Format("Resim kaydedildi!\n{0}", outputPath));
-                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Resim başarıyla kaydedildi: {0}", outputPath));
+                    // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
+                    float scaleX = (float)sourceImage.Width / imageBox.Width;
+                    float scaleY = (float)sourceImage.Height / imageBox.Height;
+
+                    Rectangle cropRect = new Rectangle(
+                        (int)(selectionRect.X * scaleX),
+                        (int)(selectionRect.Y * scaleY),
+                        (int)(selectionRect.Width * scaleX),
+                        (int)(selectionRect.Height * scaleY)
+                    );
+
+                    // Seçilen alanı yeni bir resim olarak kaydet
+                    using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height))
+                    {
+                        using (var g = Graphics.FromImage(cropImage))
+                        {
+                            g.DrawImage(sourceImage, new Rectangle(0, 0, cropRect.Width, cropRect.Height),
+                                      cropRect, GraphicsUnit.Pixel);
+                        }
+
+                        string outputPath = Path.Combine(_cdn, $"signature_{DateTime.Now.Ticks}.png");
+                        cropImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+
+                        MessageBox.Show($"İmza başarıyla kaydedildi:\n{outputPath}");
+                        Logger.Instance.Debug($"[BtnSaveSignature_Click] İmza kaydedildi: {outputPath}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Kaydetme hatası: {0}", ex.Message));
-                    MessageBox.Show(string.Format("Resim kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug($"[BtnSaveSignature_Click] Hata: {ex.Message}");
+                MessageBox.Show($"İmza kaydedilirken hata oluştu: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
