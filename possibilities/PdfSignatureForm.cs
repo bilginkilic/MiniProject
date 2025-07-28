@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using Gizmox.WebGUI.Forms;
 
-namespace Possibilities
+namespace BtmuApps.UI.Forms.SIGN
 {
     public class CustomImagePanel : Panel
     {
@@ -36,6 +36,7 @@ namespace Possibilities
 
     public class PdfSignatureForm : Form
     {
+        private readonly string _cdn = @"\\trrgap3027\files\circular\cdn";
         private UploadControl uploadControl;
         private Button btnShowPdf;
         private CustomImagePanel imagePanel;
@@ -78,7 +79,7 @@ namespace Possibilities
             this.uploadControl.Location = new System.Drawing.Point(20, 20);
             this.uploadControl.Width = 300;
             this.uploadControl.UploadComplete += UploadControl_UploadComplete;
-            this.uploadControl.UploadFilePath = @"\\trrfap2034\files\cdn"; 
+            this.uploadControl.UploadFilePath = _cdn;
 
             // btnShowPdf
             this.btnShowPdf.Text = "PDF'i Göster";
@@ -135,16 +136,15 @@ namespace Possibilities
             Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF gösterme işlemi başlatıldı. Yüklenen PDF yolu: {0}", lastUploadedPdfPath));
             if (!string.IsNullOrEmpty(lastUploadedPdfPath))
             {
-                string cdnFolder = @"\\trrfap2034\files\cdn";
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] CDN klasör yolu: {0}", cdnFolder));
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] CDN klasör yolu: {0}", _cdn));
 
                 try
                 {
-                    System.IO.Directory.CreateDirectory(cdnFolder);
-                    string imagePath = System.IO.Path.Combine(cdnFolder, "page_1.png");
+                    System.IO.Directory.CreateDirectory(_cdn);
+                    string imagePath = System.IO.Path.Combine(_cdn, "page_1.png");
                     Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF'i resme çeviriliyor. Hedef resim yolu: {0}", imagePath));
 
-                    PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, cdnFolder);
+                    PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn);
 
                     if (System.IO.File.Exists(imagePath))
                     {
@@ -294,7 +294,7 @@ namespace Possibilities
                             (int)(imagePanel.SelectionRect.Width * scaleX),
                             (int)(imagePanel.SelectionRect.Height * scaleY)
                         );
-                        string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
+                        string outputPath = System.IO.Path.Combine(_cdn, string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
                         
                         Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Crop edilecek alan (orijinal boyutlara göre): {0}", cropRect));
                         Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Kaydedilecek imza yolu: {0}", outputPath));
