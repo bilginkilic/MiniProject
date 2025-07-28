@@ -133,13 +133,35 @@ namespace Possibilities
                                 pictureBoxPdfPage.Image = null;
                             }
                             
-                            // Resmi doğrudan yükle
-                            using (var stream = new System.IO.FileStream(imagePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                            // Dosya boyutunu kontrol et
+                            var fileInfo = new System.IO.FileInfo(imagePath);
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Dosya boyutu: {0} bytes", fileInfo.Length));
+                            
+                            if (fileInfo.Length == 0)
                             {
-                                pictureBoxPdfPage.Image = System.Drawing.Image.FromStream(stream);
+                                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Dosya boş!");
+                                MessageBox.Show("Oluşturulan resim dosyası boş!", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return;
                             }
                             
+                            // Resmi doğrudan yükle - stream'i kapatmadan önce Image'i oluştur
+                            System.Drawing.Image loadedImage = null;
+                            using (var stream = new System.IO.FileStream(imagePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                            {
+                                loadedImage = System.Drawing.Image.FromStream(stream);
+                            }
+                            
+                            if (loadedImage == null)
+                            {
+                                Logger.Instance.Debug("[BtnShowPdf_Click] Hata: Image.FromStream null döndü!");
+                                MessageBox.Show("Resim yüklenemedi - dosya formatı desteklenmiyor olabilir.", "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return;
+                            }
+                            
+                            pictureBoxPdfPage.Image = loadedImage;
                             pictureBoxPdfPage.SizeMode = PictureBoxSizeMode.Zoom;
+                            
+                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Resim başarıyla yüklendi. Boyut: {0}x{1}", loadedImage.Width, loadedImage.Height));
                             
                             lastRenderedImagePath = imagePath;
                             btnSaveSignature.Enabled = false;
