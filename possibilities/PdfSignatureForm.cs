@@ -18,6 +18,7 @@ namespace BtmuApps.UI.Forms.SIGN
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
         private Rectangle selectionRect;
+        private HiddenField selectionDataField;
 
         public PdfSignatureForm()
         {
@@ -39,6 +40,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.btnShowPdf = new Button();
             this.imageBox = new HtmlBox();
             this.btnSaveSignature = new Button();
+            this.selectionDataField = new HiddenField();
 
             // Form
             this.Text = "İmza Sirkülerinden İmza Seçimi";
@@ -62,6 +64,10 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.BorderStyle = BorderStyle.FixedSingle;
             this.imageBox.BackColor = Color.White;
 
+            // selectionDataField
+            this.selectionDataField.ID = "selectionData";
+            this.selectionDataField.TextChanged += SelectionDataField_TextChanged;
+
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçilen İmzayı Kaydet";
             this.btnSaveSignature.Location = new System.Drawing.Point(20, 580);
@@ -73,6 +79,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.Controls.Add(this.btnShowPdf);
             this.Controls.Add(this.imageBox);
             this.Controls.Add(this.btnSaveSignature);
+            this.Controls.Add(this.selectionDataField);
         }
 
         private void UploadControl_UploadComplete(object sender, UploadCompleteEventArgs e)
@@ -90,6 +97,30 @@ namespace BtmuApps.UI.Forms.SIGN
                 btnShowPdf.Enabled = true;
                 MessageBox.Show("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
                 Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {0}", lastUploadedPdfPath));
+            }
+        }
+
+        private void SelectionDataField_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                string[] parts = selectionDataField.Text.Split(',');
+                if (parts.Length >= 4)
+                {
+                    int x = Convert.ToInt32(parts[0]);
+                    int y = Convert.ToInt32(parts[1]);
+                    int width = Convert.ToInt32(parts[2]);
+                    int height = Convert.ToInt32(parts[3]);
+
+                    selectionRect = new Rectangle(x, y, width, height);
+                    btnSaveSignature.Enabled = width > 10 && height > 10;
+                    
+                    Logger.Instance.Debug(string.Format("[SelectionDataField_TextChanged] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug(string.Format("[SelectionDataField_TextChanged] Seçim verisi işlenirken hata: {0}", ex.Message));
             }
         }
 
@@ -156,6 +187,7 @@ namespace BtmuApps.UI.Forms.SIGN
                                     background-color: rgba(255,0,0,0.1);
                                     pointer-events: none;
                                     display: none;
+                                    z-index: 1000;
                                 }}
                             </style>
                         </head>
@@ -169,6 +201,8 @@ namespace BtmuApps.UI.Forms.SIGN
                             <script>
                                 var isSelecting = false;
                                 var startX, startY;
+                                var selectionBox = document.getElementById('selection');
+                                var hiddenField = document.getElementById('{1}');
                                 
                                 function startSelection(e) {{
                                     isSelecting = true;
@@ -176,12 +210,11 @@ namespace BtmuApps.UI.Forms.SIGN
                                     startX = e.clientX - rect.left;
                                     startY = e.clientY - rect.top;
                                     
-                                    var sel = document.getElementById('selection');
-                                    sel.style.left = startX + 'px';
-                                    sel.style.top = startY + 'px';
-                                    sel.style.width = '0px';
-                                    sel.style.height = '0px';
-                                    sel.style.display = 'block';
+                                    selectionBox.style.left = startX + 'px';
+                                    selectionBox.style.top = startY + 'px';
+                                    selectionBox.style.width = '0px';
+                                    selectionBox.style.height = '0px';
+                                    selectionBox.style.display = 'block';
                                 }}
                                 
                                 function updateSelection(e) {{
@@ -197,38 +230,29 @@ namespace BtmuApps.UI.Forms.SIGN
                                     var w = Math.abs(currentX - startX);
                                     var h = Math.abs(currentY - startY);
                                     
-                                    var sel = document.getElementById('selection');
-                                    sel.style.left = x + 'px';
-                                    sel.style.top = y + 'px';
-                                    sel.style.width = w + 'px';
-                                    sel.style.height = h + 'px';
-
-                                    // Seçim bilgilerini form ile gönder
-                                    var formData = new FormData();
-                                    formData.append('x', x);
-                                    formData.append('y', y);
-                                    formData.append('width', w);
-                                    formData.append('height', h);
-
-                                    // Form submit
-                                    var form = document.createElement('form');
-                                    form.method = 'POST';
-                                    form.style.display = 'none';
-                                    
-                                    for(var key of formData.keys()) {{
-                                        var input = document.createElement('input');
-                                        input.type = 'hidden';
-                                        input.name = key;
-                                        input.value = formData.get(key);
-                                        form.appendChild(input);
-                                    }}
-                                    
-                                    document.body.appendChild(form);
-                                    form.submit();
+                                    selectionBox.style.left = x + 'px';
+                                    selectionBox.style.top = y + 'px';
+                                    selectionBox.style.width = w + 'px';
+                                    selectionBox.style.height = h + 'px';
                                 }}
                                 
-                                function endSelection() {{
+                                function endSelection(e) {{
+                                    if (!isSelecting) return;
                                     isSelecting = false;
+                                    
+                                    var img = document.querySelector('.image-wrapper img');
+                                    var rect = img.getBoundingClientRect();
+                                    var currentX = e.clientX - rect.left;
+                                    var currentY = e.clientY - rect.top;
+                                    
+                                    var x = Math.min(startX, currentX);
+                                    var y = Math.min(startY, currentY);
+                                    var w = Math.abs(currentX - startX);
+                                    var h = Math.abs(currentY - startY);
+                                    
+                                    // Seçim verilerini hidden field'a gönder
+                                    var selectionData = [x, y, w, h].join(',');
+                                    __doPostBack('{1}', selectionData);
                                 }}
                                 
                                 window.onload = function() {{
@@ -236,34 +260,18 @@ namespace BtmuApps.UI.Forms.SIGN
                                     img.addEventListener('mousedown', startSelection);
                                     img.addEventListener('mousemove', updateSelection);
                                     img.addEventListener('mouseup', endSelection);
+                                    img.addEventListener('mouseleave', function() {{
+                                        if (isSelecting) {{
+                                            endSelection(event);
+                                        }}
+                                    }});
                                 }};
                             </script>
                         </body>
-                        </html>", base64Image);
+                        </html>", base64Image, selectionDataField.ID);
 
                     imageBox.Html = html;
                     lastRenderedImagePath = imagePath;
-
-                    // Form verilerini kontrol et
-                    if (Context.Request.Form["x"] != null)
-                    {
-                        try
-                        {
-                            int x = Convert.ToInt32(Context.Request.Form["x"]);
-                            int y = Convert.ToInt32(Context.Request.Form["y"]);
-                            int width = Convert.ToInt32(Context.Request.Form["width"]);
-                            int height = Convert.ToInt32(Context.Request.Form["height"]);
-
-                            selectionRect = new Rectangle(x, y, width, height);
-                            btnSaveSignature.Enabled = width > 10 && height > 10;
-                            
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Seçim verisi işlenirken hata: {0}", ex.Message));
-                        }
-                    }
 
                     MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
                 }
