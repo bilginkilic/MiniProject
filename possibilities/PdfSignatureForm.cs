@@ -6,13 +6,40 @@ using Gizmox.WebGUI.Forms;
 
 namespace Possibilities
 {
+    public class CustomImagePanel : Panel
+    {
+        private Rectangle _selectionRect;
+        
+        public Rectangle SelectionRect
+        {
+            get => _selectionRect;
+            set
+            {
+                _selectionRect = value;
+                this.Refresh();
+            }
+        }
+
+        protected override void RenderAttributes(IContext context)
+        {
+            base.RenderAttributes(context);
+            
+            if (_selectionRect.Width > 0 && _selectionRect.Height > 0)
+            {
+                using (var pen = new Pen(Color.Red, 2))
+                {
+                    context.Graphics.DrawRectangle(pen, _selectionRect);
+                }
+            }
+        }
+    }
+
     public class PdfSignatureForm : Form
     {
         private UploadControl uploadControl;
         private Button btnShowPdf;
-        private Panel imagePanel;
+        private CustomImagePanel imagePanel;
         private Button btnSaveSignature;
-        private Rectangle selectionRect;
         private bool isSelecting = false;
         private Point selectionStart;
         private string lastUploadedPdfPath;
@@ -27,7 +54,6 @@ namespace Possibilities
         {
             if (disposing)
             {
-                // Panel'deki resmi dispose et
                 if (imagePanel != null && imagePanel.BackgroundImage != null)
                 {
                     imagePanel.BackgroundImage.Dispose();
@@ -41,7 +67,7 @@ namespace Possibilities
         {
             this.uploadControl = new UploadControl();
             this.btnShowPdf = new Button();
-            this.imagePanel = new Panel();
+            this.imagePanel = new CustomImagePanel();
             this.btnSaveSignature = new Button();
 
             // Form
@@ -68,7 +94,6 @@ namespace Possibilities
             this.imagePanel.MouseDown += Panel_MouseDown;
             this.imagePanel.MouseMove += Panel_MouseMove;
             this.imagePanel.MouseUp += Panel_MouseUp;
-            this.imagePanel.Paint += Panel_Paint;
 
             // btnSaveSignature
             this.btnSaveSignature.Text = "Seçimi İmza Olarak Kaydet";
@@ -193,7 +218,7 @@ namespace Possibilities
                             
                             lastRenderedImagePath = imagePath;
                             btnSaveSignature.Enabled = false;
-                            selectionRect = System.Drawing.Rectangle.Empty;
+                            imagePanel.SelectionRect = Rectangle.Empty;
                             MessageBox.Show("PDF'nin ilk sayfası ekranda gösteriliyor. Seçim yapabilirsiniz.");
                         }
                         catch (Exception loadEx)
@@ -227,7 +252,7 @@ namespace Possibilities
             if (imagePanel.BackgroundImage == null) return;
             isSelecting = true;
             selectionStart = e.Location;
-            selectionRect = new System.Drawing.Rectangle(e.Location, new System.Drawing.Size(0, 0));
+            imagePanel.SelectionRect = new Rectangle(e.Location, new Size(0, 0));
             btnSaveSignature.Enabled = false;
         }
 
@@ -235,39 +260,27 @@ namespace Possibilities
         {
             if (isSelecting && imagePanel.BackgroundImage != null)
             {
-                int x = System.Math.Min(selectionStart.X, e.X);
-                int y = System.Math.Min(selectionStart.Y, e.Y);
-                int w = System.Math.Abs(selectionStart.X - e.X);
-                int h = System.Math.Abs(selectionStart.Y - e.Y);
-                selectionRect = new System.Drawing.Rectangle(x, y, w, h);
-                imagePanel.Invalidate(); // Yeniden çizim için
+                int x = Math.Min(selectionStart.X, e.X);
+                int y = Math.Min(selectionStart.Y, e.Y);
+                int w = Math.Abs(selectionStart.X - e.X);
+                int h = Math.Abs(selectionStart.Y - e.Y);
+                imagePanel.SelectionRect = new Rectangle(x, y, w, h);
             }
         }
 
         private void Panel_MouseUp(object sender, MouseEventArgs e)
         {
             isSelecting = false;
-            btnSaveSignature.Enabled = selectionRect.Width > 0 && selectionRect.Height > 0;
-            Logger.Instance.Debug(string.Format("[Panel_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", selectionRect, btnSaveSignature.Enabled));
-            imagePanel.Invalidate(); // Yeniden çizim için
-        }
-
-        private void Panel_Paint(object sender, PaintEventArgs e)
-        {
-            // Seçim dikdörtgenini çiz
-            if (selectionRect.Width > 0 && selectionRect.Height > 0)
-            {
-                using (var pen = new System.Drawing.Pen(System.Drawing.Color.Red, 2))
-                {
-                    e.Graphics.DrawRectangle(pen, selectionRect);
-                }
-            }
+            btnSaveSignature.Enabled = imagePanel.SelectionRect.Width > 0 && imagePanel.SelectionRect.Height > 0;
+            Logger.Instance.Debug(string.Format("[Panel_MouseUp] MouseUp olayı tetiklendi. Seçim tamamlandı. Seçim dikdörtgeni: {0}. Kaydet butonu aktif: {1}", 
+                imagePanel.SelectionRect, btnSaveSignature.Enabled));
         }
 
         private void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {0}. Seçim dikdörtgeni: {1}", lastRenderedImagePath, selectionRect));
-            if (!string.IsNullOrEmpty(lastRenderedImagePath) && selectionRect.Width > 0 && selectionRect.Height > 0)
+            Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydetme işlemi başlatıldı. Render edilmiş resim yolu: {0}. Seçim dikdörtgeni: {1}", 
+                lastRenderedImagePath, imagePanel.SelectionRect));
+            if (!string.IsNullOrEmpty(lastRenderedImagePath) && imagePanel.SelectionRect.Width > 0 && imagePanel.SelectionRect.Height > 0)
             {
                 try
                 {
@@ -276,10 +289,10 @@ namespace Possibilities
                         float scaleX = (float)img.Width / imagePanel.Width;
                         float scaleY = (float)img.Height / imagePanel.Height;
                         System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(
-                            (int)(selectionRect.X * scaleX),
-                            (int)(selectionRect.Y * scaleY),
-                            (int)(selectionRect.Width * scaleX),
-                            (int)(selectionRect.Height * scaleY)
+                            (int)(imagePanel.SelectionRect.X * scaleX),
+                            (int)(imagePanel.SelectionRect.Y * scaleY),
+                            (int)(imagePanel.SelectionRect.Width * scaleX),
+                            (int)(imagePanel.SelectionRect.Height * scaleY)
                         );
                         string outputPath = System.IO.Path.Combine(@"\\trrfap2034\files\cdn", string.Format("signature_{0}.png", System.DateTime.Now.Ticks));
                         
