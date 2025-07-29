@@ -324,10 +324,10 @@ namespace KvkkTools
                     progressBar.Maximum = dataGridFiles.SelectedRows.Count;
                     progressBar.Value = 0;
 
-                    var files = new List<(int LibraryId, int Id, string Extension)>();
+                    var files = new List<FileInfo>();
                     foreach (DataGridViewRow row in dataGridFiles.SelectedRows)
                     {
-                        files.Add((
+                        files.Add(new FileInfo(
                             Convert.ToInt32(row.Cells["LIBRARYID"].Value),
                             Convert.ToInt32(row.Cells["ID"].Value),
                             row.Cells["EXTENSION"].Value.ToString()
@@ -336,7 +336,7 @@ namespace KvkkTools
 
                     Task.Run(() =>
                     {
-                        fileExtractor.BatchExtract(fbd.SelectedPath, files.ToArray());
+                        fileExtractor.BatchExtract(fbd.SelectedPath, files);
                         this.Invoke((MethodInvoker)delegate
                         {
                             progressBar.Visible = false;

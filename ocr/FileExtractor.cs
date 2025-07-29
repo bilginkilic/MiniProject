@@ -1,9 +1,24 @@
 using System;
 using System.IO;
 using System.Data.SqlClient;
+using System.Collections.Generic;
 
 namespace KvkkTools
 {
+    public class FileInfo
+    {
+        public int LibraryId { get; set; }
+        public int Id { get; set; }
+        public string Extension { get; set; }
+
+        public FileInfo(int libraryId, int id, string extension)
+        {
+            LibraryId = libraryId;
+            Id = id;
+            Extension = extension;
+        }
+    }
+
     public class FileExtractor
     {
         private readonly string connectionString;
@@ -19,10 +34,9 @@ namespace KvkkTools
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = @"SELECT [DATA] 
-                               FROM [EBA].[dbo].[EFSFILEDATAPARTS]
-                               WHERE [LIBRARYID] = @LibraryId AND [FILEDATAID] = @Id
-                               ORDER BY [PARTINDEX]";
+                string query = string.Format("SELECT [DATA] FROM [EBA].[dbo].[EFSFILEDATAPARTS] " +
+                                          "WHERE [LIBRARYID] = @LibraryId AND [FILEDATAID] = @Id " +
+                                          "ORDER BY [PARTINDEX]");
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -42,28 +56,32 @@ namespace KvkkTools
             }
         }
 
-        public void SaveToFile(int libraryId, int id, string extension, string outputPath)
+        public void SaveToFile(FileInfo fileInfo, string outputPath)
         {
-            byte[] fileData = GetFileData(libraryId, id);
+            byte[] fileData = GetFileData(fileInfo.LibraryId, fileInfo.Id);
             if (fileData != null && fileData.Length > 0)
             {
-                string fullPath = Path.Combine(outputPath, $"file_{libraryId}_{id}{extension}");
+                string fileName = string.Format("file_{0}_{1}{2}", 
+                    fileInfo.LibraryId, fileInfo.Id, fileInfo.Extension);
+                string fullPath = Path.Combine(outputPath, fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
                 File.WriteAllBytes(fullPath, fileData);
             }
         }
 
-        public void BatchExtract(string outputPath, params (int LibraryId, int Id, string Extension)[] files)
+        public void BatchExtract(string outputPath, List<FileInfo> files)
         {
             foreach (var file in files)
             {
                 try
                 {
-                    SaveToFile(file.LibraryId, file.Id, file.Extension, outputPath);
+                    SaveToFile(file, outputPath);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Dosya çıkarma hatası (LibraryId={file.LibraryId}, Id={file.Id}): {ex.Message}");
+                    string errorMessage = string.Format("Dosya çıkarma hatası (LibraryId={0}, Id={1}): {2}", 
+                        file.LibraryId, file.Id, ex.Message);
+                    Console.WriteLine(errorMessage);
                 }
             }
         }
