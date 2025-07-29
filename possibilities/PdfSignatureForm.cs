@@ -142,10 +142,14 @@ namespace BtmuApps.UI.Forms.SIGN
             try
             {
                 Directory.CreateDirectory(_cdn);
-                string imagePath = Path.Combine(_cdn, "signature_page.png");
+                string imagePath = Path.Combine(_cdn, "page_1.png"); // PdfToImageAndCrop sınıfının kullandığı dosya adı formatı
                 
-                // PDF'yi yüksek kalitede PNG'ye çevir
-                PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn, 300); // 300 DPI kalite
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF dönüşümü başlıyor. PDF: {0}, Hedef: {1}", lastUploadedPdfPath, imagePath));
+                
+                // PDF'yi PNG'ye çevir
+                PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn);
+                
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF dönüşümü tamamlandı. Dosya mevcut mu: {0}", File.Exists(imagePath)));
 
                 if (File.Exists(imagePath))
                 {
