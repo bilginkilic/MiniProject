@@ -10,8 +10,7 @@ using System.Threading.Tasks;
 using Tesseract;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
-using NPOI.XSSF.UserModel;
-using NPOI.SS.UserModel;
+using Aspose.Cells;
 
 namespace KvkkTools
 {
@@ -357,15 +356,27 @@ namespace KvkkTools
 
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
-                    using (var workbook = new XSSFWorkbook())
+                    try
                     {
-                        var sheet = workbook.CreateSheet("Analiz Sonuçları");
-                        
+                        // Yeni bir çalışma kitabı oluştur
+                        var workbook = new Workbook();
+                        var worksheet = workbook.Worksheets[0];
+                        worksheet.Name = "Analiz Sonuçları";
+
+                        // Stil tanımlamaları
+                        var headerStyle = workbook.CreateStyle();
+                        headerStyle.Font.IsBold = true;
+                        headerStyle.ForegroundColor = Color.LightGray;
+                        headerStyle.Pattern = BackgroundType.Solid;
+                        headerStyle.HorizontalAlignment = TextAlignmentType.Center;
+
                         // Başlık satırı
-                        var headerRow = sheet.CreateRow(0);
-                        headerRow.CreateCell(0).SetCellValue("Dosya Bilgisi");
-                        headerRow.CreateCell(1).SetCellValue("Bulunan Veri Tipi");
-                        headerRow.CreateCell(2).SetCellValue("Değer");
+                        worksheet.Cells["A1"].PutValue("Dosya Bilgisi");
+                        worksheet.Cells["B1"].PutValue("Bulunan Veri Tipi");
+                        worksheet.Cells["C1"].PutValue("Değer");
+
+                        // Başlık stilini uygula
+                        worksheet.Cells["A1:C1"].Style = headerStyle;
 
                         // Sonuçları parse et ve Excel'e aktar
                         string[] results = txtResults.Text.Split(new[] { "\n\n===" }, StringSplitOptions.RemoveEmptyEntries);
@@ -385,10 +396,10 @@ namespace KvkkTools
                                     i++; // Bir sonraki satıra geç (değerler)
                                     while (i < parts.Length && parts[i].StartsWith("-"))
                                     {
-                                        var row = sheet.CreateRow(rowIndex++);
-                                        row.CreateCell(0).SetCellValue(fileInfo);
-                                        row.CreateCell(1).SetCellValue(dataType);
-                                        row.CreateCell(2).SetCellValue(parts[i].Replace("-", "").Trim());
+                                        rowIndex++;
+                                        worksheet.Cells[string.Format("A{0}", rowIndex)].PutValue(fileInfo);
+                                        worksheet.Cells[string.Format("B{0}", rowIndex)].PutValue(dataType);
+                                        worksheet.Cells[string.Format("C{0}", rowIndex)].PutValue(parts[i].Replace("-", "").Trim());
                                         i++;
                                     }
                                     i--; // Döngüde tekrar artacağı için azalt
@@ -396,18 +407,46 @@ namespace KvkkTools
                             }
                         }
 
-                        // Sütun genişliklerini ayarla
-                        sheet.AutoSizeColumn(0);
-                        sheet.AutoSizeColumn(1);
-                        sheet.AutoSizeColumn(2);
+                        // Otomatik sütun genişliği
+                        worksheet.AutoFitColumns();
 
-                        // Dosyayı kaydet
-                        using (var fs = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write))
+                        // Kenarlıkları ayarla
+                        var range = worksheet.Cells.CreateRange(string.Format("A1:C{0}", rowIndex));
+                        range.SetOutlineBorder(BorderType.TopBorder, CellBorderType.Thin, Color.Black);
+                        range.SetOutlineBorder(BorderType.BottomBorder, CellBorderType.Thin, Color.Black);
+                        range.SetOutlineBorder(BorderType.LeftBorder, CellBorderType.Thin, Color.Black);
+                        range.SetOutlineBorder(BorderType.RightBorder, CellBorderType.Thin, Color.Black);
+                        range.SetInsideBorder(BorderType.VerticalBorder, CellBorderType.Thin, Color.Black);
+                        range.SetInsideBorder(BorderType.HorizontalBorder, CellBorderType.Thin, Color.Black);
+
+                        // Alternatif satır renklendirmesi
+                        var altRowStyle = workbook.CreateStyle();
+                        altRowStyle.ForegroundColor = Color.FromArgb(242, 242, 242);
+                        altRowStyle.Pattern = BackgroundType.Solid;
+
+                        for (int row = 2; row <= rowIndex; row++)
                         {
-                            workbook.Write(fs);
+                            if (row % 2 == 0)
+                            {
+                                var altRange = worksheet.Cells.CreateRange(row, 0, 1, 3);
+                                altRange.Style = altRowStyle;
+                            }
                         }
 
-                        MessageBox.Show("Sonuçlar Excel dosyasına aktarıldı.");
+                        // Filtreleme özelliğini ekle
+                        worksheet.AutoFilter.Range = worksheet.Cells.CreateRange(string.Format("A1:C{0}", rowIndex));
+
+                        // Excel dosyasını kaydet
+                        var saveOptions = new XlsSaveOptions(SaveFormat.Xlsx);
+                        saveOptions.UpdateExternalLinks = false;
+                        workbook.Save(sfd.FileName, saveOptions);
+
+                        MessageBox.Show("Sonuçlar Excel dosyasına aktarıldı.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(string.Format("Excel dosyası oluşturulurken hata oluştu: {0}", ex.Message),
+                            "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
