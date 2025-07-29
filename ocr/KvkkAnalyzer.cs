@@ -160,18 +160,18 @@ namespace KvkkTools
 
             if (!string.IsNullOrEmpty(searchText))
             {
-                filesTable.DefaultView.RowFilter = $"CONVERT(LIBRARYID, 'System.String') LIKE '%{searchText}%' OR " +
-                                                 $"CONVERT(ID, 'System.String') LIKE '%{searchText}%'";
+                filesTable.DefaultView.RowFilter = string.Format("CONVERT(LIBRARYID, 'System.String') LIKE '%{0}%' OR " +
+                                         "CONVERT(ID, 'System.String') LIKE '%{0}%'", searchText);
             }
 
             if (fileType != "Tümü")
             {
                 string currentFilter = filesTable.DefaultView.RowFilter;
-                string extensionFilter = $"EXTENSION = '{fileType}'";
+                string extensionFilter = string.Format("EXTENSION = '{0}'", fileType);
                 
                 filesTable.DefaultView.RowFilter = string.IsNullOrEmpty(currentFilter) 
                     ? extensionFilter 
-                    : $"{currentFilter} AND {extensionFilter}";
+                    : string.Format("{0} AND {1}", currentFilter, extensionFilter);
             }
         }
 
@@ -198,7 +198,8 @@ namespace KvkkTools
                     if (fileData != null)
                     {
                         string extractedText = await ExtractText(fileData, extension);
-                        AnalyzeText(extractedText, $"LibraryID: {libraryId}, ID: {id}");
+                        string fileInfoText = string.Format("LibraryID: {0}, ID: {1}", libraryId, id);
+                        AnalyzeText(extractedText, fileInfoText);
                     }
                 }
             }
@@ -269,13 +270,13 @@ namespace KvkkTools
 
                     // Word ve Excel için ayrı işleyiciler eklenebilir
                     default:
-                        text = $"[{extension}] dosya tipi henüz desteklenmiyor.";
+                        text = string.Format("[{0}] dosya tipi henüz desteklenmiyor.", extension);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                text = $"Metin çıkarma hatası: {ex.Message}";
+                text = string.Format("Metin çıkarma hatası: {0}", ex.Message);
             }
 
             return text;
@@ -292,17 +293,17 @@ namespace KvkkTools
                 { "Kredi Kartı", @"\b[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}\b" }
             };
 
-            txtResults.AppendText($"\n\n=== {fileInfo} ===\n");
+            txtResults.AppendText(string.Format("\n\n=== {0} ===\n", fileInfo));
 
             foreach (var pattern in patterns)
             {
                 var matches = Regex.Matches(text, pattern.Value);
                 if (matches.Count > 0)
                 {
-                    txtResults.AppendText($"\n{pattern.Key} bulundu ({matches.Count} adet):\n");
+                    txtResults.AppendText(string.Format("\n{0} bulundu ({1} adet):\n", pattern.Key, matches.Count));
                     foreach (Match match in matches)
                     {
-                        txtResults.AppendText($"- {match.Value}\n");
+                        txtResults.AppendText(string.Format("- {0}\n", match.Value));
                     }
                 }
             }
