@@ -5,6 +5,8 @@ using System.Threading;
 using Gizmox.WebGUI.Forms;
 using Gizmox.WebGUI.Common;
 using System.Drawing.Imaging;
+using System.Linq;
+using System.Web;
 
 namespace BtmuApps.UI.Forms.SIGN
 {
@@ -87,7 +89,7 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             try
             {
-                string selectionData = Context.Request.Params["selectionData"];
+                string selectionData = e.ToString(); // EventArgs'dan gelen veriyi kullan
                 if (!string.IsNullOrEmpty(selectionData))
                 {
                     string[] parts = selectionData.Split(',');
@@ -254,27 +256,10 @@ namespace BtmuApps.UI.Forms.SIGN
                                     var w = Math.abs(currentX - startX);
                                     var h = Math.abs(currentY - startY);
                                     
-                                    // Seçim verilerini gizli butona gönder
-                                    var selectionData = [x, y, w, h].join(',');
-                                    var form = document.createElement('form');
-                                    form.method = 'POST';
-                                    form.style.display = 'none';
-
-                                    var input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = 'selectionData';
-                                    input.value = selectionData;
-                                    form.appendChild(input);
-
-                                    // Gizli butonu tetikle
+                                    // VWG event sistemini kullan
                                     var btnId = '{1}';
-                                    var btn = document.createElement('input');
-                                    btn.type = 'submit';
-                                    btn.name = btnId;
-                                    form.appendChild(btn);
-
-                                    document.body.appendChild(form);
-                                    btn.click();
+                                    var eventArg = x + ',' + y + ',' + w + ',' + h;
+                                    VWG.postBack(btnId, eventArg);
                                 }}
                                 
                                 window.onload = function() {{
@@ -356,5 +341,4 @@ namespace BtmuApps.UI.Forms.SIGN
             }
         }
     }
-} 
 } 
