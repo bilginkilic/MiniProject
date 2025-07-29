@@ -7,6 +7,7 @@ using Gizmox.WebGUI.Common;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Web;
+using Newtonsoft.Json;
 
 namespace BtmuApps.UI.Forms.SIGN
 {
@@ -89,33 +90,41 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             try
             {
-                string selectionData = e.ToString(); // EventArgs'dan gelen veriyi kullan
-                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Seçim verisi alındı: {0}", selectionData));
-                
-                if (!string.IsNullOrEmpty(selectionData))
+                // window.name'den veriyi al
+                string windowName = Context.Request.Browser.WindowName;
+                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Window.name verisi alındı: {0}", windowName));
+
+                if (!string.IsNullOrEmpty(windowName))
                 {
-                    string[] parts = selectionData.Split(',');
-                    if (parts.Length >= 4)
+                    try
                     {
-                        int x = Convert.ToInt32(parts[0]);
-                        int y = Convert.ToInt32(parts[1]);
-                        int width = Convert.ToInt32(parts[2]);
-                        int height = Convert.ToInt32(parts[3]);
+                        // JSON'dan Rectangle oluştur
+                        dynamic selection = JsonConvert.DeserializeObject(windowName);
+                        int x = (int)selection.x;
+                        int y = (int)selection.y;
+                        int width = (int)selection.width;
+                        int height = (int)selection.height;
 
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = width > 10 && height > 10;
                         
                         Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
+
+                        // Seçim başarılı olduğunda kullanıcıya bildir
+                        if (btnSaveSignature.Enabled)
+                        {
+                            MessageBox.Show("İmza seçimi yapıldı. Kaydetmek için 'Seçilen İmzayı Kaydet' butonuna tıklayın.");
+                        }
                     }
-                    else
+                    catch (JsonException jsonEx)
                     {
-                        Logger.Instance.Debug("[BtnUpdateSelection_Click] Hatalı seçim verisi formatı");
+                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] JSON parse hatası: {0}", jsonEx.Message));
                     }
                 }
                 else
                 {
-                    Logger.Instance.Debug("[BtnUpdateSelection_Click] Seçim verisi boş");
+                    Logger.Instance.Debug("[BtnUpdateSelection_Click] Window.name verisi boş");
                 }
             }
             catch (Exception ex)
@@ -225,6 +234,17 @@ namespace BtmuApps.UI.Forms.SIGN
                                 var startX, startY;
                                 var selectionBox = document.getElementById('selection');
                                 var lastSelection = null;
+
+                                // Session verisi ayarla
+                                function setSessionData(data) {{
+                                    try {{
+                                        window.name = JSON.stringify(data);
+                                        return true;
+                                    }} catch (e) {{
+                                        console.error('Session verisi ayarlanamadı:', e);
+                                        return false;
+                                    }}
+                                }}
                                 
                                 function startSelection(e) {{
                                     isSelecting = true;
@@ -275,19 +295,24 @@ namespace BtmuApps.UI.Forms.SIGN
                                     // Seçimi sakla
                                     lastSelection = {{x: x, y: y, width: w, height: h}};
                                     
-                                    // VWG event sistemini kullan
-                                    var btnId = '{1}';
-                                    var eventArg = x + ',' + y + ',' + w + ',' + h;
-                                    
                                     // Seçim kutusunu görünür tut
                                     selectionBox.style.left = x + 'px';
                                     selectionBox.style.top = y + 'px';
                                     selectionBox.style.width = w + 'px';
                                     selectionBox.style.height = h + 'px';
                                     selectionBox.style.display = 'block';
+
+                                    // Session'a veriyi kaydet
+                                    window.name = JSON.stringify({{
+                                        x: x,
+                                        y: y,
+                                        width: w,
+                                        height: h
+                                    }});
                                     
-                                    // Sunucuya bildir
-                                    VWG.postBack(btnId, eventArg);
+                                    // Butonu tetikle
+                                    var btnId = '{1}';
+                                    document.getElementsByName(btnId)[0].click();
                                 }}
                                 
                                 window.onload = function() {{
