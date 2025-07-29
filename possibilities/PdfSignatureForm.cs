@@ -97,8 +97,8 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             try
             {
-                // HtmlBox'dan veriyi al
-                string selectionData = hiddenBox.GetAttribute("value");
+                // HtmlBox'dan veriyi al (InnerHtml veya Text kullanarak)
+                string selectionData = hiddenBox.InnerHtml ?? hiddenBox.Text;
                 Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] HtmlBox verisi alındı: {0}", selectionData));
 
                 if (!string.IsNullOrEmpty(selectionData))
@@ -308,7 +308,7 @@ namespace BtmuApps.UI.Forms.SIGN
                                     selectionBox.style.display = 'block';
 
                                     // Veriyi gizli HtmlBox'a kaydet
-                                    document.getElementById('hiddenBox').setAttribute('value', x + ',' + y + ',' + w + ',' + h);
+                                    document.getElementById('hiddenBox').innerHTML = x + ',' + y + ',' + w + ',' + h;
                                     
                                     // Butonu tetikle
                                     var btnId = '{1}';
