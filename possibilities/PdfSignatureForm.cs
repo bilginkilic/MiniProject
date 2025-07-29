@@ -71,7 +71,10 @@ namespace BtmuApps.UI.Forms.SIGN
 
             // hiddenBox
             this.hiddenBox.ID = "hiddenBox";
-            this.hiddenBox.Visible = false;
+            this.hiddenBox.Html = "<div id='hiddenBox'></div>";
+            this.hiddenBox.Visible = true; // HtmlBox'ı görünür yap ama içeriği gizli
+            this.hiddenBox.Width = 1;
+            this.hiddenBox.Height = 1;
 
             // btnUpdateSelection - gizli buton
             this.btnUpdateSelection.ID = "btnUpdateSelection";
@@ -234,10 +237,12 @@ namespace BtmuApps.UI.Forms.SIGN
                                     <div id='selection'></div>
                                 </div>
                             </div>
+                            <div id='hiddenBox' style='display:none'></div>
                             <script>
                                 var isSelecting = false;
                                 var startX, startY;
                                 var selectionBox = document.getElementById('selection');
+                                var hiddenBox = document.getElementById('hiddenBox');
                                 var lastSelection = null;
 
                                 // Session verisi ayarla
@@ -307,12 +312,21 @@ namespace BtmuApps.UI.Forms.SIGN
                                     selectionBox.style.height = h + 'px';
                                     selectionBox.style.display = 'block';
 
-                                    // Veriyi gizli HtmlBox'a kaydet
-                                    document.getElementById('hiddenBox').innerHTML = x + ',' + y + ',' + w + ',' + h;
-                                    
-                                    // Butonu tetikle
-                                    var btnId = '{1}';
-                                    document.getElementsByName(btnId)[0].click();
+                                    // Veriyi gizli div'e kaydet
+                                    if (hiddenBox) {{
+                                        hiddenBox.innerHTML = x + ',' + y + ',' + w + ',' + h;
+                                        
+                                        // Butonu tetikle
+                                        var btnId = '{1}';
+                                        var btn = document.getElementsByName(btnId)[0];
+                                        if (btn) {{
+                                            btn.click();
+                                        }} else {{
+                                            console.error('Button not found:', btnId);
+                                        }}
+                                    }} else {{
+                                        console.error('Hidden box not found');
+                                    }}
                                 }}
                                 
                                 window.onload = function() {{
