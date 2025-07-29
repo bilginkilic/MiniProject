@@ -90,6 +90,8 @@ namespace BtmuApps.UI.Forms.SIGN
             try
             {
                 string selectionData = e.ToString(); // EventArgs'dan gelen veriyi kullan
+                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Seçim verisi alındı: {0}", selectionData));
+                
                 if (!string.IsNullOrEmpty(selectionData))
                 {
                     string[] parts = selectionData.Split(',');
@@ -103,8 +105,17 @@ namespace BtmuApps.UI.Forms.SIGN
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = width > 10 && height > 10;
                         
-                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}", x, y, width, height));
+                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
+                            x, y, width, height, btnSaveSignature.Enabled));
                     }
+                    else
+                    {
+                        Logger.Instance.Debug("[BtnUpdateSelection_Click] Hatalı seçim verisi formatı");
+                    }
+                }
+                else
+                {
+                    Logger.Instance.Debug("[BtnUpdateSelection_Click] Seçim verisi boş");
                 }
             }
             catch (Exception ex)
@@ -213,6 +224,7 @@ namespace BtmuApps.UI.Forms.SIGN
                                 var isSelecting = false;
                                 var startX, startY;
                                 var selectionBox = document.getElementById('selection');
+                                var lastSelection = null;
                                 
                                 function startSelection(e) {{
                                     isSelecting = true;
@@ -260,9 +272,21 @@ namespace BtmuApps.UI.Forms.SIGN
                                     var w = Math.abs(currentX - startX);
                                     var h = Math.abs(currentY - startY);
                                     
+                                    // Seçimi sakla
+                                    lastSelection = {{x: x, y: y, width: w, height: h}};
+                                    
                                     // VWG event sistemini kullan
                                     var btnId = '{1}';
                                     var eventArg = x + ',' + y + ',' + w + ',' + h;
+                                    
+                                    // Seçim kutusunu görünür tut
+                                    selectionBox.style.left = x + 'px';
+                                    selectionBox.style.top = y + 'px';
+                                    selectionBox.style.width = w + 'px';
+                                    selectionBox.style.height = h + 'px';
+                                    selectionBox.style.display = 'block';
+                                    
+                                    // Sunucuya bildir
                                     VWG.postBack(btnId, eventArg);
                                 }}
                                 
@@ -271,11 +295,20 @@ namespace BtmuApps.UI.Forms.SIGN
                                     img.addEventListener('mousedown', startSelection);
                                     img.addEventListener('mousemove', updateSelection);
                                     img.addEventListener('mouseup', endSelection);
-                                    img.addEventListener('mouseleave', function() {{
+                                    img.addEventListener('mouseleave', function(e) {{
                                         if (isSelecting) {{
-                                            endSelection(event);
+                                            endSelection(e);
                                         }}
                                     }});
+                                    
+                                    // Sayfa yüklendiğinde önceki seçimi göster
+                                    if (lastSelection) {{
+                                        selectionBox.style.left = lastSelection.x + 'px';
+                                        selectionBox.style.top = lastSelection.y + 'px';
+                                        selectionBox.style.width = lastSelection.width + 'px';
+                                        selectionBox.style.height = lastSelection.height + 'px';
+                                        selectionBox.style.display = 'block';
+                                    }}
                                 }};
                             </script>
                         </body>
