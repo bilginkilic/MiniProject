@@ -22,6 +22,7 @@ namespace BtmuApps.UI.Forms.SIGN
         private string lastUploadedPdfPath;
         private string lastRenderedImagePath;
         private Rectangle selectionRect;
+        private HtmlBox hiddenBox; // Veri transferi için gizli HtmlBox
 
         public PdfSignatureForm()
         {
@@ -44,6 +45,7 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox = new HtmlBox();
             this.btnSaveSignature = new Button();
             this.btnUpdateSelection = new Button();
+            this.hiddenBox = new HtmlBox(); // Gizli HtmlBox ekle
 
             // Form
             this.Text = "İmza Sirkülerinden İmza Seçimi";
@@ -67,6 +69,10 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.BorderStyle = BorderStyle.FixedSingle;
             this.imageBox.BackColor = Color.White;
 
+            // hiddenBox
+            this.hiddenBox.ID = "hiddenBox";
+            this.hiddenBox.Visible = false;
+
             // btnUpdateSelection - gizli buton
             this.btnUpdateSelection.ID = "btnUpdateSelection";
             this.btnUpdateSelection.Visible = false;
@@ -84,26 +90,26 @@ namespace BtmuApps.UI.Forms.SIGN
             this.Controls.Add(this.imageBox);
             this.Controls.Add(this.btnSaveSignature);
             this.Controls.Add(this.btnUpdateSelection);
+            this.Controls.Add(this.hiddenBox);
         }
 
         private void BtnUpdateSelection_Click(object sender, EventArgs e)
         {
             try
             {
-                // window.name'den veriyi al
-                string windowName = Context.Request.Browser.WindowName;
-                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Window.name verisi alındı: {0}", windowName));
+                // HtmlBox'dan veriyi al
+                string selectionData = hiddenBox.GetAttribute("value");
+                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] HtmlBox verisi alındı: {0}", selectionData));
 
-                if (!string.IsNullOrEmpty(windowName))
+                if (!string.IsNullOrEmpty(selectionData))
                 {
-                    try
+                    string[] parts = selectionData.Split(',');
+                    if (parts.Length >= 4)
                     {
-                        // JSON'dan Rectangle oluştur
-                        dynamic selection = JsonConvert.DeserializeObject(windowName);
-                        int x = (int)selection.x;
-                        int y = (int)selection.y;
-                        int width = (int)selection.width;
-                        int height = (int)selection.height;
+                        int x = Convert.ToInt32(parts[0]);
+                        int y = Convert.ToInt32(parts[1]);
+                        int width = Convert.ToInt32(parts[2]);
+                        int height = Convert.ToInt32(parts[3]);
 
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = width > 10 && height > 10;
@@ -111,20 +117,19 @@ namespace BtmuApps.UI.Forms.SIGN
                         Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
 
-                        // Seçim başarılı olduğunda kullanıcıya bildir
                         if (btnSaveSignature.Enabled)
                         {
                             MessageBox.Show("İmza seçimi yapıldı. Kaydetmek için 'Seçilen İmzayı Kaydet' butonuna tıklayın.");
                         }
                     }
-                    catch (JsonException jsonEx)
+                    else
                     {
-                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] JSON parse hatası: {0}", jsonEx.Message));
+                        Logger.Instance.Debug("[BtnUpdateSelection_Click] Hatalı seçim verisi formatı");
                     }
                 }
                 else
                 {
-                    Logger.Instance.Debug("[BtnUpdateSelection_Click] Window.name verisi boş");
+                    Logger.Instance.Debug("[BtnUpdateSelection_Click] HtmlBox verisi boş");
                 }
             }
             catch (Exception ex)
@@ -302,13 +307,8 @@ namespace BtmuApps.UI.Forms.SIGN
                                     selectionBox.style.height = h + 'px';
                                     selectionBox.style.display = 'block';
 
-                                    // Session'a veriyi kaydet
-                                    window.name = JSON.stringify({{
-                                        x: x,
-                                        y: y,
-                                        width: w,
-                                        height: h
-                                    }});
+                                    // Veriyi gizli HtmlBox'a kaydet
+                                    document.getElementById('hiddenBox').setAttribute('value', x + ',' + y + ',' + w + ',' + h);
                                     
                                     // Butonu tetikle
                                     var btnId = '{1}';
