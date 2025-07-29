@@ -382,21 +382,34 @@ namespace BtmuApps.UI.Forms.SIGN
                                     selectionBox.style.display = 'block';
 
                                     // Veriyi gizli div'e kaydet
-                                    if (hiddenBox) {{
+                                    if (hiddenBox) {
                                         hiddenBox.innerHTML = x + ',' + y + ',' + w + ',' + h;
                                         console.log('Selection data saved:', hiddenBox.innerHTML);
                                         
-                                        // Butonu tetikle
-                                        var btn = document.getElementById('12345');
-                                        if (btn) {{
-                                            console.log('Button found, clicking...');
-                                            btn.click();
-                                        }} else {{
-                                            console.error('Button not found with ID: 12345');
-                                        }}
-                                    }} else {{
+                                        // Butonu getElementsByName ile bul
+                                        var buttons = document.getElementsByName('12345');
+                                        if (buttons && buttons.length > 0) {
+                                            console.log('Button found by name, clicking...');
+                                            buttons[0].click();
+                                        } else {
+                                            console.error('Button not found with name: 12345');
+                                            // Alternatif olarak form submit dene
+                                            var form = document.createElement('form');
+                                            form.method = 'POST';
+                                            form.style.display = 'none';
+                                            
+                                            var input = document.createElement('input');
+                                            input.type = 'submit';
+                                            input.name = '12345';
+                                            form.appendChild(input);
+                                            
+                                            document.body.appendChild(form);
+                                            input.click();
+                                            document.body.removeChild(form);
+                                        }
+                                    } else {
                                         console.error('Hidden box not found with ID: 54321');
-                                    }}
+                                    }
                                 }}
                                 
                                 window.onload = function() {{
