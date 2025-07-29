@@ -70,14 +70,15 @@ namespace BtmuApps.UI.Forms.SIGN
             this.imageBox.BackColor = Color.White;
 
             // hiddenBox
-            this.hiddenBox.ID = "hiddenBox";
-            this.hiddenBox.Html = "<div id='hiddenBox'></div>";
+            this.hiddenBox.ID = "54321"; // Sadece rakam
+            this.hiddenBox.Html = "<div id='54321'></div>";
             this.hiddenBox.Visible = true; // HtmlBox'ı görünür yap ama içeriği gizli
             this.hiddenBox.Width = 1;
             this.hiddenBox.Height = 1;
 
             // btnUpdateSelection - gizli buton
-            this.btnUpdateSelection.ID = "btnUpdateSelection";
+            this.btnUpdateSelection.ID = "12345"; // Sadece rakam
+            this.btnUpdateSelection.Name = "12345"; // Name özelliği de aynı
             this.btnUpdateSelection.Visible = false;
             this.btnUpdateSelection.Click += BtnUpdateSelection_Click;
 
@@ -191,7 +192,75 @@ namespace BtmuApps.UI.Forms.SIGN
                         base64Image = Convert.ToBase64String(imageBytes);
                     }
 
-                    string html = string.Format(@"
+                    string html = GetJavaScript(base64Image, "12345");
+
+                    imageBox.Html = html;
+                    lastRenderedImagePath = imagePath;
+
+                    MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
+                }
+                else
+                {
+                    MessageBox.Show("İmza sirkülerini görüntülenemedi. Lütfen dosyanın PDF formatında olduğundan emin olun.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(string.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnSaveSignature_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(lastRenderedImagePath) || selectionRect.IsEmpty)
+            {
+                MessageBox.Show("Lütfen önce bir imza seçin.");
+                return;
+            }
+
+            try
+            {
+                using (var sourceImage = Image.FromFile(lastRenderedImagePath))
+                {
+                    // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
+                    float scaleX = (float)sourceImage.Width / imageBox.Width;
+                    float scaleY = (float)sourceImage.Height / imageBox.Height;
+
+                    Rectangle cropRect = new Rectangle(
+                        (int)(selectionRect.X * scaleX),
+                        (int)(selectionRect.Y * scaleY),
+                        (int)(selectionRect.Width * scaleX),
+                        (int)(selectionRect.Height * scaleY)
+                    );
+
+                    // Seçilen alanı yeni bir resim olarak kaydet
+                    using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height))
+                    {
+                        using (var g = Graphics.FromImage(cropImage))
+                        {
+                            g.DrawImage(sourceImage, new Rectangle(0, 0, cropRect.Width, cropRect.Height),
+                                      cropRect, GraphicsUnit.Pixel);
+                        }
+
+                        string outputPath = Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
+                        cropImage.Save(outputPath, ImageFormat.Png);
+
+                        MessageBox.Show(string.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
+                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydedildi: {0}", outputPath));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(string.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private string GetJavaScript(string base64Image, string btnId)
+        {
+            return string.Format(@"
                         <html>
                         <head>
                             <style>
@@ -237,12 +306,12 @@ namespace BtmuApps.UI.Forms.SIGN
                                     <div id='selection'></div>
                                 </div>
                             </div>
-                            <div id='hiddenBox' style='display:none'></div>
+                            <div id='54321' style='display:none'></div>
                             <script>
                                 var isSelecting = false;
                                 var startX, startY;
                                 var selectionBox = document.getElementById('selection');
-                                var hiddenBox = document.getElementById('hiddenBox');
+                                var hiddenBox = document.getElementById('54321');
                                 var lastSelection = null;
 
                                 // Session verisi ayarla
@@ -315,17 +384,18 @@ namespace BtmuApps.UI.Forms.SIGN
                                     // Veriyi gizli div'e kaydet
                                     if (hiddenBox) {{
                                         hiddenBox.innerHTML = x + ',' + y + ',' + w + ',' + h;
+                                        console.log('Selection data saved:', hiddenBox.innerHTML);
                                         
                                         // Butonu tetikle
-                                        var btnId = '{1}';
-                                        var btn = document.getElementsByName(btnId)[0];
+                                        var btn = document.getElementById('12345');
                                         if (btn) {{
+                                            console.log('Button found, clicking...');
                                             btn.click();
                                         }} else {{
-                                            console.error('Button not found:', btnId);
+                                            console.error('Button not found with ID: 12345');
                                         }}
                                     }} else {{
-                                        console.error('Hidden box not found');
+                                        console.error('Hidden box not found with ID: 54321');
                                     }}
                                 }}
                                 
@@ -348,73 +418,16 @@ namespace BtmuApps.UI.Forms.SIGN
                                         selectionBox.style.height = lastSelection.height + 'px';
                                         selectionBox.style.display = 'block';
                                     }}
+                                    
+                                    console.log('Elements initialized:', {{
+                                        hiddenBox: !!hiddenBox,
+                                        selectionBox: !!selectionBox,
+                                        updateButton: !!document.getElementById('12345')
+                                    }});
                                 }};
                             </script>
                         </body>
-                        </html>", base64Image, btnUpdateSelection.ID);
-
-                    imageBox.Html = html;
-                    lastRenderedImagePath = imagePath;
-
-                    MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
-                }
-                else
-                {
-                    MessageBox.Show("İmza sirkülerini görüntülenemedi. Lütfen dosyanın PDF formatında olduğundan emin olun.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: {0}", ex.Message));
-                MessageBox.Show(string.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void BtnSaveSignature_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(lastRenderedImagePath) || selectionRect.IsEmpty)
-            {
-                MessageBox.Show("Lütfen önce bir imza seçin.");
-                return;
-            }
-
-            try
-            {
-                using (var sourceImage = Image.FromFile(lastRenderedImagePath))
-                {
-                    // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
-                    float scaleX = (float)sourceImage.Width / imageBox.Width;
-                    float scaleY = (float)sourceImage.Height / imageBox.Height;
-
-                    Rectangle cropRect = new Rectangle(
-                        (int)(selectionRect.X * scaleX),
-                        (int)(selectionRect.Y * scaleY),
-                        (int)(selectionRect.Width * scaleX),
-                        (int)(selectionRect.Height * scaleY)
-                    );
-
-                    // Seçilen alanı yeni bir resim olarak kaydet
-                    using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height))
-                    {
-                        using (var g = Graphics.FromImage(cropImage))
-                        {
-                            g.DrawImage(sourceImage, new Rectangle(0, 0, cropRect.Width, cropRect.Height),
-                                      cropRect, GraphicsUnit.Pixel);
-                        }
-
-                        string outputPath = Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
-                        cropImage.Save(outputPath, ImageFormat.Png);
-
-                        MessageBox.Show(string.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
-                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydedildi: {0}", outputPath));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Hata: {0}", ex.Message));
-                MessageBox.Show(string.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+                        </html>", base64Image, "12345"); // Rakamsal ID'yi kullan
         }
     }
 } 
