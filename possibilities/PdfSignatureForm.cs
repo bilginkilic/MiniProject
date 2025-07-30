@@ -120,13 +120,20 @@ namespace BtmuApps.UI.Forms.SIGN
 
                 if (!string.IsNullOrEmpty(selectionData))
                 {
+                    Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parsing selection data: {selectionData}");
                     string[] parts = selectionData.Split(',');
                     if (parts.Length >= 4)
                     {
-                        int x = Convert.ToInt32(parts[0]);
-                        int y = Convert.ToInt32(parts[1]);
-                        int width = Convert.ToInt32(parts[2]);
-                        int height = Convert.ToInt32(parts[3]);
+                        // Sayıları parse etmeden önce trim ve kontrol
+                        parts = parts.Select(p => p.Trim()).ToArray();
+                        Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parts after trim: {string.Join(",", parts)}");
+
+                        if (int.TryParse(parts[0], out int x) &&
+                            int.TryParse(parts[1], out int y) &&
+                            int.TryParse(parts[2], out int width) &&
+                            int.TryParse(parts[3], out int height))
+                        {
+                            Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parsed values: x={x}, y={y}, w={width}, h={height}");
 
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = true; // Her zaman aktif yap
@@ -387,11 +394,13 @@ namespace BtmuApps.UI.Forms.SIGN
                 var w = Math.abs(currentX - startX);
                 var h = Math.abs(currentY - startY);
                 
-                // Koordinatları tam sayıya yuvarla
-                x = Math.round(x);
-                y = Math.round(y);
-                w = Math.round(w);
-                h = Math.round(h);
+                // Koordinatları tam sayıya yuvarla ve string'e çevir
+                var selectionData = [
+                    Math.round(x).toString(),
+                    Math.round(y).toString(),
+                    Math.round(w).toString(),
+                    Math.round(h).toString()
+                ].join(',');
                 
                 // Seçim çok küçükse iptal et
                 if (w < 10 || h < 10) {{
@@ -412,9 +421,9 @@ namespace BtmuApps.UI.Forms.SIGN
 
                 // Veriyi gizli input'a kaydet
                 if (hiddenInput) {{
-                    var selectionData = x + ',' + y + ',' + w + ',' + h;
                     hiddenInput.value = selectionData;
                     hiddenInput.innerHTML = selectionData; // Hem value hem innerHTML'e kaydet
+                    console.log('Selection data formatted and saved:', selectionData);
                     console.log('Selection data saved:', selectionData);
                     
                     // Butonu bul ve tıkla
