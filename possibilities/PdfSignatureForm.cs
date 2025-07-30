@@ -131,8 +131,8 @@ namespace BtmuApps.UI.Forms.SIGN
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = true; // Her zaman aktif yap
                         
-                        // Seçim verilerini ViewState'de sakla
-                        ViewState["LastSelection"] = selectionData;
+                        // Seçim verilerini Session'da sakla
+                        Context.Session["LastSelection"] = selectionData;
                         
                         Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
@@ -208,8 +208,9 @@ namespace BtmuApps.UI.Forms.SIGN
                         base64Image = Convert.ToBase64String(imageBytes);
                     }
 
-                    // ViewState'den son seçimi al
-                    string lastSelection = ViewState["LastSelection"] as string;
+                    // Session'dan son seçimi al
+                    string lastSelection = Context.Session["LastSelection"] as string;
+                    Logger.Instance.Debug($"[BtnShowPdf_Click] Son seçim verisi: {lastSelection}");
                     
                     string html = GetJavaScript(base64Image, "12345");
                     imageBox.Html = html;
