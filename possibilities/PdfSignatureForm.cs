@@ -131,6 +131,9 @@ namespace BtmuApps.UI.Forms.SIGN
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = true; // Her zaman aktif yap
                         
+                        // Seçim verilerini ViewState'de sakla
+                        ViewState["LastSelection"] = selectionData;
+                        
                         Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
 
@@ -205,9 +208,17 @@ namespace BtmuApps.UI.Forms.SIGN
                         base64Image = Convert.ToBase64String(imageBytes);
                     }
 
+                    // ViewState'den son seçimi al
+                    string lastSelection = ViewState["LastSelection"] as string;
+                    
                     string html = GetJavaScript(base64Image, "12345");
-
                     imageBox.Html = html;
+
+                    // Son seçimi hidden input'a yükle
+                    if (!string.IsNullOrEmpty(lastSelection))
+                    {
+                        hiddenBox.Html = string.Format("<input type='hidden' id='54321' name='54321' value='{0}' />", lastSelection);
+                    }
                     lastRenderedImagePath = imagePath;
 
                     MessageBox.Show("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
@@ -440,6 +451,29 @@ namespace BtmuApps.UI.Forms.SIGN
                 }}
             }}
             
+            // Son seçimi yeniden çiz
+            function restoreLastSelection() {{
+                var savedData = hiddenInput.value;
+                console.log('Restoring last selection:', savedData);
+                
+                if (savedData) {{
+                    var parts = savedData.split(',');
+                    if (parts.length >= 4) {{
+                        var x = parseInt(parts[0]);
+                        var y = parseInt(parts[1]);
+                        var w = parseInt(parts[2]);
+                        var h = parseInt(parts[3]);
+                        
+                        selectionBox.className = 'selected';
+                        selectionBox.style.left = x + 'px';
+                        selectionBox.style.top = y + 'px';
+                        selectionBox.style.width = w + 'px';
+                        selectionBox.style.height = h + 'px';
+                        console.log('Selection restored');
+                    }}
+                }}
+            }}
+
             window.onload = function() {{
                 var img = document.querySelector('.image-wrapper img');
                 img.addEventListener('mousedown', startSelection);
@@ -450,6 +484,9 @@ namespace BtmuApps.UI.Forms.SIGN
                         endSelection(e);
                     }}
                 }});
+                
+                // Sayfa yüklendiğinde son seçimi göster
+                setTimeout(restoreLastSelection, 100);
                 
                 console.log('Elements initialized:', {{
                     hiddenInput: !!hiddenInput,
