@@ -79,7 +79,7 @@ namespace BtmuApps.UI.Forms.SIGN
             // btnUpdateSelection - gizli buton
             this.btnUpdateSelection.ID = "12345"; // Sadece rakam
             this.btnUpdateSelection.Name = "12345"; // Name özelliği de aynı
-            this.btnUpdateSelection.Visible = false;
+            this.btnUpdateSelection.Style.Display = "none"; // Tamamen gizleme, sadece görünmez yap
             this.btnUpdateSelection.Click += BtnUpdateSelection_Click;
 
             // btnSaveSignature
@@ -405,10 +405,20 @@ namespace BtmuApps.UI.Forms.SIGN
                     hiddenInput.innerHTML = selectionData; // Hem value hem innerHTML'e kaydet
                     console.log('Selection data saved:', selectionData);
                     
-                    // Form submit
-                    var form = document.createElement('form');
-                    form.method = 'POST';
-                    form.style.display = 'none';
+                    // Butonu bul ve tıkla
+                    var updateButton = document.getElementsByName('12345')[0];
+                    console.log('Update button found:', !!updateButton);
+                    
+                    if (updateButton) {
+                        console.log('Clicking update button...');
+                        updateButton.click();
+                    } else {
+                        console.error('Update button not found, trying form submit...');
+                        // Form submit as fallback
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = window.location.href;
+                        form.style.display = 'none';
                     
                     var input = document.createElement('input');
                     input.type = 'submit';
