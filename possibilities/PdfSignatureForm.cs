@@ -71,7 +71,7 @@ namespace BtmuApps.UI.Forms.SIGN
 
             // hiddenBox
             this.hiddenBox.ID = "54321"; // Sadece rakam
-            this.hiddenBox.Html = "<div id='54321'></div>";
+            this.hiddenBox.Html = "<input type='hidden' id='54321' name='54321' value='' />";
             this.hiddenBox.Visible = true; // HtmlBox'ı görünür yap ama içeriği gizli
             this.hiddenBox.Width = 1;
             this.hiddenBox.Height = 1;
@@ -101,8 +101,21 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             try
             {
-                // HtmlBox'dan veriyi al (InnerHtml veya Text kullanarak)
-                string selectionData = hiddenBox.InnerHtml ?? hiddenBox.Text;
+                // HtmlBox'dan veriyi al
+                string selectionData = null;
+                
+                // Önce form verisi olarak almayı dene
+                if (Context.Request.Form != null && Context.Request.Form["54321"] != null)
+                {
+                    selectionData = Context.Request.Form["54321"];
+                    Logger.Instance.Debug("[BtnUpdateSelection_Click] Form verisi alındı");
+                }
+                // Form verisi yoksa HtmlBox'tan almayı dene
+                else
+                {
+                    selectionData = hiddenBox.InnerHtml ?? hiddenBox.Text;
+                    Logger.Instance.Debug("[BtnUpdateSelection_Click] HtmlBox verisi alındı");
+                }
                 Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] HtmlBox verisi alındı: {0}", selectionData));
 
                 if (!string.IsNullOrEmpty(selectionData))
@@ -387,8 +400,10 @@ namespace BtmuApps.UI.Forms.SIGN
 
                 // Veriyi gizli input'a kaydet
                 if (hiddenInput) {{
-                    hiddenInput.value = [x, y, w, h].join(',');
-                    console.log('Selection data saved:', hiddenInput.value);
+                    var selectionData = x + ',' + y + ',' + w + ',' + h;
+                    hiddenInput.value = selectionData;
+                    hiddenInput.innerHTML = selectionData; // Hem value hem innerHTML'e kaydet
+                    console.log('Selection data saved:', selectionData);
                     
                     // Form submit
                     var form = document.createElement('form');
