@@ -116,7 +116,7 @@ namespace BtmuApps.UI.Forms.SIGN
                         int height = Convert.ToInt32(parts[3]);
 
                         selectionRect = new Rectangle(x, y, width, height);
-                        btnSaveSignature.Enabled = width > 10 && height > 10;
+                        btnSaveSignature.Enabled = true; // Her zaman aktif yap
                         
                         Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
@@ -303,7 +303,7 @@ namespace BtmuApps.UI.Forms.SIGN
         <div class='container'>
             <div class='image-wrapper'>
                 <img src='data:image/png;base64,{0}' alt='İmza Sirkülerini' />
-                <div id='selection'></div>
+                <div id='selection' class='selecting'></div>
             </div>
         </div>
         <input type='hidden' id='54321' name='54321' value='' />
@@ -316,6 +316,8 @@ namespace BtmuApps.UI.Forms.SIGN
             
             function startSelection(e) {{
                 isSelecting = true;
+                selectionBox.className = 'selecting';
+                
                 var rect = e.target.getBoundingClientRect();
                 startX = e.clientX - rect.left;
                 startY = e.clientY - rect.top;
@@ -360,15 +362,28 @@ namespace BtmuApps.UI.Forms.SIGN
                 var w = Math.abs(currentX - startX);
                 var h = Math.abs(currentY - startY);
                 
+                // Koordinatları tam sayıya yuvarla
+                x = Math.round(x);
+                y = Math.round(y);
+                w = Math.round(w);
+                h = Math.round(h);
+                
+                // Seçim çok küçükse iptal et
+                if (w < 10 || h < 10) {{
+                    selectionBox.className = 'selecting';
+                    selectionBox.style.display = 'none';
+                    return;
+                }}
+                
                 // Seçimi sakla
                 lastSelection = {{x: x, y: y, width: w, height: h}};
                 
-                // Seçim kutusunu görünür tut
+                // Seçim kutusunu kalıcı yap
+                selectionBox.className = 'selected';
                 selectionBox.style.left = x + 'px';
                 selectionBox.style.top = y + 'px';
                 selectionBox.style.width = w + 'px';
                 selectionBox.style.height = h + 'px';
-                selectionBox.style.display = 'block';
 
                 // Veriyi gizli input'a kaydet
                 if (hiddenInput) {{
