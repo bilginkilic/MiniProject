@@ -196,6 +196,8 @@ namespace AspxExamples
             try
             {
                 string selectionData = hdnSelection.Value;
+                System.Diagnostics.Debug.WriteLine(String.Format("Seçim verisi: {0}", selectionData));
+
                 if (string.IsNullOrEmpty(selectionData))
                 {
                     ShowError("Lütfen önce bir imza alanı seçiniz.");
@@ -211,6 +213,9 @@ namespace AspxExamples
                     int width = int.Parse(parts[3]);
                     int height = int.Parse(parts[4]);
 
+                    System.Diagnostics.Debug.WriteLine(String.Format("Seçim koordinatları: Sayfa={0}, X={1}, Y={2}, Genişlik={3}, Yükseklik={4}", 
+                        page, x, y, width, height));
+
                     if (width <= 0 || height <= 0)
                     {
                         ShowError("Geçersiz seçim boyutları. Lütfen tekrar seçim yapınız.");
@@ -218,19 +223,19 @@ namespace AspxExamples
                     }
 
                     string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", page));
+                    System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim yolu: {0}", imagePath));
+
                     if (!File.Exists(imagePath))
                     {
                         ShowError("Seçilen sayfanın görüntüsü bulunamadı. Lütfen sayfayı yenileyin.");
                         return;
                     }
 
-                    Rectangle selectionRect = new Rectangle(x, y, width, height);
-
-                    using (var sourceImage = new Bitmap(imagePath))
+                    using (var sourceImage = new System.Drawing.Bitmap(imagePath))
                     {
-                        if (selectionRect.X < 0 || selectionRect.Y < 0 ||
-                            selectionRect.Right > sourceImage.Width ||
-                            selectionRect.Bottom > sourceImage.Height)
+                        System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim boyutları: {0}x{1}", sourceImage.Width, sourceImage.Height));
+
+                        if (x < 0 || y < 0 || x + width > sourceImage.Width || y + height > sourceImage.Height)
                         {
                             ShowError("Seçilen alan resim sınırları dışında. Lütfen tekrar seçim yapınız.");
                             return;
@@ -238,45 +243,66 @@ namespace AspxExamples
 
                         string outputFileName = String.Format("signature_{0}.png", DateTime.Now.Ticks);
                         string outputPath = Path.Combine(_cdn, outputFileName);
+                        System.Diagnostics.Debug.WriteLine(String.Format("Hedef resim yolu: {0}", outputPath));
 
                         // Kırpma işlemi
-                        using (var bitmap = new Bitmap(selectionRect.Width, selectionRect.Height, PixelFormat.Format32bppArgb))
+                        using (var bitmap = new System.Drawing.Bitmap(width, height))
                         {
                             bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
-                            using (var graphics = Graphics.FromImage(bitmap))
+                            using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
                             {
                                 graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                                 graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
                                 graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
                                 graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                                graphics.DrawImage(sourceImage,
-                                    new Rectangle(0, 0, selectionRect.Width, selectionRect.Height),
-                                    selectionRect,
-                                    GraphicsUnit.Pixel);
+                                var sourceRect = new System.Drawing.Rectangle(x, y, width, height);
+                                var destRect = new System.Drawing.Rectangle(0, 0, width, height);
+
+                                System.Diagnostics.Debug.WriteLine(String.Format("Kırpma koordinatları: Kaynak={0}, Hedef={1}", 
+                                    sourceRect.ToString(), destRect.ToString()));
+
+                                graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
                             }
 
-                            bitmap.Save(outputPath, ImageFormat.Png);
-
-                            // Dosyanın oluşturulduğunu kontrol et
-                            if (File.Exists(outputPath))
+                            try
                             {
+                                // Önce geçici dosyaya kaydet
+                                string tempPath = Path.Combine(_cdn, String.Format("temp_{0}", outputFileName));
+                                bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
+
+                                // Başarılı olursa asıl konuma taşı
+                                if (File.Exists(outputPath))
+                                {
+                                    File.Delete(outputPath);
+                                }
+                                File.Move(tempPath, outputPath);
+
+                                var fileInfo = new FileInfo(outputPath);
+                                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydedildi: {0}, Boyut: {1} bytes", outputPath, fileInfo.Length));
+
                                 ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.",
                                     outputFileName), "success");
 
-                                System.Diagnostics.Debug.WriteLine(String.Format("İmza dosyası oluşturuldu: {0}", outputPath));
-                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya boyutu: {0} bytes", new FileInfo(outputPath).Length));
+                                // Seçimi temizle
+                                hdnSelection.Value = "";
+                                ScriptManager.RegisterStartupScript(this, GetType(), 
+                                    "clearSelection", 
+                                    "if(typeof clearSelection === 'function') { clearSelection(); }", 
+                                    true);
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                ShowError("İmza dosyası oluşturulamadı. Lütfen tekrar deneyiniz.");
+                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya kaydetme hatası: {0}", ex.Message));
+                                throw;
                             }
                         }
                     }
                 }
                 else
                 {
+                    System.Diagnostics.Debug.WriteLine(String.Format("Geçersiz seçim verisi parça sayısı: {0}", parts.Length));
                     ShowError("Seçim verileri geçersiz. Lütfen tekrar seçim yapınız.");
                 }
             }
