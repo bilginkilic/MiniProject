@@ -9,10 +9,10 @@ namespace AspxExamples
     {
         private HtmlBox htmlBox;
 
-        public SimpleAspxPopup(string aspxUrl)
+        public SimpleAspxPopup(string aspxFileName)
         {
             InitializeComponent();
-            LoadAspxContent(aspxUrl);
+            LoadAspxContent(aspxFileName);
         }
 
         private void InitializeComponent()
@@ -33,9 +33,22 @@ namespace AspxExamples
             this.Controls.Add(htmlBox);
         }
 
-        private void LoadAspxContent(string aspxUrl)
+        private void LoadAspxContent(string aspxFileName)
         {
-            htmlBox.Url = aspxUrl;
+            try
+            {
+                string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
+                htmlBox.Url = aspxUrl;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"ASPX sayfası yüklenirken hata: {ex.Message}",
+                    "Hata",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
     }
 
@@ -46,8 +59,7 @@ namespace AspxExamples
         {
             try
             {
-                string aspxUrl = "http://yourserver/yourpage.aspx";
-                using (var popup = new SimpleAspxPopup(aspxUrl))
+                using (var popup = new SimpleAspxPopup("ExamplePage.aspx"))
                 {
                     popup.ShowDialog();
                 }

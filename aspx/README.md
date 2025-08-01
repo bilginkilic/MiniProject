@@ -4,11 +4,12 @@ Bu klasör, Gizmox WebGUI uygulamasında ASPX sayfalarını popup olarak açmak 
 
 ## Dosyalar
 
-1. `SimpleAspxPopup.cs`: Basit bir popup form örneği
-2. `JavaScriptPopup.cs`: JavaScript window.open kullanarak popup açma örneği
-3. `ModalAspxPopup.cs`: Modal dialog şeklinde ASPX popup örneği
-4. `CustomAspxPopup.cs`: Özelleştirilmiş tasarıma sahip popup örneği
-5. `ExamplePage.aspx`: Test için örnek ASPX sayfası
+1. `AspxUrlHelper.cs`: ASPX URL'lerini oluşturmak için yardımcı sınıf
+2. `SimpleAspxPopup.cs`: Basit bir popup form örneği
+3. `JavaScriptPopup.cs`: JavaScript window.open kullanarak popup açma örneği
+4. `ModalAspxPopup.cs`: Modal dialog şeklinde ASPX popup örneği
+5. `CustomAspxPopup.cs`: Özelleştirilmiş tasarıma sahip popup örneği
+6. `ExamplePage.aspx`: Test için örnek ASPX sayfası
 
 ## Kullanım
 
@@ -29,11 +30,23 @@ ModalPopupExample.ShowModalPopup();
 CustomPopupExample.ShowCustomPopup();
 ```
 
+## URL Yönetimi
+
+Tüm örnekler `AspxUrlHelper` sınıfını kullanarak ASPX sayfalarının URL'lerini otomatik olarak oluşturur:
+
+```csharp
+// URL alma
+string aspxUrl = AspxUrlHelper.GetAspxUrl("ExamplePage.aspx");
+
+// Relative URL alma
+string relativeUrl = AspxUrlHelper.GetRelativeAspxUrl("ExamplePage.aspx");
+```
+
 ## Önemli Notlar
 
-1. ASPX URL'lerini kendi projenize göre düzenleyin
+1. URL'ler otomatik olarak proje yapısına göre oluşturulur
 2. Cross-origin istekleri için gerekli güvenlik ayarlarını yapın
-3. HTTPS kullanıyorsanız, tüm kaynakların HTTPS olduğundan emin olun
+3. HTTPS kullanıyorsanız, URL'ler otomatik olarak HTTPS protokolünü kullanır
 4. Popup boyutlarını içeriğe göre ayarlayın
 
 ## Gereksinimler

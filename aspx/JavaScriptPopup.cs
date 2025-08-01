@@ -40,7 +40,7 @@ namespace AspxExamples
         {
             try
             {
-                OpenJavaScriptPopup("http://yourserver/yourpage.aspx");
+                OpenJavaScriptPopup("ExamplePage.aspx");
             }
             catch (Exception ex)
             {
@@ -53,8 +53,9 @@ namespace AspxExamples
             }
         }
 
-        private void OpenJavaScriptPopup(string aspxUrl)
+        private void OpenJavaScriptPopup(string aspxFileName)
         {
+            string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
             string script = $@"
                 window.open('{aspxUrl}', 'AspxPopup', 
                 'width=800,height=600,status=0,toolbar=0,menubar=0,location=0,scrollbars=1');

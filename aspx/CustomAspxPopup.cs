@@ -12,10 +12,10 @@ namespace AspxExamples
         private Label titleLabel;
         private Button closeButton;
 
-        public CustomAspxPopup(string aspxUrl, string title, Size size)
+        public CustomAspxPopup(string aspxFileName, string title, Size size)
         {
             InitializeComponent(title, size);
-            LoadAspxContent(aspxUrl);
+            LoadAspxContent(aspxFileName);
         }
 
         private void InitializeComponent(string title, Size size)
@@ -56,9 +56,22 @@ namespace AspxExamples
             this.Controls.AddRange(new Control[] { headerPanel, htmlBox });
         }
 
-        private void LoadAspxContent(string aspxUrl)
+        private void LoadAspxContent(string aspxFileName)
         {
-            htmlBox.Url = aspxUrl;
+            try
+            {
+                string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
+                htmlBox.Url = aspxUrl;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"ASPX sayfası yüklenirken hata: {ex.Message}",
+                    "Hata",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
 
         // Sürükleme işlemleri için
@@ -82,9 +95,8 @@ namespace AspxExamples
         {
             try
             {
-                string aspxUrl = "http://yourserver/yourpage.aspx";
                 var popup = new CustomAspxPopup(
-                    aspxUrl,
+                    "ExamplePage.aspx",
                     "Özel Popup",
                     new Size(800, 600)
                 );
