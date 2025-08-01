@@ -143,11 +143,16 @@ namespace AspxExamples
                     {
                         try
                         {
-                            byte[] imageBytes = File.ReadAllBytes(imagePath);
-                            string base64String = Convert.ToBase64String(imageBytes);
-                            imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
-                            
-                            System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi", i));
+                            using (var image = System.Drawing.Image.FromFile(imagePath))
+                            using (var ms = new MemoryStream())
+                            {
+                                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                byte[] imageBytes = ms.ToArray();
+                                string base64String = Convert.ToBase64String(imageBytes);
+                                imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
+                                
+                                System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi, Boyut: {1} bytes", i, imageBytes.Length));
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -172,7 +177,7 @@ namespace AspxExamples
                 
                 ScriptManager.RegisterStartupScript(this, GetType(),
                     "initTabs",
-                    String.Format("var imageDataList = {0}; console.log('Image data loaded'); initializeTabs({1});", 
+                    String.Format("var imageDataList = {0}; console.log('Image data loaded, count:', {1}); initializeTabs({1});", 
                         imageDataJson, pageCount),
                     true);
 
