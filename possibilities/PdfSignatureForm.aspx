@@ -523,9 +523,9 @@
             }
 
             function initializeImageEvents() {
-                var img = document.querySelector('#<%= imgSignature.ClientID %>');
+                var img = document.querySelector('.tab-content.active img');
                 if (img) {
-                    var imageWrapper = document.querySelector('.image-wrapper');
+                    var imageWrapper = document.querySelector('.tab-content.active .image-wrapper');
                     imageWrapper.addEventListener('mousedown', startSelection);
                 }
             }
@@ -534,18 +534,26 @@
                 var savedData = hiddenField.value;
                 if (savedData) {
                     var parts = savedData.split(',');
-                    if (parts.length >= 4) {
-                        var x = parseInt(parts[0]);
-                        var y = parseInt(parts[1]);
-                        var w = parseInt(parts[2]);
-                        var h = parseInt(parts[3]);
+                    if (parts.length >= 5) {
+                        var page = parseInt(parts[0]);
+                        var x = parseInt(parts[1]);
+                        var y = parseInt(parts[2]);
+                        var w = parseInt(parts[3]);
+                        var h = parseInt(parts[4]);
 
-                        selectionBox.style.left = x + 'px';
-                        selectionBox.style.top = y + 'px';
-                        selectionBox.style.width = w + 'px';
-                        selectionBox.style.height = h + 'px';
-                        selectionBox.style.display = 'block';
-                        btnSave.disabled = false;
+                        // Doğru sayfaya geç
+                        showPage(page);
+
+                        // Selection box'ı göster
+                        selectionBox = getCurrentSelectionBox();
+                        if (selectionBox) {
+                            selectionBox.style.left = x + 'px';
+                            selectionBox.style.top = y + 'px';
+                            selectionBox.style.width = w + 'px';
+                            selectionBox.style.height = h + 'px';
+                            selectionBox.style.display = 'block';
+                            btnSave.disabled = false;
+                        }
                     }
                 }
             }
@@ -611,6 +619,8 @@
                     // Sayfa sayısını al
                     var pageCount = parseInt(document.getElementById('<%= hdnPageCount.ClientID %>').value) || 1;
                     initializeTabs(pageCount);
+                    initializeImageEvents();
+                    restoreSelection();
                 });
             }
 
