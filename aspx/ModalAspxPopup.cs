@@ -20,26 +20,37 @@ namespace AspxExamples
         {
             // Form ayarları
             this.Text = "Modal ASPX";
-            this.Size = new Size(800, 650);
+            this.Size = new Size(1024, 768); // Daha büyük varsayılan boyut
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
+            this.FormBorderStyle = FormBorderStyle.Sizable; // Yeniden boyutlandırılabilir
+            this.MaximizeBox = true;
+            this.MinimizeBox = true;
+            
+            // Minimum boyut sınırlaması
+            this.MinimumSize = new Size(800, 600);
 
-            // HtmlBox ayarları
+            // HtmlBox ayarları - Otomatik boyutlandırma için Dock özelliği
             htmlBox = new HtmlBox();
-            htmlBox.Size = new Size(780, 570);
-            htmlBox.Location = new Point(10, 10);
+            htmlBox.Dock = DockStyle.Fill;
+            htmlBox.Margin = new Padding(10);
             htmlBox.BorderStyle = BorderStyle.FixedSingle;
+
+            // Alt panel için container
+            Panel bottomPanel = new Panel();
+            bottomPanel.Height = 50;
+            bottomPanel.Dock = DockStyle.Bottom;
+            bottomPanel.Padding = new Padding(10);
 
             // Kapatma butonu
             btnClose = new Button();
             btnClose.Text = "Kapat";
             btnClose.Size = new Size(100, 30);
-            btnClose.Location = new Point(350, 590);
+            btnClose.Anchor = AnchorStyles.None; // Ortalamak için
+            btnClose.Location = new Point((bottomPanel.Width - btnClose.Width) / 2, (bottomPanel.Height - btnClose.Height) / 2);
             btnClose.Click += (s, e) => this.Close();
 
-            this.Controls.AddRange(new Control[] { htmlBox, btnClose });
+            bottomPanel.Controls.Add(btnClose);
+            this.Controls.AddRange(new Control[] { htmlBox, bottomPanel });
         }
 
         private void LoadAspxContent(string aspxFileName)
