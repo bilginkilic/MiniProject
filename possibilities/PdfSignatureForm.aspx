@@ -72,7 +72,6 @@
             border: 2px solid #eee;
             border-radius: 8px;
             background: #fff;
-            overflow: hidden;
             margin: 10px 0;
             display: flex;
             flex-direction: column;
@@ -106,7 +105,7 @@
             position: relative;
             flex: 1;
             display: none;
-            overflow: hidden;
+            min-height: 0;
         }
         .tab-content.active {
             display: flex;
@@ -114,8 +113,7 @@
         .image-wrapper {
             position: relative;
             flex: 1;
-            width: 100%;
-            height: 100%;
+            min-height: 0;
             overflow: auto;
             display: flex;
             justify-content: center;
@@ -600,38 +598,6 @@
                 }
             }
 
-            function showNotification(message, type) {
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notificationMessage');
-                
-                notification.className = 'notification ' + type;
-                notificationMessage.textContent = message;
-                
-                notification.classList.add('show');
-                
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 3000);
-            }
-
-            // Modify file upload event
-            var uploadButton = document.getElementById('<%= btnUpload.ClientID %>');
-            if (uploadButton) {
-                uploadButton.addEventListener('click', function() {
-                    showLoading('Dosya yükleniyor...');
-                });
-            }
-
-            // Modify PDF show event
-            var showPdfButton = document.getElementById('<%= btnShowPdf.ClientID %>');
-            if (showPdfButton) {
-                showPdfButton.addEventListener('click', function() {
-                    showLoading('PDF dosyası yükleniyor...');
-                    setTimeout(() => updateLoadingMessage('PDF sayfaları görüntüye dönüştürülüyor...'), 1000);
-                    setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
-                });
-            }
-
             function saveSignature() {
                 if (!currentSelection) return;
                 
@@ -644,7 +610,14 @@
                 btnSave.disabled = true;
                 
                 // Form submit
-                __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                try {
+                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                } catch (error) {
+                    console.error('Save error:', error);
+                    hideLoading();
+                    showNotification('İmza kaydedilirken bir hata oluştu: ' + error.message, 'error');
+                    btnSave.disabled = false;
+                }
                 
                 return false;
             }
@@ -671,9 +644,59 @@
                 prm.add_endRequest(function(sender, args) {
                     hideLoading();
                     if (args.get_error() != undefined) {
-                        showNotification('İmza kaydedilirken bir hata oluştu: ' + args.get_error().message, 'error');
+                        var errorMessage = args.get_error().message;
+                        console.error('Server error:', errorMessage);
+                        showNotification('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
                         args.set_errorHandled(true);
+                        btnSave.disabled = false;
                     }
+                });
+
+                // Timeout kontrolü
+                var saveTimeout;
+                prm.add_beginRequest(function() {
+                    saveTimeout = setTimeout(function() {
+                        hideLoading();
+                        showNotification('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
+                        btnSave.disabled = false;
+                    }, 30000); // 30 saniye timeout
+                });
+
+                prm.add_endRequest(function() {
+                    clearTimeout(saveTimeout);
+                });
+            }
+
+            function showNotification(message, type) {
+                console.log('Notification:', type, message);
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                
+                notification.className = 'notification ' + type;
+                notificationMessage.textContent = message;
+                
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
+
+            // Modify file upload event
+            var uploadButton = document.getElementById('<%= btnUpload.ClientID %>');
+            if (uploadButton) {
+                uploadButton.addEventListener('click', function() {
+                    showLoading('Dosya yükleniyor...');
+                });
+            }
+
+            // Modify PDF show event
+            var showPdfButton = document.getElementById('<%= btnShowPdf.ClientID %>');
+            if (showPdfButton) {
+                showPdfButton.addEventListener('click', function() {
+                    showLoading('PDF dosyası yükleniyor...');
+                    setTimeout(() => updateLoadingMessage('PDF sayfaları görüntüye dönüştürülüyor...'), 1000);
+                    setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
                 });
             }
 
