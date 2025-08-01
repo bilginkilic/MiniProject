@@ -282,6 +282,16 @@
             font-size: 13px;
             margin-top: 5px;
         }
+        /* Selection box style */
+        .selection {
+            position: fixed;
+            border: 2px solid #dc3545;
+            background-color: rgba(220,53,69,0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -343,9 +353,11 @@
         <script type="text/javascript">
             function getMousePosition(e, element) {
                 var rect = element.getBoundingClientRect();
+                var scrollLeft = element.scrollLeft;
+                var scrollTop = element.scrollTop;
                 return {
-                    x: e.clientX - rect.left + element.scrollLeft,
-                    y: e.clientY - rect.top + element.scrollTop
+                    x: e.clientX - rect.left + scrollLeft,
+                    y: e.clientY - rect.top + scrollTop
                 };
             }
 
@@ -482,8 +494,8 @@
 
                 selectionBox = getCurrentSelectionBox();
                 if (selectionBox) {
-                    selectionBox.style.left = startX + 'px';
-                    selectionBox.style.top = startY + 'px';
+                    selectionBox.style.left = (startX - wrapper.scrollLeft) + 'px';
+                    selectionBox.style.top = (startY - wrapper.scrollTop) + 'px';
                     selectionBox.style.width = '0px';
                     selectionBox.style.height = '0px';
                     selectionBox.style.display = 'block';
@@ -505,8 +517,8 @@
                 const w = Math.abs(pos.x - startX);
                 const h = Math.abs(pos.y - startY);
 
-                selectionBox.style.left = x + 'px';
-                selectionBox.style.top = y + 'px';
+                selectionBox.style.left = (x - wrapper.scrollLeft) + 'px';
+                selectionBox.style.top = (y - wrapper.scrollTop) + 'px';
                 selectionBox.style.width = w + 'px';
                 selectionBox.style.height = h + 'px';
             }
@@ -532,14 +544,10 @@
                 const activeTab = document.querySelector('.tab.active');
                 const currentPage = parseInt(activeTab.getAttribute('data-page'));
 
-                // Scroll pozisyonunu hesaba kat
-                const scrollLeft = wrapper.scrollLeft;
-                const scrollTop = wrapper.scrollTop;
-                
                 currentSelection = {
                     page: currentPage,
-                    x: Math.round(x + scrollLeft),
-                    y: Math.round(y + scrollTop),
+                    x: Math.round(x),
+                    y: Math.round(y),
                     width: Math.round(w),
                     height: Math.round(h)
                 };
