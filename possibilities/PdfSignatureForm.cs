@@ -116,24 +116,24 @@ namespace BtmuApps.UI.Forms.SIGN
                     selectionData = hiddenBox.InnerHtml ?? hiddenBox.Text;
                     Logger.Instance.Debug("[BtnUpdateSelection_Click] HtmlBox verisi alındı");
                 }
-                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] HtmlBox verisi alındı: {0}", selectionData));
+                Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] HtmlBox verisi alındı: {0}", selectionData));
 
                 if (!string.IsNullOrEmpty(selectionData))
                 {
-                    Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parsing selection data: {selectionData}");
+                    Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] Parsing selection data: {0}", selectionData));
                     string[] parts = selectionData.Split(',');
                     if (parts.Length >= 4)
                     {
                         // Sayıları parse etmeden önce trim ve kontrol
                         parts = parts.Select(p => p.Trim()).ToArray();
-                        Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parts after trim: {string.Join(",", parts)}");
+                        Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] Parts after trim: {0}", string.Join(",", parts)));
 
                         if (int.TryParse(parts[0], out int x) &&
                             int.TryParse(parts[1], out int y) &&
                             int.TryParse(parts[2], out int width) &&
                             int.TryParse(parts[3], out int height))
                         {
-                            Logger.Instance.Debug($"[BtnUpdateSelection_Click] Parsed values: x={x}, y={y}, w={width}, h={height}");
+                            Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] Parsed values: x={0}, y={1}, w={2}, h={3}", x, y, width, height));
 
                         selectionRect = new Rectangle(x, y, width, height);
                         btnSaveSignature.Enabled = true; // Her zaman aktif yap
@@ -141,7 +141,7 @@ namespace BtmuApps.UI.Forms.SIGN
                         // Seçim verilerini Session'da sakla
                         Context.Session["LastSelection"] = selectionData;
                         
-                        Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
+                        Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] Yeni seçim: X={0}, Y={1}, W={2}, H={3}, Buton Aktif={4}", 
                             x, y, width, height, btnSaveSignature.Enabled));
 
                         if (btnSaveSignature.Enabled)
@@ -161,7 +161,7 @@ namespace BtmuApps.UI.Forms.SIGN
             }
             catch (Exception ex)
             {
-                Logger.Instance.Debug(string.Format("[BtnUpdateSelection_Click] Seçim verisi işlenirken hata: {0}", ex.Message));
+                Logger.Instance.Debug(String.Format("[BtnUpdateSelection_Click] Seçim verisi işlenirken hata: {0}", ex.Message));
             }
         }
 
@@ -169,8 +169,8 @@ namespace BtmuApps.UI.Forms.SIGN
         {
             if (e.Error != null)
             {
-                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] Yükleme Hatası: {0}", e.Error.Message));
-                MessageBox.Show(string.Format("İmza sirkülerini yüklerken hata oluştu:\n{0}", e.Error.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(String.Format("[UploadControl_UploadComplete] Yükleme Hatası: {0}", e.Error.Message));
+                MessageBox.Show(String.Format("İmza sirkülerini yüklerken hata oluştu:\n{0}", e.Error.Message), "Yükleme Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lastUploadedPdfPath = null;
                 btnShowPdf.Enabled = false;
             }
@@ -179,7 +179,7 @@ namespace BtmuApps.UI.Forms.SIGN
                 lastUploadedPdfPath = e.FilePath;
                 btnShowPdf.Enabled = true;
                 MessageBox.Show("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
-                Logger.Instance.Debug(string.Format("[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {0}", lastUploadedPdfPath));
+                Logger.Instance.Debug(String.Format("[UploadControl_UploadComplete] İmza sirkülerini yüklendi: {0}", lastUploadedPdfPath));
             }
         }
 
@@ -196,12 +196,12 @@ namespace BtmuApps.UI.Forms.SIGN
                 Directory.CreateDirectory(_cdn);
                 string imagePath = Path.Combine(_cdn, "page_1.png"); // PdfToImageAndCrop sınıfının kullandığı dosya adı formatı
                 
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF dönüşümü başlıyor. PDF: {0}, Hedef: {1}", lastUploadedPdfPath, imagePath));
+                Logger.Instance.Debug(String.Format("[BtnShowPdf_Click] PDF dönüşümü başlıyor. PDF: {0}, Hedef: {1}", lastUploadedPdfPath, imagePath));
                 
                 // PDF'yi PNG'ye çevir
                 PdfToImageAndCrop.ConvertPdfToImages(lastUploadedPdfPath, _cdn);
                 
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] PDF dönüşümü tamamlandı. Dosya mevcut mu: {0}", File.Exists(imagePath)));
+                Logger.Instance.Debug(String.Format("[BtnShowPdf_Click] PDF dönüşümü tamamlandı. Dosya mevcut mu: {0}", File.Exists(imagePath)));
 
                 if (File.Exists(imagePath))
                 {
@@ -217,7 +217,7 @@ namespace BtmuApps.UI.Forms.SIGN
 
                     // Session'dan son seçimi al
                     string lastSelection = Context.Session["LastSelection"] as string;
-                    Logger.Instance.Debug($"[BtnShowPdf_Click] Son seçim verisi: {lastSelection}");
+                    Logger.Instance.Debug(String.Format("[BtnShowPdf_Click] Son seçim verisi: {0}", lastSelection));
                     
                     string html = GetJavaScript(base64Image, "12345");
                     imageBox.Html = html;
@@ -225,7 +225,7 @@ namespace BtmuApps.UI.Forms.SIGN
                     // Son seçimi hidden input'a yükle
                     if (!string.IsNullOrEmpty(lastSelection))
                     {
-                        hiddenBox.Html = string.Format("<input type='hidden' id='54321' name='54321' value='{0}' />", lastSelection);
+                        hiddenBox.Html = String.Format("<input type='hidden' id='54321' name='54321' value='{0}' />", lastSelection);
                     }
                     lastRenderedImagePath = imagePath;
 
@@ -238,8 +238,8 @@ namespace BtmuApps.UI.Forms.SIGN
             }
             catch (Exception ex)
             {
-                Logger.Instance.Debug(string.Format("[BtnShowPdf_Click] Hata: {0}", ex.Message));
-                MessageBox.Show(string.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(String.Format("[BtnShowPdf_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(String.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -275,24 +275,24 @@ namespace BtmuApps.UI.Forms.SIGN
                                       cropRect, GraphicsUnit.Pixel);
                         }
 
-                        string outputPath = Path.Combine(_cdn, string.Format("signature_{0}.png", DateTime.Now.Ticks));
+                        string outputPath = Path.Combine(_cdn, String.Format("signature_{0}.png", DateTime.Now.Ticks));
                         cropImage.Save(outputPath, ImageFormat.Png);
 
-                        MessageBox.Show(string.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
-                        Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] İmza kaydedildi: {0}", outputPath));
+                        MessageBox.Show(String.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
+                        Logger.Instance.Debug(String.Format("[BtnSaveSignature_Click] İmza kaydedildi: {0}", outputPath));
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Instance.Debug(string.Format("[BtnSaveSignature_Click] Hata: {0}", ex.Message));
-                MessageBox.Show(string.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Instance.Debug(String.Format("[BtnSaveSignature_Click] Hata: {0}", ex.Message));
+                MessageBox.Show(String.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message), "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private string GetJavaScript(string base64Image, string btnId)
         {
-            return string.Format(@"
+            return String.Format(@"
     <html>
     <head>
         <style>
