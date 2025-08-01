@@ -19,6 +19,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .container {
             flex: 1;
@@ -33,6 +34,7 @@
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
+            overflow: hidden;
         }
         .header {
             display: flex;
@@ -101,9 +103,10 @@
             border-color: #dc3545;
         }
         .tab-content {
-            display: none;
-            flex: 1;
             position: relative;
+            flex: 1;
+            display: none;
+            overflow: hidden;
         }
         .tab-content.active {
             display: flex;
@@ -111,14 +114,17 @@
         .image-wrapper {
             position: relative;
             flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
             display: flex;
             justify-content: center;
-            align-items: center;
-            overflow: auto;
-            padding: 10px;
+            align-items: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .image-wrapper img {
-            max-width: 100%;
+            max-width: none;
             height: auto;
             display: block;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -453,6 +459,7 @@
             function startSelection(e) {
                 e.preventDefault();
                 
+                // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
                 if (currentSelection) {
                     clearSelection();
                     return;
@@ -510,17 +517,21 @@
                 const h = Math.abs(pos.y - startY);
 
                 if (w < 10 || h < 10) {
-                    selectionBox.style.display = 'none';
+                    clearSelection();
                     return;
                 }
 
                 const activeTab = document.querySelector('.tab.active');
                 const currentPage = parseInt(activeTab.getAttribute('data-page'));
 
+                // Scroll pozisyonunu hesaba kat
+                const scrollLeft = wrapper.scrollLeft;
+                const scrollTop = wrapper.scrollTop;
+                
                 currentSelection = {
                     page: currentPage,
-                    x: Math.round(x),
-                    y: Math.round(y),
+                    x: Math.round(x + scrollLeft),
+                    y: Math.round(y + scrollTop),
                     width: Math.round(w),
                     height: Math.round(h)
                 };
@@ -533,6 +544,7 @@
                     currentSelection.height
                 ].join(',');
 
+                console.log('Selection data:', selectionData);
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
 
