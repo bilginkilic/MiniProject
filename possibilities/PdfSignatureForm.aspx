@@ -105,29 +105,7 @@
             background-color: #e6ffe6;
             border: 1px solid #99ff99;
         }
-        /* Tam ekran butonu stilleri */
-        .fullscreen-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1001;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        /* Tam ekran modu stilleri */
-        .fullscreen {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 9999 !important;
-            background: white !important;
-        }
+
     </style>
 </head>
 <body>
@@ -147,9 +125,7 @@
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
-                <button type="button" class="fullscreen-btn" onclick="toggleFullscreen()">
-                    <span class="fullscreen-icon">⛶</span>
-                </button>
+
                 <div class="image-wrapper">
                     <asp:Image ID="imgSignature" runat="server" style="max-width: 100%; max-height: 100%;" />
                     <div id="selection"></div>
@@ -172,31 +148,7 @@
             var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
-            var isFullscreen = false;
 
-            function toggleFullscreen() {
-                var container = document.getElementById('<%= imageContainer.ClientID %>');
-                if (!isFullscreen) {
-                    container.classList.add('fullscreen');
-                    document.querySelector('.fullscreen-icon').textContent = '⛶';
-                } else {
-                    container.classList.remove('fullscreen');
-                    document.querySelector('.fullscreen-icon').textContent = '⛶';
-                }
-                isFullscreen = !isFullscreen;
-                
-                // Seçim kutusunu sıfırla
-                if (selectionBox) {
-                    selectionBox.style.display = 'none';
-                }
-                
-                // Görüntüyü yeniden boyutlandır
-                setTimeout(function() {
-                    if (window.dispatchEvent) {
-                        window.dispatchEvent(new Event('resize'));
-                    }
-                }, 100);
-            }
 
             function startSelection(e) {
                 isSelecting = true;
