@@ -109,19 +109,19 @@
             display: flex;
         }
         .image-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: relative;
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: auto;
+            padding: 10px;
         }
         .image-wrapper img {
-            max-width: none;
-            max-height: none;
+            max-width: 100%;
+            height: auto;
+            display: block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         #selection {
             position: absolute;
@@ -383,7 +383,6 @@
                 contentsContainer.innerHTML = '';
                 
                 console.log('Initializing tabs with page count:', pageCount);
-                console.log('CDN path:', cdnPath);
                 
                 // Her sayfa için tab ve içerik oluştur
                 for (let i = 1; i <= pageCount; i++) {
@@ -407,8 +406,6 @@
                     // Resmi oluştur
                     const img = document.createElement('img');
                     img.id = formatString('imgSignature_{0}', i);
-                    img.style.maxWidth = '100%';
-                    img.style.height = 'auto';
                     
                     // Resim yükleme hatası kontrolü
                     img.onerror = function() {
