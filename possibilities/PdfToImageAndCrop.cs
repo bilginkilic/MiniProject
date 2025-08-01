@@ -79,12 +79,12 @@ namespace Possibilities
                 );
 
                 // Resmi geçici dosyaya optimize et
-                using (var image = Image.FromFile(imagePath))
-                using (var bitmap = new Bitmap(image))
+                using (var image = System.Drawing.Image.FromFile(imagePath))
+                using (var bitmap = new System.Drawing.Bitmap(image))
                 {
                     // Resim kalitesi ayarları
-                    var encoderParameters = new EncoderParameters(1);
-                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+                    var encoderParameters = new System.Drawing.Imaging.EncoderParameters(1);
+                    encoderParameters.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 90L);
 
                     // PNG codec'ini bul
                     ImageCodecInfo pngEncoder = GetPngEncoder();
@@ -128,8 +128,8 @@ namespace Possibilities
         {
             try
             {
-                ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
-                return codecs.FirstOrDefault(codec => codec.FormatID == ImageFormat.Png.Guid);
+                ImageCodecInfo[] codecs = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders();
+                return codecs.FirstOrDefault(codec => codec.FormatID == System.Drawing.Imaging.ImageFormat.Png.Guid);
             }
             catch
             {
@@ -138,7 +138,7 @@ namespace Possibilities
         }
 
         // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
-        public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
+        public static void CropImageAndSave(string imagePath, System.Drawing.Rectangle section, string outputImagePath)
         {
             if (!File.Exists(imagePath))
             {
@@ -153,7 +153,7 @@ namespace Possibilities
 
             try
             {
-                using (var sourceImage = Image.FromFile(imagePath))
+                using (var sourceImage = System.Drawing.Image.FromFile(imagePath))
                 {
                     // Seçim alanının resim sınırları içinde olduğunu kontrol et
                     if (section.X < 0 || section.Y < 0 ||
@@ -163,11 +163,11 @@ namespace Possibilities
                         throw new ArgumentException("Seçilen alan resim sınırları dışında.");
                     }
 
-                    using (var bitmap = new Bitmap(section.Width, section.Height, PixelFormat.Format32bppArgb))
+                    using (var bitmap = new System.Drawing.Bitmap(section.Width, section.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
                     {
                         bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
-                        using (var graphics = Graphics.FromImage(bitmap))
+                        using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
                         {
                             // Yüksek kaliteli çıktı için grafik ayarları
                             graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -176,13 +176,13 @@ namespace Possibilities
                             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
                             graphics.DrawImage(sourceImage,
-                                new Rectangle(0, 0, section.Width, section.Height),
+                                new System.Drawing.Rectangle(0, 0, section.Width, section.Height),
                                 section,
-                                GraphicsUnit.Pixel);
+                                System.Drawing.GraphicsUnit.Pixel);
                         }
 
                         // Önce geçici dosyaya kaydet
-                        bitmap.Save(tempPath, ImageFormat.Png);
+                        bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
                     }
                 }
 
@@ -222,7 +222,7 @@ namespace Possibilities
             // 2. Kullanıcıdan crop koordinatları alındığını varsayalım:
             // Örneğin, 1. sayfa için (x=100, y=150, w=200, h=100)
             string pageImagePath = Path.Combine(cdnFolder, "page_1.png");
-            Rectangle cropArea = new Rectangle(100, 150, 200, 100);
+            System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(100, 150, 200, 100);
             string croppedImagePath = Path.Combine(cdnFolder, "cropped_signature.png");
 
             // 3. Crop ve kaydet
