@@ -407,8 +407,8 @@
                     // Resmi oluştur
                     const img = document.createElement('img');
                     img.id = formatString('imgSignature_{0}', i);
-                    const timestamp = new Date().getTime();
-                    img.src = formatString('{0}/page_{1}.png?t={2}', cdnPath, i, timestamp);
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
                     
                     // Resim yükleme hatası kontrolü
                     img.onerror = function() {
@@ -419,9 +419,15 @@
                     
                     // Resim yükleme başarılı
                     img.onload = function() {
-                        console.log('Image loaded successfully for page:', i);
+                        console.log(formatString('Image loaded successfully for page {0}: {1}', i, this.src));
+                        console.log(formatString('Image dimensions: {0}x{1}', this.naturalWidth, this.naturalHeight));
                         this.style.display = 'block';
                     };
+
+                    const timestamp = new Date().getTime();
+                    const imgSrc = formatString('{0}/page_{1}.png?t={2}', cdnPath, i, timestamp);
+                    console.log(formatString('Loading image for page {0}: {1}', i, imgSrc));
+                    img.src = imgSrc;
                     
                     wrapper.appendChild(img);
                     content.appendChild(wrapper);

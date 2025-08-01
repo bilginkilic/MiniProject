@@ -139,6 +139,19 @@ namespace AspxExamples
                     {
                         var fileInfo = new FileInfo(imagePath);
                         System.Diagnostics.Debug.WriteLine(String.Format("Sayfa oluşturuldu: {0}, Boyut: {1} bytes", imagePath, fileInfo.Length));
+                        
+                        // Dosya erişim izinlerini kontrol et
+                        try
+                        {
+                            using (var fs = File.OpenRead(imagePath))
+                            {
+                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya okunabilir: {0}", imagePath));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(String.Format("Dosya erişim hatası: {0} - {1}", imagePath, ex.Message));
+                        }
                     }
                 }
 
@@ -152,10 +165,13 @@ namespace AspxExamples
                 hdnPageCount.Value = pageCount.ToString();
                 
                 // JavaScript'e sayfa sayısını ve CDN yolunu gönder
+                string virtualPath = String.Format("http://{0}/cdn", Request.Url.Authority);
+                System.Diagnostics.Debug.WriteLine(String.Format("Virtual path: {0}", virtualPath));
+
                 ScriptManager.RegisterStartupScript(this, GetType(),
                     "initTabs",
-                    String.Format("var cdnPath = '{0}'; initializeTabs({1});", 
-                        _cdnVirtualPath, pageCount),
+                    String.Format("var cdnPath = '{0}'; console.log('CDN Path:', cdnPath); initializeTabs({1});", 
+                        virtualPath, pageCount),
                     true);
 
                 ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
