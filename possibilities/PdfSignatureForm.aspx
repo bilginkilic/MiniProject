@@ -72,6 +72,41 @@
             background: #fff;
             overflow: hidden;
             margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .tabs {
+            display: flex;
+            padding: 10px 10px 0 10px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #eee;
+            gap: 5px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        .tab:hover {
+            background: #f8f9fa;
+        }
+        .tab.active {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        .tab-content {
+            display: none;
+            flex: 1;
+            position: relative;
+        }
+        .tab-content.active {
+            display: flex;
         }
         .image-wrapper {
             position: absolute;
@@ -260,9 +295,11 @@
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
-                <div class="image-wrapper">
-                    <asp:Image ID="imgSignature" runat="server" />
-                    <div id="selection"></div>
+                <div class="tabs" id="pageTabs">
+                    <!-- Tabs will be added here dynamically -->
+                </div>
+                <div id="pageContents">
+                    <!-- Tab contents will be added here dynamically -->
                 </div>
             </div>
 
@@ -314,28 +351,95 @@
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
             var currentSelection = null;
 
+            function showPage(pageNumber) {
+                // Tüm tabları ve içerikleri gizle
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Seçilen tabı ve içeriği göster
+                document.querySelector(`.tab[data-page="${pageNumber}"]`).classList.add('active');
+                document.querySelector(`.tab-content[data-page="${pageNumber}"]`).classList.add('active');
+                
+                // Seçimi temizle
+                clearSelection();
+            }
+
+            function initializeTabs(pageCount) {
+                const tabsContainer = document.getElementById('pageTabs');
+                const contentsContainer = document.getElementById('pageContents');
+                
+                // Mevcut tabları ve içerikleri temizle
+                tabsContainer.innerHTML = '';
+                contentsContainer.innerHTML = '';
+                
+                // Her sayfa için tab ve içerik oluştur
+                for (let i = 1; i <= pageCount; i++) {
+                    // Tab oluştur
+                    const tab = document.createElement('div');
+                    tab.className = 'tab' + (i === 1 ? ' active' : '');
+                    tab.setAttribute('data-page', i);
+                    tab.textContent = `Sayfa ${i}`;
+                    tab.onclick = () => showPage(i);
+                    tabsContainer.appendChild(tab);
+                    
+                    // İçerik container'ı oluştur
+                    const content = document.createElement('div');
+                    content.className = 'tab-content' + (i === 1 ? ' active' : '');
+                    content.setAttribute('data-page', i);
+                    
+                    // Image wrapper oluştur
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'image-wrapper';
+                    
+                    // Resmi oluştur
+                    const img = document.createElement('img');
+                    img.id = `imgSignature_${i}`;
+                    img.src = `cdn/page_${i}.png?t=${new Date().getTime()}`;
+                    
+                    wrapper.appendChild(img);
+                    content.appendChild(wrapper);
+                    contentsContainer.appendChild(content);
+                }
+
+                // Selection box'ı her tab content'e ekle
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    const selection = document.createElement('div');
+                    selection.id = `selection_${content.getAttribute('data-page')}`;
+                    selection.className = 'selection';
+                    selection.style.cssText = 'position: absolute; border: 2px solid #dc3545; background-color: rgba(220,53,69,0.1); pointer-events: none; display: none; z-index: 1000; border-radius: 4px;';
+                    content.appendChild(selection);
+                });
+
+                // Event listener'ları ekle
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.addEventListener('mousedown', startSelection);
+                });
+            }
+
+            // Seçim işlemleri için aktif sayfayı takip et
+            let currentPage = 1;
+
+            function getCurrentSelectionBox() {
+                return document.querySelector(`.tab-content[data-page="${currentPage}"] .selection`);
+            }
+
             function startSelection(e) {
-                e.preventDefault(); // Mouse olayını engelle
+                e.preventDefault();
+                
+                // Tıklanan sayfayı belirle
+                const tabContent = e.target.closest('.tab-content');
+                if (!tabContent) return;
+                
+                currentPage = parseInt(tabContent.getAttribute('data-page'));
+                selectionBox = getCurrentSelectionBox();
                 
                 if (currentSelection) {
-                    // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
-                    var imageWrapper = document.querySelector('.image-wrapper');
-                    var pos = getMousePosition(e, imageWrapper);
-                    var rect = selectionBox.getBoundingClientRect();
-                    var isInsideSelection = pos.x >= parseInt(selectionBox.style.left) &&
-                                         pos.x <= (parseInt(selectionBox.style.left) + parseInt(selectionBox.style.width)) &&
-                                         pos.y >= parseInt(selectionBox.style.top) &&
-                                         pos.y <= (parseInt(selectionBox.style.top) + parseInt(selectionBox.style.height));
-                    
-                    if (!isInsideSelection) {
-                        clearSelection();
-                    }
+                    clearSelection();
                     return;
                 }
 
                 isSelecting = true;
-                var imageWrapper = document.querySelector('.image-wrapper');
-                var pos = getMousePosition(e, imageWrapper);
+                const pos = getMousePosition(e, tabContent);
                 
                 startX = pos.x;
                 startY = pos.y;
@@ -346,24 +450,24 @@
                 selectionBox.style.height = '0px';
                 selectionBox.style.display = 'block';
 
-                // Mouse hareketlerini takip etmek için event listener'ları ekle
-                imageWrapper.addEventListener('mousemove', updateSelection);
-                imageWrapper.addEventListener('mouseup', endSelection);
-                imageWrapper.addEventListener('mouseleave', endSelection);
+                tabContent.addEventListener('mousemove', updateSelection);
+                tabContent.addEventListener('mouseup', endSelection);
+                tabContent.addEventListener('mouseleave', endSelection);
             }
 
             function updateSelection(e) {
-                e.preventDefault(); // Mouse olayını engelle
-                
+                e.preventDefault();
                 if (!isSelecting) return;
 
-                var imageWrapper = document.querySelector('.image-wrapper');
-                var pos = getMousePosition(e, imageWrapper);
+                const tabContent = e.target.closest('.tab-content');
+                if (!tabContent) return;
+
+                const pos = getMousePosition(e, tabContent);
                 
-                var x = Math.min(startX, pos.x);
-                var y = Math.min(startY, pos.y);
-                var w = Math.abs(pos.x - startX);
-                var h = Math.abs(pos.y - startY);
+                const x = Math.min(startX, pos.x);
+                const y = Math.min(startY, pos.y);
+                const w = Math.abs(pos.x - startX);
+                const h = Math.abs(pos.y - startY);
 
                 selectionBox.style.left = x + 'px';
                 selectionBox.style.top = y + 'px';
@@ -371,26 +475,20 @@
                 selectionBox.style.height = h + 'px';
             }
 
-            function clearSelection() {
-                selectionBox.style.display = 'none';
-                currentSelection = null;
-                btnSave.disabled = true;
-                hiddenField.value = '';
-            }
-
             function endSelection(e) {
-                e.preventDefault(); // Mouse olayını engelle
-                
+                e.preventDefault();
                 if (!isSelecting) return;
-                isSelecting = false;
-
-                var imageWrapper = document.querySelector('.image-wrapper');
-                var pos = getMousePosition(e, imageWrapper);
                 
-                var x = Math.min(startX, pos.x);
-                var y = Math.min(startY, pos.y);
-                var w = Math.abs(pos.x - startX);
-                var h = Math.abs(pos.y - startY);
+                const tabContent = e.target.closest('.tab-content');
+                if (!tabContent) return;
+
+                isSelecting = false;
+                const pos = getMousePosition(e, tabContent);
+                
+                const x = Math.min(startX, pos.x);
+                const y = Math.min(startY, pos.y);
+                const w = Math.abs(pos.x - startX);
+                const h = Math.abs(pos.y - startY);
 
                 if (w < 10 || h < 10) {
                     selectionBox.style.display = 'none';
@@ -398,6 +496,7 @@
                 }
 
                 currentSelection = {
+                    page: currentPage,
                     x: Math.round(x),
                     y: Math.round(y),
                     width: Math.round(w),
@@ -405,6 +504,7 @@
                 };
 
                 var selectionData = [
+                    currentSelection.page,
                     currentSelection.x,
                     currentSelection.y,
                     currentSelection.width,
@@ -414,10 +514,18 @@
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
 
-                // Event listener'ları kaldır
-                imageWrapper.removeEventListener('mousemove', updateSelection);
-                imageWrapper.removeEventListener('mouseup', endSelection);
-                imageWrapper.removeEventListener('mouseleave', endSelection);
+                tabContent.removeEventListener('mousemove', updateSelection);
+                tabContent.removeEventListener('mouseup', endSelection);
+                tabContent.removeEventListener('mouseleave', endSelection);
+            }
+
+            function clearSelection() {
+                if (selectionBox) {
+                    selectionBox.style.display = 'none';
+                }
+                currentSelection = null;
+                btnSave.disabled = true;
+                hiddenField.value = '';
             }
 
             function initializeImageEvents() {
@@ -504,10 +612,11 @@
             if (typeof(Sys) !== 'undefined') {
                 var prm = Sys.WebForms.PageRequestManager.getInstance();
                 
-                prm.add_endRequest(function() {
+                prm.add_endRequest(function(sender, args) {
                     hideLoading();
-                    initializeImageEvents();
-                    restoreSelection();
+                    // Sayfa sayısını al (hidden field'dan veya başka bir kaynaktan)
+                    var pageCount = parseInt(document.getElementById('<%= hdnPageCount.ClientID %>').value) || 1;
+                    initializeTabs(pageCount);
                 });
             }
 

@@ -10,50 +10,152 @@ namespace Possibilities
     public class PdfToImageAndCrop
     {
         // PDF'i sayfa sayfa resimlere çevirir ve cdn klasörüne kaydeder (Aspose ile)
-        public static void ConvertPdfToImages(string pdfPath, string cdnFolder)
+        public static int ConvertPdfToImages(string pdfPath, string cdnFolder)
         {
-            using (var pdfDocument = new Document(pdfPath))
+            if (!File.Exists(pdfPath))
             {
-                for (int pageCount = 1; pageCount <= pdfDocument.Pages.Count; pageCount++)
+                throw new FileNotFoundException("PDF dosyası bulunamadı.", pdfPath);
+            }
+
+            if (!Directory.Exists(cdnFolder))
+            {
+                Directory.CreateDirectory(cdnFolder);
+            }
+
+            try
+            {
+                using (var pdfDocument = new Document(pdfPath))
                 {
-                    string imagePath = Path.Combine(cdnFolder, $"page_{pageCount}.png");
-                    using (FileStream imageStream = new FileStream(imagePath, FileMode.Create))
+                    int pageCount = pdfDocument.Pages.Count;
+                    
+                    // Önceki dosyaları temizle
+                    foreach (string file in Directory.GetFiles(cdnFolder, "page_*.png"))
                     {
-                        var resolution = new Resolution(300);
-                        var pngDevice = new PngDevice(resolution);
-                        pngDevice.Process(pdfDocument.Pages[pageCount], imageStream);
-                        imageStream.Close();
+                        try { File.Delete(file); } catch { }
                     }
+
+                    for (int pageNumber = 1; pageNumber <= pageCount; pageNumber++)
+                    {
+                        string imagePath = Path.Combine(cdnFolder, String.Format("page_{0}.png", pageNumber));
+                        using (FileStream imageStream = new FileStream(imagePath, FileMode.Create))
+                        {
+                            // Yüksek kaliteli çıktı için çözünürlük ayarları
+                            var resolution = new Resolution(300);
+                            var pngDevice = new PngDevice(resolution);
+                            
+                            // Sayfa işleme kalitesi ayarları
+                            pngDevice.Process(pdfDocument.Pages[pageNumber], imageStream);
+                            imageStream.Close();
+
+                            // Oluşturulan resmi optimize et
+                            OptimizeImage(imagePath);
+                        }
+                    }
+
+                    return pageCount;
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(String.Format("PDF dosyası resme çevrilirken hata oluştu: {0}", ex.Message), ex);
             }
         }
 
-        // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
-        public static void CropImageAndSave(string imagePath, System.Drawing.Rectangle section, string outputImagePath)
+        private static void OptimizeImage(string imagePath)
         {
-            // System.Drawing.Image.FromFile kullanıyoruz
-            using (var sourceImage = System.Drawing.Image.FromFile(imagePath))
+            try
             {
-                // Bitmap constructor'ı için 3. parametre olarak PixelFormat.Format32bppArgb belirtiyoruz.
-                // Bu, .NET Framework 4.5.2'de geçerli bir constructor'dır.
-                using (var bmp = new System.Drawing.Bitmap(section.Width, section.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                using (var image = Image.FromFile(imagePath))
+                using (var bitmap = new Bitmap(image))
                 {
-                    // Graphics nesnesini System.Drawing.Graphics.FromImage ile alıyoruz
-                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    // Resim kalitesi ayarları
+                    var encoderParameters = new EncoderParameters(1);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+
+                    // PNG codec'ini bul
+                    ImageCodecInfo pngEncoder = GetPngEncoder();
+                    if (pngEncoder != null)
                     {
-                        // DrawImage metodunu 7 parametreli overload ile kullanıyoruz
-                        // destination rectangle (nereye çizileceği): (0,0) konumunda, kırpılan alanın genişliği ve yüksekliği kadar
-                        // source rectangle (nereden alınacağı): section.X, section.Y konumundan section.Width, section.Height kadar
-                        g.DrawImage(
-                            sourceImage,
-                            new System.Drawing.Rectangle(0, 0, section.Width, section.Height), // Hedef dikdörtgen
-                            section.X, section.Y, section.Width, section.Height, // Kaynak dikdörtgen parametreleri
-                            System.Drawing.GraphicsUnit.Pixel // Ölçü birimi
-                        );
+                        bitmap.Save(imagePath, pngEncoder, encoderParameters);
                     }
-                    // Resimi PNG formatında kaydediyoruz
-                    bmp.Save(outputImagePath, System.Drawing.Imaging.ImageFormat.Png);
                 }
+            }
+            catch
+            {
+                // Optimizasyon başarısız olursa orijinal resmi koru
+            }
+        }
+
+        private static ImageCodecInfo GetPngEncoder()
+        {
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+            for (int i = 0; i < codecs.Length; i++)
+            {
+                if (codecs[i].FormatID == ImageFormat.Png.Guid)
+                {
+                    return codecs[i];
+                }
+            }
+            return null;
+        }
+
+        // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
+        public static void CropImageAndSave(string imagePath, Rectangle section, string outputImagePath)
+        {
+            if (!File.Exists(imagePath))
+            {
+                throw new FileNotFoundException("Kaynak resim dosyası bulunamadı.", imagePath);
+            }
+
+            try
+            {
+                using (var sourceImage = Image.FromFile(imagePath))
+                {
+                    // Seçim alanının resim sınırları içinde olduğunu kontrol et
+                    if (section.X < 0 || section.Y < 0 ||
+                        section.Right > sourceImage.Width ||
+                        section.Bottom > sourceImage.Height)
+                    {
+                        throw new ArgumentException("Seçilen alan resim sınırları dışında.");
+                    }
+
+                    using (var bitmap = new Bitmap(section.Width, section.Height, PixelFormat.Format32bppArgb))
+                    {
+                        bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
+
+                        using (var graphics = Graphics.FromImage(bitmap))
+                        {
+                            // Yüksek kaliteli çıktı için grafik ayarları
+                            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                            graphics.DrawImage(sourceImage,
+                                new Rectangle(0, 0, section.Width, section.Height),
+                                section,
+                                GraphicsUnit.Pixel);
+                        }
+
+                        // Optimize edilmiş PNG olarak kaydet
+                        var encoderParameters = new EncoderParameters(1);
+                        encoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+
+                        ImageCodecInfo pngEncoder = GetPngEncoder();
+                        if (pngEncoder != null)
+                        {
+                            bitmap.Save(outputImagePath, pngEncoder, encoderParameters);
+                        }
+                        else
+                        {
+                            bitmap.Save(outputImagePath, ImageFormat.Png);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(String.Format("Resim kırpma işlemi sırasında hata oluştu: {0}", ex.Message), ex);
             }
         }
 

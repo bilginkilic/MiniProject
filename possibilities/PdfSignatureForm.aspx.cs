@@ -4,12 +4,14 @@ using System.IO;
 using System.Web;
 using System.Web.UI;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 
 namespace AspxExamples
 {
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private readonly string _cdn = Path.Combine(HttpRuntime.AppDomainAppPath, "cdn");
+        protected HiddenField hdnPageCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -37,6 +39,12 @@ namespace AspxExamples
                     {
                         ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.");
                         return;
+                    }
+
+                    // Önceki dosyaları temizle
+                    foreach (string file in Directory.GetFiles(_cdn, "page_*.png"))
+                    {
+                        try { File.Delete(file); } catch { }
                     }
 
                     string pdfPath = Path.Combine(_cdn, fileName);
@@ -69,24 +77,20 @@ namespace AspxExamples
 
             try
             {
-                string imagePath = Path.Combine(_cdn, "page_1.png");
-                
                 // PDF'yi PNG'ye çevir
-                PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                
+                // Sayfa sayısını client'a gönder
+                ScriptManager.RegisterStartupScript(this, GetType(),
+                    "initTabs",
+                    String.Format("initializeTabs({0});", pageCount),
+                    true);
 
-                if (File.Exists(imagePath))
-                {
-                    // Resmi göster
-                    imgSignature.ImageUrl = String.Format("~/cdn/page_1.png?t={0}", DateTime.Now.Ticks);
-                    Session["LastRenderedImage"] = imagePath;
+                // Sayfa sayısını hidden field'a kaydet
+                hdnPageCount.Value = pageCount.ToString();
 
-                    ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
-                    btnSaveSignature.Enabled = true; // Kaydet butonu aktif olsun
-                }
-                else
-                {
-                    ShowError("İmza sirkülerini görüntülerken bir hata oluştu. Lütfen dosyanın geçerli bir PDF olduğundan emin olun.");
-                }
+                ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
+                btnSaveSignature.Enabled = true;
             }
             catch (Exception ex)
             {
@@ -96,24 +100,23 @@ namespace AspxExamples
 
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {
-            string imagePath = Session["LastRenderedImage"] as string;
-            string selectionData = hdnSelection.Value;
-
-            if (string.IsNullOrEmpty(imagePath) || string.IsNullOrEmpty(selectionData))
-            {
-                ShowError("Lütfen önce bir imza alanı seçiniz.");
-                return;
-            }
-
             try
             {
-                string[] parts = selectionData.Split(',');
-                if (parts.Length >= 4)
+                string selectionData = hdnSelection.Value;
+                if (string.IsNullOrEmpty(selectionData))
                 {
-                    int x = int.Parse(parts[0]);
-                    int y = int.Parse(parts[1]);
-                    int width = int.Parse(parts[2]);
-                    int height = int.Parse(parts[3]);
+                    ShowError("Lütfen önce bir imza alanı seçiniz.");
+                    return;
+                }
+
+                string[] parts = selectionData.Split(',');
+                if (parts.Length >= 5) // page,x,y,width,height
+                {
+                    int page = int.Parse(parts[0]);
+                    int x = int.Parse(parts[1]);
+                    int y = int.Parse(parts[2]);
+                    int width = int.Parse(parts[3]);
+                    int height = int.Parse(parts[4]);
 
                     if (width <= 0 || height <= 0)
                     {
@@ -121,9 +124,15 @@ namespace AspxExamples
                         return;
                     }
 
+                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", page));
+                    if (!File.Exists(imagePath))
+                    {
+                        ShowError("Seçilen sayfanın görüntüsü bulunamadı. Lütfen sayfayı yenileyin.");
+                        return;
+                    }
+
                     Rectangle selectionRect = new Rectangle(x, y, width, height);
 
-                    // Optimize edilmiş resim işleme
                     using (var sourceImage = new Bitmap(imagePath))
                     {
                         // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
@@ -138,22 +147,24 @@ namespace AspxExamples
                         );
 
                         // Kırpma alanının resim sınırları içinde olduğunu kontrol et
-                        if (cropRect.X < 0 || cropRect.Y < 0 || 
-                            cropRect.Right > sourceImage.Width || 
+                        if (cropRect.X < 0 || cropRect.Y < 0 ||
+                            cropRect.Right > sourceImage.Width ||
                             cropRect.Bottom > sourceImage.Height)
                         {
                             ShowError("Seçilen alan resim sınırları dışında. Lütfen tekrar seçim yapınız.");
                             return;
                         }
 
-                        // Performans için GraphicsUnit.Pixel kullan ve kalite ayarlarını optimize et
-                        using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                        string outputFileName = String.Format("signature_{0}.png", DateTime.Now.Ticks);
+                        string outputPath = Path.Combine(_cdn, outputFileName);
+
+                        // Kırpma işlemi
+                        using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height, PixelFormat.Format32bppArgb))
                         {
                             cropImage.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
                             using (var g = Graphics.FromImage(cropImage))
                             {
-                                // Kalite ayarları
                                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                                 g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
                                 g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
@@ -163,18 +174,23 @@ namespace AspxExamples
                                           cropRect, GraphicsUnit.Pixel);
                             }
 
-                            string outputFileName = String.Format("signature_{0}.png", DateTime.Now.Ticks);
-                            string outputPath = Path.Combine(_cdn, outputFileName);
+                            // Dosyayı kaydet
+                            cropImage.Save(outputPath, ImageFormat.Png);
 
-                            // PNG encoder ile optimize edilmiş kayıt
-                            var pngEncoder = GetPngEncoder();
-                            var encoderParams = new EncoderParameters(1);
-                            encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+                            // Dosyanın oluşturulduğunu kontrol et
+                            if (File.Exists(outputPath))
+                            {
+                                ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.",
+                                    outputFileName), "success");
 
-                            cropImage.Save(outputPath, pngEncoder, encoderParams);
-
-                            ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.", 
-                                outputFileName), "success");
+                                // Debug bilgisi
+                                Debug.WriteLine(String.Format("İmza dosyası oluşturuldu: {0}", outputPath));
+                                Debug.WriteLine(String.Format("Dosya boyutu: {0} bytes", new FileInfo(outputPath).Length));
+                            }
+                            else
+                            {
+                                ShowError("İmza dosyası oluşturulamadı. Lütfen tekrar deneyiniz.");
+                            }
                         }
                     }
                 }
@@ -183,44 +199,27 @@ namespace AspxExamples
                     ShowError("Seçim verileri geçersiz. Lütfen tekrar seçim yapınız.");
                 }
             }
-            catch (OutOfMemoryException)
-            {
-                ShowError("Resim işlenirken bellek yetersiz. Lütfen daha küçük bir alan seçin veya sayfayı yenileyin.");
-            }
             catch (Exception ex)
             {
                 ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
+                Debug.WriteLine(String.Format("Hata detayı: {0}", ex.ToString()));
             }
-        }
-
-        private ImageCodecInfo GetPngEncoder()
-        {
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
-            for (int i = 0; i < codecs.Length; i++)
-            {
-                if (codecs[i].FormatID == ImageFormat.Png.Guid)
-                {
-                    return codecs[i];
-                }
-            }
-            return null;
         }
 
         private void ShowError(string message)
         {
-            ScriptManager.RegisterStartupScript(this, GetType(), 
-                "showNotification", 
-                String.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)), 
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "showNotification",
+                String.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)),
                 true);
         }
 
         private void ShowMessage(string message, string type = "info")
         {
-            ScriptManager.RegisterStartupScript(this, GetType(), 
-                "showNotification", 
-                String.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type), 
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "showNotification",
+                String.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type),
                 true);
         }
     }
-}
 }
