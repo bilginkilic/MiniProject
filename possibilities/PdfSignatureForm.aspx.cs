@@ -154,14 +154,18 @@ namespace AspxExamples
 
         private void ShowError(string message)
         {
-            lblMessage.CssClass = String.Format("message {0}", "error");
-            lblMessage.Text = message;
+            ScriptManager.RegisterStartupScript(this, GetType(), 
+                "showNotification", 
+                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', 'error');", 
+                true);
         }
 
         private void ShowMessage(string message, string type = "info")
         {
-            lblMessage.CssClass = String.Format("message {0}", type);
-            lblMessage.Text = message;
+            ScriptManager.RegisterStartupScript(this, GetType(), 
+                "showNotification", 
+                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', '{type}');", 
+                true);
         }
     }
 }

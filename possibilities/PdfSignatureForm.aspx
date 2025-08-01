@@ -90,8 +90,8 @@
         }
         #selection {
             position: absolute;
-            border: 2px solid #007bff;
-            background-color: rgba(0,123,255,0.1);
+            border: 2px solid #dc3545;
+            background-color: rgba(220,53,69,0.1);
             pointer-events: none;
             display: none;
             z-index: 1000;
@@ -102,7 +102,7 @@
             margin-right: 10px;
             cursor: pointer;
             border: none;
-            background-color: #007bff;
+            background-color: #dc3545;
             color: white;
             border-radius: 6px;
             transition: all 0.3s ease;
@@ -113,7 +113,7 @@
             gap: 8px;
         }
         .button:hover {
-            background-color: #0056b3;
+            background-color: #c82333;
             transform: translateY(-1px);
         }
         .button:disabled {
@@ -121,11 +121,69 @@
             cursor: not-allowed;
             transform: none;
         }
+        .button:not(:disabled) {
+            background-color: #dc3545;
+        }
         .button.secondary {
             background-color: #6c757d;
         }
         .button.secondary:hover {
             background-color: #5a6268;
+        }
+        
+        /* Loading Animation Styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #dc3545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 6px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            border-left: 4px solid #28a745;
+        }
+        .notification.error {
+            border-left: 4px solid #dc3545;
+        }
+        .notification.info {
+            border-left: 4px solid #17a2b8;
         }
         .footer {
             padding: 15px 0;
@@ -199,6 +257,16 @@
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+        
+        <!-- Notification Container -->
+        <div id="notification" class="notification">
+            <span id="notificationMessage"></span>
         </div>
 
         <script type="text/javascript">
@@ -315,6 +383,63 @@
                         btnSave.disabled = false;
                     }
                 }
+            }
+
+            function showLoading() {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+            }
+
+            function hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+
+            function showNotification(message, type) {
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                
+                notification.className = 'notification ' + type;
+                notificationMessage.textContent = message;
+                
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // Modify file upload event
+            var uploadButton = document.getElementById('<%= btnUpload.ClientID %>');
+            if (uploadButton) {
+                uploadButton.addEventListener('click', function() {
+                    showLoading();
+                });
+            }
+
+            // Modify PDF show event
+            var showPdfButton = document.getElementById('<%= btnShowPdf.ClientID %>');
+            if (showPdfButton) {
+                showPdfButton.addEventListener('click', function() {
+                    showLoading();
+                });
+            }
+
+            // Add event listener for form submission
+            var form = document.getElementById('form1');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    showLoading();
+                });
+            }
+
+            // Initialize Sys.WebForms.PageRequestManager for AJAX handling
+            if (typeof(Sys) !== 'undefined') {
+                var prm = Sys.WebForms.PageRequestManager.getInstance();
+                
+                prm.add_endRequest(function() {
+                    hideLoading();
+                    initializeImageEvents();
+                    restoreSelection();
+                });
             }
 
             if (window.addEventListener) {
