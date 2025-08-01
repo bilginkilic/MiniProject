@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
+using System.Linq; // Added for FirstOrDefault
 
 namespace Possibilities
 {
@@ -65,6 +66,19 @@ namespace Possibilities
         {
             try
             {
+                // Önce dosyanın serbest olduğundan emin ol
+                using (var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    fs.Close();
+                }
+
+                // Geçici bir dosya adı oluştur
+                string tempPath = Path.Combine(
+                    Path.GetDirectoryName(imagePath),
+                    "temp_" + Path.GetFileName(imagePath)
+                );
+
+                // Resmi geçici dosyaya optimize et
                 using (var image = Image.FromFile(imagePath))
                 using (var bitmap = new Bitmap(image))
                 {
@@ -76,27 +90,51 @@ namespace Possibilities
                     ImageCodecInfo pngEncoder = GetPngEncoder();
                     if (pngEncoder != null)
                     {
-                        bitmap.Save(imagePath, pngEncoder, encoderParameters);
+                        // Önce geçici dosyaya kaydet
+                        bitmap.Save(tempPath, pngEncoder, encoderParameters);
                     }
                 }
+
+                // Orijinal dosyayı sil ve geçici dosyayı yerine koy
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(imagePath);
+                    File.Move(tempPath, imagePath);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Optimizasyon başarısız olursa orijinal resmi koru
+                // Hata durumunda geçici dosyayı temizle
+                try
+                {
+                    string tempPath = Path.Combine(
+                        Path.GetDirectoryName(imagePath),
+                        "temp_" + Path.GetFileName(imagePath)
+                    );
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch { }
+
+                // Hatayı logla
+                System.Diagnostics.Debug.WriteLine($"Resim optimizasyonu başarısız: {ex.Message}");
+                // Optimizasyon başarısız olursa orijinal resmi koru - sessizce devam et
             }
         }
 
         private static ImageCodecInfo GetPngEncoder()
         {
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
-            for (int i = 0; i < codecs.Length; i++)
+            try
             {
-                if (codecs[i].FormatID == ImageFormat.Png.Guid)
-                {
-                    return codecs[i];
-                }
+                ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+                return codecs.FirstOrDefault(codec => codec.FormatID == ImageFormat.Png.Guid);
             }
-            return null;
+            catch
+            {
+                return null;
+            }
         }
 
         // Seçilen alanı crop'lar ve cdn klasörüne kaydeder
@@ -106,6 +144,12 @@ namespace Possibilities
             {
                 throw new FileNotFoundException("Kaynak resim dosyası bulunamadı.", imagePath);
             }
+
+            // Geçici dosya yolu oluştur
+            string tempPath = Path.Combine(
+                Path.GetDirectoryName(outputImagePath),
+                "temp_" + Path.GetFileName(outputImagePath)
+            );
 
             try
             {
@@ -137,25 +181,31 @@ namespace Possibilities
                                 GraphicsUnit.Pixel);
                         }
 
-                        // Optimize edilmiş PNG olarak kaydet
-                        var encoderParameters = new EncoderParameters(1);
-                        encoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
-
-                        ImageCodecInfo pngEncoder = GetPngEncoder();
-                        if (pngEncoder != null)
-                        {
-                            bitmap.Save(outputImagePath, pngEncoder, encoderParameters);
-                        }
-                        else
-                        {
-                            bitmap.Save(outputImagePath, ImageFormat.Png);
-                        }
+                        // Önce geçici dosyaya kaydet
+                        bitmap.Save(tempPath, ImageFormat.Png);
                     }
                 }
+
+                // Başarılı olursa, geçici dosyayı hedef konuma taşı
+                if (File.Exists(outputImagePath))
+                {
+                    File.Delete(outputImagePath);
+                }
+                File.Move(tempPath, outputImagePath);
             }
             catch (Exception ex)
             {
-                throw new Exception(String.Format("Resim kırpma işlemi sırasında hata oluştu: {0}", ex.Message), ex);
+                // Hata durumunda geçici dosyayı temizle
+                try
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch { }
+
+                throw new Exception($"Resim kırpma işlemi sırasında hata oluştu: {ex.Message}", ex);
             }
         }
 
