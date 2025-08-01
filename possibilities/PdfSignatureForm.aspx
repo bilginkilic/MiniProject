@@ -30,7 +30,6 @@
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
-            height: 100%;
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
@@ -69,12 +68,19 @@
             position: relative;
             flex: 1;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
             border: 2px solid #eee;
             border-radius: 8px;
             background: #fff;
             margin: 10px 0;
-            display: flex;
-            flex-direction: column;
+            overflow: hidden;
+        }
+        #pageContents {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
         }
         .tabs {
             display: flex;
@@ -102,24 +108,25 @@
             border-color: #dc3545;
         }
         .tab-content {
-            position: relative;
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: none;
-            min-height: 0;
         }
         .tab-content.active {
-            display: flex;
+            display: block;
         }
         .image-wrapper {
-            position: relative;
-            flex: 1;
-            min-height: 0;
+            width: 100%;
+            height: 100%;
             overflow: auto;
+            padding: 20px;
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding: 20px;
-            box-sizing: border-box;
         }
         .image-wrapper img {
             max-width: none;
@@ -247,6 +254,9 @@
             align-items: center;
             border-top: 2px solid #eee;
             margin-top: 20px;
+            background: white;
+            position: relative;
+            z-index: 1;
         }
         .message {
             padding: 12px 15px;
