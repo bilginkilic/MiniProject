@@ -119,7 +119,7 @@ namespace Possibilities
                 catch { }
 
                 // Hatayı logla
-                System.Diagnostics.Debug.WriteLine($"Resim optimizasyonu başarısız: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(String.Format("Resim optimizasyonu başarısız: {0}", ex.Message));
                 // Optimizasyon başarısız olursa orijinal resmi koru - sessizce devam et
             }
         }
@@ -205,7 +205,7 @@ namespace Possibilities
                 }
                 catch { }
 
-                throw new Exception($"Resim kırpma işlemi sırasında hata oluştu: {ex.Message}", ex);
+                throw new Exception(String.Format("Resim kırpma işlemi sırasında hata oluştu: {0}", ex.Message), ex);
             }
         }
 
