@@ -200,12 +200,15 @@
 
             function startSelection(e) {
                 isSelecting = true;
+                var imageWrapper = document.querySelector('.image-wrapper');
                 var rect = e.target.getBoundingClientRect();
-                startX = e.clientX - rect.left;
-                startY = e.clientY - rect.top;
+                
+                // Scroll pozisyonlarını hesaba kat
+                startX = e.clientX - rect.left + imageWrapper.scrollLeft;
+                startY = e.clientY - rect.top + imageWrapper.scrollTop;
 
-                selectionBox.style.left = startX + 'px';
-                selectionBox.style.top = startY + 'px';
+                selectionBox.style.left = (e.clientX - rect.left) + 'px';
+                selectionBox.style.top = (e.clientY - rect.top) + 'px';
                 selectionBox.style.width = '0px';
                 selectionBox.style.height = '0px';
                 selectionBox.style.display = 'block';
@@ -214,12 +217,13 @@
             function updateSelection(e) {
                 if (!isSelecting) return;
 
+                var imageWrapper = document.querySelector('.image-wrapper');
                 var rect = e.target.getBoundingClientRect();
-                var currentX = e.clientX - rect.left;
-                var currentY = e.clientY - rect.top;
+                var currentX = e.clientX - rect.left + imageWrapper.scrollLeft;
+                var currentY = e.clientY - rect.top + imageWrapper.scrollTop;
 
-                var x = Math.min(startX, currentX);
-                var y = Math.min(startY, currentY);
+                var x = Math.min(startX, currentX) - imageWrapper.scrollLeft;
+                var y = Math.min(startY, currentY) - imageWrapper.scrollTop;
                 var w = Math.abs(currentX - startX);
                 var h = Math.abs(currentY - startY);
 
@@ -233,12 +237,13 @@
                 if (!isSelecting) return;
                 isSelecting = false;
 
+                var imageWrapper = document.querySelector('.image-wrapper');
                 var rect = e.target.getBoundingClientRect();
-                var currentX = e.clientX - rect.left;
-                var currentY = e.clientY - rect.top;
+                var currentX = e.clientX - rect.left + imageWrapper.scrollLeft;
+                var currentY = e.clientY - rect.top + imageWrapper.scrollTop;
 
-                var x = Math.min(startX, currentX);
-                var y = Math.min(startY, currentY);
+                var x = Math.min(startX, currentX) - imageWrapper.scrollLeft;
+                var y = Math.min(startY, currentY) - imageWrapper.scrollTop;
                 var w = Math.abs(currentX - startX);
                 var h = Math.abs(currentY - startY);
 
