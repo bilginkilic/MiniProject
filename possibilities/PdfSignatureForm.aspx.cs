@@ -196,7 +196,7 @@ namespace AspxExamples
             try
             {
                 string selectionData = hdnSelection.Value;
-                System.Diagnostics.Debug.WriteLine(String.Format("Seçim verisi: {0}", selectionData));
+                System.Diagnostics.Debug.WriteLine(String.Format("Seçim verisi alındı: {0}", selectionData));
 
                 if (string.IsNullOrEmpty(selectionData))
                 {
@@ -245,29 +245,29 @@ namespace AspxExamples
                         string outputPath = Path.Combine(_cdn, outputFileName);
                         System.Diagnostics.Debug.WriteLine(String.Format("Hedef resim yolu: {0}", outputPath));
 
-                        // Kırpma işlemi
-                        using (var bitmap = new System.Drawing.Bitmap(width, height))
+                        try
                         {
-                            bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
-
-                            using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
+                            // Kırpma işlemi
+                            using (var bitmap = new System.Drawing.Bitmap(width, height))
                             {
-                                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                                graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
-                                var sourceRect = new System.Drawing.Rectangle(x, y, width, height);
-                                var destRect = new System.Drawing.Rectangle(0, 0, width, height);
+                                using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
+                                {
+                                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                    graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                                System.Diagnostics.Debug.WriteLine(String.Format("Kırpma koordinatları: Kaynak={0}, Hedef={1}", 
-                                    sourceRect.ToString(), destRect.ToString()));
+                                    var sourceRect = new System.Drawing.Rectangle(x, y, width, height);
+                                    var destRect = new System.Drawing.Rectangle(0, 0, width, height);
 
-                                graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
-                            }
+                                    System.Diagnostics.Debug.WriteLine(String.Format("Kırpma koordinatları: Kaynak={0}, Hedef={1}", 
+                                        sourceRect.ToString(), destRect.ToString()));
 
-                            try
-                            {
+                                    graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
+                                }
+
                                 // Önce geçici dosyaya kaydet
                                 string tempPath = Path.Combine(_cdn, String.Format("temp_{0}", outputFileName));
                                 bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
@@ -282,21 +282,21 @@ namespace AspxExamples
                                 var fileInfo = new FileInfo(outputPath);
                                 System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydedildi: {0}, Boyut: {1} bytes", outputPath, fileInfo.Length));
 
-                                ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.",
-                                    outputFileName), "success");
-
-                                // Seçimi temizle
-                                hdnSelection.Value = "";
-                                ScriptManager.RegisterStartupScript(this, GetType(), 
-                                    "clearSelection", 
-                                    "if(typeof clearSelection === 'function') { clearSelection(); }", 
+                                // JavaScript'e başarı mesajı gönder ve seçimi temizle
+                                ScriptManager.RegisterStartupScript(this, GetType(),
+                                    "saveSuccess",
+                                    String.Format(@"
+                                        showNotification('İmza başarıyla kaydedildi: {0}', 'success');
+                                        clearSelection();
+                                        hideLoading();
+                                    ", outputFileName),
                                     true);
                             }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya kaydetme hatası: {0}", ex.Message));
-                                throw;
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(String.Format("Dosya kaydetme hatası: {0}", ex.Message));
+                            throw;
                         }
                     }
                 }

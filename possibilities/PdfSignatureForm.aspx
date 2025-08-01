@@ -632,37 +632,48 @@
                 });
             }
 
-            // Add event listener for signature save button
-            var saveSignatureButton = document.getElementById('<%= btnSaveSignature.ClientID %>');
-            if (saveSignatureButton) {
-                saveSignatureButton.addEventListener('click', function() {
-                    if (currentSelection) {
-                        showLoading('İmza alanı kesiliyor...');
-                        setTimeout(() => updateLoadingMessage('İmza kaydediliyor...'), 1000);
-                        clearSelection();
-                    }
-                });
+            function saveSignature() {
+                if (!currentSelection) return;
+                
+                showLoading('İmza kaydediliyor...');
+                
+                // Seçim verilerini logla
+                console.log('Saving signature with data:', hiddenField.value);
+                
+                // Butonu devre dışı bırak
+                btnSave.disabled = true;
+                
+                // Form submit
+                __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                
+                return false;
             }
 
-            // Add event listener for form submission
-            var form = document.getElementById('form1');
-            if (form) {
-                form.addEventListener('submit', function() {
-                    showLoading('Form gönderiliyor...');
-                });
+            // Save button click handler
+            var saveButton = document.getElementById('<%= btnSaveSignature.ClientID %>');
+            if (saveButton) {
+                saveButton.onclick = function(e) {
+                    e.preventDefault();
+                    return saveSignature();
+                };
             }
 
             // Initialize Sys.WebForms.PageRequestManager for AJAX handling
             if (typeof(Sys) !== 'undefined') {
                 var prm = Sys.WebForms.PageRequestManager.getInstance();
                 
+                prm.add_initializeRequest(function(sender, args) {
+                    if (args.get_postBackElement().id === '<%= btnSaveSignature.ClientID %>') {
+                        showLoading('İmza kaydediliyor...');
+                    }
+                });
+                
                 prm.add_endRequest(function(sender, args) {
                     hideLoading();
-                    // Sayfa sayısını al
-                    var pageCount = parseInt(document.getElementById('<%= hdnPageCount.ClientID %>').value) || 1;
-                    initializeTabs(pageCount);
-                    initializeImageEvents();
-                    restoreSelection();
+                    if (args.get_error() != undefined) {
+                        showNotification('İmza kaydedilirken bir hata oluştu: ' + args.get_error().message, 'error');
+                        args.set_errorHandled(true);
+                    }
                 });
             }
 
