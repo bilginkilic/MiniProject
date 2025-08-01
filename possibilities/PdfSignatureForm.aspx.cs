@@ -54,7 +54,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError($"Dosya yüklenirken bir hata oluştu: {ex.Message}");
+                ShowError(String.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -77,7 +77,7 @@ namespace AspxExamples
                 if (File.Exists(imagePath))
                 {
                     // Resmi göster
-                    imgSignature.ImageUrl = $"~/cdn/page_1.png?t={DateTime.Now.Ticks}";
+                    imgSignature.ImageUrl = String.Format("~/cdn/page_1.png?t={0}", DateTime.Now.Ticks);
                     Session["LastRenderedImage"] = imagePath;
 
                     ShowMessage("İmza sirkülerini görüntüleniyor. Mouse ile istediğiniz imza alanını seçebilirsiniz.", "info");
@@ -90,7 +90,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError($"İmza sirkülerini görüntülerken bir hata oluştu: {ex.Message}");
+                ShowError(String.Format("İmza sirkülerini görüntülerken bir hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -138,29 +138,29 @@ namespace AspxExamples
                                           cropRect, GraphicsUnit.Pixel);
                             }
 
-                            string outputPath = Path.Combine(_cdn, $"signature_{DateTime.Now.Ticks}.png");
+                            string outputPath = Path.Combine(_cdn, String.Format("signature_{0}.png", DateTime.Now.Ticks));
                             cropImage.Save(outputPath, ImageFormat.Png);
 
-                            ShowMessage($"İmza başarıyla kaydedildi. Yeni bir seçim yapmak için tekrar mouse ile seçim yapabilirsiniz.", "success");
+                            ShowMessage(String.Format("İmza başarıyla kaydedildi. Yeni bir seçim yapmak için tekrar mouse ile seçim yapabilirsiniz. Dosya: {0}", outputPath), "success");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
+                ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
         private void ShowError(string message)
         {
-            lblMessage.CssClass = "message error";
+            lblMessage.CssClass = String.Format("message {0}", "error");
             lblMessage.Text = message;
         }
 
         private void ShowMessage(string message, string type = "info")
         {
-            lblMessage.CssClass = $"message {type}";
+            lblMessage.CssClass = String.Format("message {0}", type);
             lblMessage.Text = message;
         }
     }
