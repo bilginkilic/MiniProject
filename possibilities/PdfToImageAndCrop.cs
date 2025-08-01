@@ -75,7 +75,7 @@ namespace Possibilities
                 // Geçici bir dosya adı oluştur
                 string tempPath = Path.Combine(
                     Path.GetDirectoryName(imagePath),
-                    "temp_" + Path.GetFileName(imagePath)
+                    String.Format("temp_{0}", Path.GetFileName(imagePath))
                 );
 
                 // Resmi geçici dosyaya optimize et
@@ -109,7 +109,7 @@ namespace Possibilities
                 {
                     string tempPath = Path.Combine(
                         Path.GetDirectoryName(imagePath),
-                        "temp_" + Path.GetFileName(imagePath)
+                        String.Format("temp_{0}", Path.GetFileName(imagePath))
                     );
                     if (File.Exists(tempPath))
                     {
@@ -148,7 +148,7 @@ namespace Possibilities
             // Geçici dosya yolu oluştur
             string tempPath = Path.Combine(
                 Path.GetDirectoryName(outputImagePath),
-                "temp_" + Path.GetFileName(outputImagePath)
+                String.Format("temp_{0}", Path.GetFileName(outputImagePath))
             );
 
             try
