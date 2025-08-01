@@ -115,9 +115,16 @@ namespace AspxExamples
                     int width = int.Parse(parts[2]);
                     int height = int.Parse(parts[3]);
 
+                    if (width <= 0 || height <= 0)
+                    {
+                        ShowError("Geçersiz seçim boyutları. Lütfen tekrar seçim yapınız.");
+                        return;
+                    }
+
                     Rectangle selectionRect = new Rectangle(x, y, width, height);
 
-                    using (var sourceImage = Image.FromFile(imagePath))
+                    // Optimize edilmiş resim işleme
+                    using (var sourceImage = new Bitmap(imagePath))
                     {
                         // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
                         float scaleX = (float)sourceImage.Width / sourceImage.Width;
@@ -130,27 +137,73 @@ namespace AspxExamples
                             (int)(selectionRect.Height * scaleY)
                         );
 
-                        using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height))
+                        // Kırpma alanının resim sınırları içinde olduğunu kontrol et
+                        if (cropRect.X < 0 || cropRect.Y < 0 || 
+                            cropRect.Right > sourceImage.Width || 
+                            cropRect.Bottom > sourceImage.Height)
                         {
+                            ShowError("Seçilen alan resim sınırları dışında. Lütfen tekrar seçim yapınız.");
+                            return;
+                        }
+
+                        // Performans için GraphicsUnit.Pixel kullan ve kalite ayarlarını optimize et
+                        using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                        {
+                            cropImage.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
+
                             using (var g = Graphics.FromImage(cropImage))
                             {
+                                // Kalite ayarları
+                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
                                 g.DrawImage(sourceImage, new Rectangle(0, 0, cropRect.Width, cropRect.Height),
                                           cropRect, GraphicsUnit.Pixel);
                             }
 
-                            string outputPath = Path.Combine(_cdn, String.Format("signature_{0}.png", DateTime.Now.Ticks));
-                            cropImage.Save(outputPath, ImageFormat.Png);
+                            string outputFileName = String.Format("signature_{0}.png", DateTime.Now.Ticks);
+                            string outputPath = Path.Combine(_cdn, outputFileName);
+
+                            // PNG encoder ile optimize edilmiş kayıt
+                            var pngEncoder = GetPngEncoder();
+                            var encoderParams = new EncoderParameters(1);
+                            encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+
+                            cropImage.Save(outputPath, pngEncoder, encoderParams);
 
                             ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.", 
-                                Path.GetFileName(outputPath)), "success");
+                                outputFileName), "success");
                         }
                     }
                 }
+                else
+                {
+                    ShowError("Seçim verileri geçersiz. Lütfen tekrar seçim yapınız.");
+                }
+            }
+            catch (OutOfMemoryException)
+            {
+                ShowError("Resim işlenirken bellek yetersiz. Lütfen daha küçük bir alan seçin veya sayfayı yenileyin.");
             }
             catch (Exception ex)
             {
                 ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
             }
+        }
+
+        private ImageCodecInfo GetPngEncoder()
+        {
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+            for (int i = 0; i < codecs.Length; i++)
+            {
+                if (codecs[i].FormatID == ImageFormat.Png.Guid)
+                {
+                    return codecs[i];
+                }
+            }
+            return null;
         }
 
         private void ShowError(string message)
@@ -169,4 +222,5 @@ namespace AspxExamples
                 true);
         }
     }
+}
 }
