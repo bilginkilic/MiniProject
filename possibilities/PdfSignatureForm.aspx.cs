@@ -5,6 +5,8 @@ using System.Web;
 using System.Web.UI;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AspxExamples
 {
@@ -124,8 +126,10 @@ namespace AspxExamples
                 int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
                 System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
 
-                // Her sayfanın oluşturulduğunu kontrol et
+                // Her sayfanın oluşturulduğunu kontrol et ve base64'e çevir
+                var imageDataList = new System.Collections.Generic.List<string>();
                 bool allPagesExist = true;
+
                 for (int i = 1; i <= pageCount; i++)
                 {
                     string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
@@ -137,20 +141,19 @@ namespace AspxExamples
                     }
                     else
                     {
-                        var fileInfo = new FileInfo(imagePath);
-                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa oluşturuldu: {0}, Boyut: {1} bytes", imagePath, fileInfo.Length));
-                        
-                        // Dosya erişim izinlerini kontrol et
                         try
                         {
-                            using (var fs = File.OpenRead(imagePath))
-                            {
-                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya okunabilir: {0}", imagePath));
-                            }
+                            byte[] imageBytes = File.ReadAllBytes(imagePath);
+                            string base64String = Convert.ToBase64String(imageBytes);
+                            imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
+                            
+                            System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi", i));
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine(String.Format("Dosya erişim hatası: {0} - {1}", imagePath, ex.Message));
+                            System.Diagnostics.Debug.WriteLine(String.Format("Base64 dönüşüm hatası: {0}", ex.Message));
+                            allPagesExist = false;
+                            break;
                         }
                     }
                 }
@@ -164,14 +167,13 @@ namespace AspxExamples
                 // Sayfa sayısını hidden field'a kaydet
                 hdnPageCount.Value = pageCount.ToString();
                 
-                // JavaScript'e sayfa sayısını ve CDN yolunu gönder
-                string virtualPath = String.Format("http://{0}/cdn", Request.Url.Authority);
-                System.Diagnostics.Debug.WriteLine(String.Format("Virtual path: {0}", virtualPath));
-
+                // JavaScript'e sayfa sayısını ve resim verilerini gönder
+                var imageDataJson = String.Format("[{0}]", String.Join(",", imageDataList.Select(x => String.Format("'{0}'", x))));
+                
                 ScriptManager.RegisterStartupScript(this, GetType(),
                     "initTabs",
-                    String.Format("var cdnPath = '{0}'; console.log('CDN Path:', cdnPath); initializeTabs({1});", 
-                        virtualPath, pageCount),
+                    String.Format("var imageDataList = {0}; console.log('Image data loaded'); initializeTabs({1});", 
+                        imageDataJson, pageCount),
                     true);
 
                 ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");

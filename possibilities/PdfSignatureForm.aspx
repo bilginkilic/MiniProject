@@ -412,22 +412,21 @@
                     
                     // Resim yükleme hatası kontrolü
                     img.onerror = function() {
-                        console.error(formatString('Image load error for page {0}: {1}', i, this.src));
+                        console.error(formatString('Image load error for page {0}', i));
                         this.style.display = 'none';
                         wrapper.innerHTML += '<div class="error-message" style="color: #dc3545; padding: 20px; text-align: center;">Resim yüklenemedi. Lütfen sayfayı yenileyin.</div>';
                     };
                     
                     // Resim yükleme başarılı
                     img.onload = function() {
-                        console.log(formatString('Image loaded successfully for page {0}: {1}', i, this.src));
+                        console.log(formatString('Image loaded successfully for page {0}', i));
                         console.log(formatString('Image dimensions: {0}x{1}', this.naturalWidth, this.naturalHeight));
                         this.style.display = 'block';
                     };
 
-                    const timestamp = new Date().getTime();
-                    const imgSrc = formatString('{0}/page_{1}.png?t={2}', cdnPath, i, timestamp);
-                    console.log(formatString('Loading image for page {0}: {1}', i, imgSrc));
-                    img.src = imgSrc;
+                    // Base64 verisini kullan
+                    img.src = imageDataList[i - 1];
+                    console.log(formatString('Setting image source for page {0}', i));
                     
                     wrapper.appendChild(img);
                     content.appendChild(wrapper);
