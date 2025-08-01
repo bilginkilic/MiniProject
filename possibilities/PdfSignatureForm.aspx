@@ -144,6 +144,16 @@
             justify-content: center;
             align-items: center;
         }
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
         .loading-spinner {
             width: 50px;
             height: 50px;
@@ -152,9 +162,11 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .loading-message {
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+            max-width: 300px;
         }
         
         /* Notification Styles */
@@ -261,7 +273,10 @@
         
         <!-- Loading Overlay -->
         <div id="loadingOverlay" class="loading-overlay">
-            <div class="loading-spinner"></div>
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div id="loadingMessage" class="loading-message">İşlem yapılıyor...</div>
+            </div>
         </div>
         
         <!-- Notification Container -->
@@ -270,13 +285,6 @@
         </div>
 
         <script type="text/javascript">
-            var isSelecting = false;
-            var startX, startY;
-            var selectionBox = document.getElementById('selection');
-            var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
-            var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
-            var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
-
             function getMousePosition(e, element) {
                 var rect = element.getBoundingClientRect();
                 return {
@@ -285,7 +293,40 @@
                 };
             }
 
+            function showLoading(message) {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                document.getElementById('loadingMessage').textContent = message || 'İşlem yapılıyor...';
+            }
+
+            function updateLoadingMessage(message) {
+                document.getElementById('loadingMessage').textContent = message;
+            }
+
+            var isSelecting = false;
+            var startX, startY;
+            var selectionBox = document.getElementById('selection');
+            var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
+            var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
+            var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+            var currentSelection = null;
+
             function startSelection(e) {
+                if (currentSelection) {
+                    // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
+                    var imageWrapper = document.querySelector('.image-wrapper');
+                    var pos = getMousePosition(e, imageWrapper);
+                    var rect = selectionBox.getBoundingClientRect();
+                    var isInsideSelection = pos.x >= parseInt(selectionBox.style.left) &&
+                                         pos.x <= (parseInt(selectionBox.style.left) + parseInt(selectionBox.style.width)) &&
+                                         pos.y >= parseInt(selectionBox.style.top) &&
+                                         pos.y <= (parseInt(selectionBox.style.top) + parseInt(selectionBox.style.height));
+                    
+                    if (!isInsideSelection) {
+                        clearSelection();
+                        return;
+                    }
+                }
+
                 isSelecting = true;
                 var imageWrapper = document.querySelector('.image-wrapper');
                 var pos = getMousePosition(e, imageWrapper);
@@ -317,6 +358,13 @@
                 selectionBox.style.height = h + 'px';
             }
 
+            function clearSelection() {
+                selectionBox.style.display = 'none';
+                currentSelection = null;
+                btnSave.disabled = true;
+                hiddenField.value = '';
+            }
+
             function endSelection(e) {
                 if (!isSelecting) return;
                 isSelecting = false;
@@ -334,21 +382,22 @@
                     return;
                 }
 
+                currentSelection = {
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    width: Math.round(w),
+                    height: Math.round(h)
+                };
+
                 var selectionData = [
-                    Math.round(x),
-                    Math.round(y),
-                    Math.round(w),
-                    Math.round(h)
+                    currentSelection.x,
+                    currentSelection.y,
+                    currentSelection.width,
+                    currentSelection.height
                 ].join(',');
 
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
-                
-                if (typeof __doPostBack === 'function') {
-                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
-                } else {
-                    btnSave.click();
-                }
             }
 
             function initializeImageEvents() {
@@ -385,14 +434,6 @@
                 }
             }
 
-            function showLoading() {
-                document.getElementById('loadingOverlay').style.display = 'flex';
-            }
-
-            function hideLoading() {
-                document.getElementById('loadingOverlay').style.display = 'none';
-            }
-
             function showNotification(message, type) {
                 const notification = document.getElementById('notification');
                 const notificationMessage = document.getElementById('notificationMessage');
@@ -411,7 +452,7 @@
             var uploadButton = document.getElementById('<%= btnUpload.ClientID %>');
             if (uploadButton) {
                 uploadButton.addEventListener('click', function() {
-                    showLoading();
+                    showLoading('Dosya yükleniyor...');
                 });
             }
 
@@ -419,7 +460,21 @@
             var showPdfButton = document.getElementById('<%= btnShowPdf.ClientID %>');
             if (showPdfButton) {
                 showPdfButton.addEventListener('click', function() {
-                    showLoading();
+                    showLoading('PDF dosyası yükleniyor...');
+                    setTimeout(() => updateLoadingMessage('PDF sayfaları görüntüye dönüştürülüyor...'), 1000);
+                    setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
+                });
+            }
+
+            // Add event listener for signature save button
+            var saveSignatureButton = document.getElementById('<%= btnSaveSignature.ClientID %>');
+            if (saveSignatureButton) {
+                saveSignatureButton.addEventListener('click', function() {
+                    if (currentSelection) {
+                        showLoading('İmza alanı kesiliyor...');
+                        setTimeout(() => updateLoadingMessage('İmza kaydediliyor...'), 1000);
+                        clearSelection();
+                    }
                 });
             }
 
@@ -427,7 +482,7 @@
             var form = document.getElementById('form1');
             if (form) {
                 form.addEventListener('submit', function() {
-                    showLoading();
+                    showLoading('Form gönderiliyor...');
                 });
             }
 

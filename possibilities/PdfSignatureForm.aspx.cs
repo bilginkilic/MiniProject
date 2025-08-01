@@ -80,8 +80,8 @@ namespace AspxExamples
                     imgSignature.ImageUrl = String.Format("~/cdn/page_1.png?t={0}", DateTime.Now.Ticks);
                     Session["LastRenderedImage"] = imagePath;
 
-                    ShowMessage("İmza sirkülerini görüntüleniyor. Mouse ile istediğiniz imza alanını seçebilirsiniz.", "info");
-                    btnSaveSignature.Enabled = false; // Yeni seçim yapılana kadar kaydet butonu devre dışı
+                    ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
+                    btnSaveSignature.Enabled = true; // Kaydet butonu aktif olsun
                 }
                 else
                 {
@@ -141,7 +141,8 @@ namespace AspxExamples
                             string outputPath = Path.Combine(_cdn, String.Format("signature_{0}.png", DateTime.Now.Ticks));
                             cropImage.Save(outputPath, ImageFormat.Png);
 
-                            ShowMessage(String.Format("İmza başarıyla kaydedildi. Yeni bir seçim yapmak için tekrar mouse ile seçim yapabilirsiniz. Dosya: {0}", outputPath), "success");
+                            ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.", 
+                                Path.GetFileName(outputPath)), "success");
                         }
                     }
                 }
