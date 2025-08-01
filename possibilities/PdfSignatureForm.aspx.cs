@@ -10,8 +10,6 @@ namespace AspxExamples
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private readonly string _cdn = Path.Combine(HttpRuntime.AppDomainAppPath, "cdn");
-        private const int DEFAULT_IMAGE_WIDTH = 800;  // Varsayılan görüntü genişliği
-        private const int DEFAULT_IMAGE_HEIGHT = 500; // Varsayılan görüntü yüksekliği
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -22,6 +20,9 @@ namespace AspxExamples
                 {
                     Directory.CreateDirectory(_cdn);
                 }
+
+                // Başlangıç mesajını göster
+                ShowMessage("PDF formatında imza sirkülerinizi yükleyerek başlayabilirsiniz.", "info");
             }
         }
 
@@ -34,27 +35,26 @@ namespace AspxExamples
                     string fileName = Path.GetFileName(fileUpload.FileName);
                     if (Path.GetExtension(fileName).ToLower() != ".pdf")
                     {
-                        ShowError("Lütfen PDF dosyası seçin.");
+                        ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.");
                         return;
                     }
 
                     string pdfPath = Path.Combine(_cdn, fileName);
                     fileUpload.SaveAs(pdfPath);
 
-                    // PDF yüklendi, göster butonunu aktif et
                     btnShowPdf.Enabled = true;
                     Session["LastUploadedPdf"] = pdfPath;
 
-                    ShowMessage("İmza sirkülerini yüklendi. Göster butonuna tıklayarak imzaları seçebilirsiniz.");
+                    ShowMessage("İmza sirküleri başarıyla yüklendi. Şimdi 'İmza Sirküleri Göster' butonuna tıklayarak devam edebilirsiniz.", "success");
                 }
                 else
                 {
-                    ShowError("Lütfen bir dosya seçin.");
+                    ShowError("Lütfen bir PDF dosyası seçiniz.");
                 }
             }
             catch (Exception ex)
             {
-                ShowError(String.Format("Dosya yüklenirken hata oluştu: {0}", ex.Message));
+                ShowError($"Dosya yüklenirken bir hata oluştu: {ex.Message}");
             }
         }
 
@@ -63,7 +63,7 @@ namespace AspxExamples
             string pdfPath = Session["LastUploadedPdf"] as string;
             if (string.IsNullOrEmpty(pdfPath))
             {
-                ShowError("Lütfen önce bir imza sirkülerini yükleyin.");
+                ShowError("Lütfen önce bir imza sirkülerini yükleyiniz.");
                 return;
             }
 
@@ -77,19 +77,20 @@ namespace AspxExamples
                 if (File.Exists(imagePath))
                 {
                     // Resmi göster
-                    imgSignature.ImageUrl = String.Format("~/cdn/page_1.png?t={0}", DateTime.Now.Ticks);
+                    imgSignature.ImageUrl = $"~/cdn/page_1.png?t={DateTime.Now.Ticks}";
                     Session["LastRenderedImage"] = imagePath;
 
-                    ShowMessage("İmza sirkülerini görüntüleniyor. İmzaları seçmek için mouse ile seçim yapabilirsiniz.");
+                    ShowMessage("İmza sirkülerini görüntüleniyor. Mouse ile istediğiniz imza alanını seçebilirsiniz.", "info");
+                    btnSaveSignature.Enabled = false; // Yeni seçim yapılana kadar kaydet butonu devre dışı
                 }
                 else
                 {
-                    ShowError("İmza sirkülerini görüntülenemedi. Lütfen dosyanın PDF formatında olduğundan emin olun.");
+                    ShowError("İmza sirkülerini görüntülerken bir hata oluştu. Lütfen dosyanın geçerli bir PDF olduğundan emin olun.");
                 }
             }
             catch (Exception ex)
             {
-                ShowError(String.Format("İmza sirkülerini görüntülerken hata oluştu: {0}", ex.Message));
+                ShowError($"İmza sirkülerini görüntülerken bir hata oluştu: {ex.Message}");
             }
         }
 
@@ -100,7 +101,7 @@ namespace AspxExamples
 
             if (string.IsNullOrEmpty(imagePath) || string.IsNullOrEmpty(selectionData))
             {
-                ShowError("Lütfen önce bir imza seçin.");
+                ShowError("Lütfen önce bir imza alanı seçiniz.");
                 return;
             }
 
@@ -119,8 +120,8 @@ namespace AspxExamples
                     using (var sourceImage = Image.FromFile(imagePath))
                     {
                         // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
-                        float scaleX = (float)sourceImage.Width / DEFAULT_IMAGE_WIDTH;
-                        float scaleY = (float)sourceImage.Height / DEFAULT_IMAGE_HEIGHT;
+                        float scaleX = (float)sourceImage.Width / sourceImage.Width;
+                        float scaleY = (float)sourceImage.Height / sourceImage.Height;
 
                         Rectangle cropRect = new Rectangle(
                             (int)(selectionRect.X * scaleX),
@@ -129,7 +130,6 @@ namespace AspxExamples
                             (int)(selectionRect.Height * scaleY)
                         );
 
-                        // Seçilen alanı yeni bir resim olarak kaydet
                         using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height))
                         {
                             using (var g = Graphics.FromImage(cropImage))
@@ -138,29 +138,29 @@ namespace AspxExamples
                                           cropRect, GraphicsUnit.Pixel);
                             }
 
-                            string outputPath = Path.Combine(_cdn, String.Format("signature_{0}.png", DateTime.Now.Ticks));
+                            string outputPath = Path.Combine(_cdn, $"signature_{DateTime.Now.Ticks}.png");
                             cropImage.Save(outputPath, ImageFormat.Png);
 
-                            ShowMessage(String.Format("İmza başarıyla kaydedildi:\n{0}", outputPath));
+                            ShowMessage($"İmza başarıyla kaydedildi. Yeni bir seçim yapmak için tekrar mouse ile seçim yapabilirsiniz.", "success");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowError(String.Format("İmza kaydedilirken hata oluştu: {0}", ex.Message));
+                ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
             }
         }
 
         private void ShowError(string message)
         {
-            lblMessage.ForeColor = Color.Red;
+            lblMessage.CssClass = "message error";
             lblMessage.Text = message;
         }
 
-        private void ShowMessage(string message)
+        private void ShowMessage(string message, string type = "info")
         {
-            lblMessage.ForeColor = Color.Green;
+            lblMessage.CssClass = $"message {type}";
             lblMessage.Text = message;
         }
     }

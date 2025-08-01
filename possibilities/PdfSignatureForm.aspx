@@ -12,6 +12,7 @@
             height: 100%;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
         }
         form {
             width: 100%;
@@ -25,30 +26,52 @@
             flex-direction: column;
             padding: 20px;
             box-sizing: border-box;
-            max-width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
             height: 100%;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 15px 0;
             margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
         }
         .upload-panel {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
             margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
             flex-wrap: wrap;
+        }
+        .upload-panel .instructions {
+            flex: 1 1 100%;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
         }
         .image-container {
             position: relative;
             flex: 1;
             min-height: 0;
-            border: 1px solid #ccc;
-            background: white;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            background: #fff;
             overflow: hidden;
+            margin: 10px 0;
         }
         .image-wrapper {
             position: absolute;
@@ -61,51 +84,81 @@
             align-items: center;
             overflow: auto;
         }
+        .image-wrapper img {
+            max-width: none;
+            max-height: none;
+        }
         #selection {
             position: absolute;
-            border: 2px solid red;
-            background-color: rgba(255,0,0,0.1);
+            border: 2px solid #007bff;
+            background-color: rgba(0,123,255,0.1);
             pointer-events: none;
             display: none;
             z-index: 1000;
+            border-radius: 4px;
         }
         .button {
-            padding: 8px 15px;
+            padding: 10px 20px;
             margin-right: 10px;
             cursor: pointer;
             border: none;
             background-color: #007bff;
             color: white;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .button:hover {
             background-color: #0056b3;
+            transform: translateY(-1px);
         }
         .button:disabled {
-            background-color: #cccccc;
+            background-color: #ccc;
             cursor: not-allowed;
+            transform: none;
+        }
+        .button.secondary {
+            background-color: #6c757d;
+        }
+        .button.secondary:hover {
+            background-color: #5a6268;
         }
         .footer {
-            padding: 10px 0;
+            padding: 15px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-top: 2px solid #eee;
+            margin-top: 20px;
         }
         .message {
-            padding: 10px;
+            padding: 12px 15px;
             margin: 10px 0;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .message.error {
-            background-color: #ffe6e6;
-            border: 1px solid #ff9999;
+            background-color: #fff3f3;
+            border: 1px solid #ffcdd2;
+            color: #d32f2f;
         }
         .message.success {
-            background-color: #e6ffe6;
-            border: 1px solid #99ff99;
+            background-color: #f1f8e9;
+            border: 1px solid #c5e1a5;
+            color: #33691e;
         }
-
+        .help-text {
+            color: #666;
+            font-size: 13px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -118,16 +171,23 @@
             </div>
             
             <div class="upload-panel">
+                <div class="instructions">
+                    <strong>Nasıl Kullanılır:</strong>
+                    <ol>
+                        <li>PDF formatındaki imza sirkülerinizi seçin ve "Yükle" butonuna tıklayın</li>
+                        <li>"İmza Sirküleri Göster" butonuna tıklayarak dökümanı görüntüleyin</li>
+                        <li>Mouse ile imza alanını seçin - seçim tamamlandığında otomatik kaydedilecektir</li>
+                    </ol>
+                </div>
                 <asp:FileUpload ID="fileUpload" runat="server" />
                 <asp:Button ID="btnUpload" runat="server" Text="Yükle" CssClass="button" OnClick="BtnUpload_Click" />
-                <asp:Button ID="btnShowPdf" runat="server" Text="İmza Sirküleri Göster" CssClass="button" 
+                <asp:Button ID="btnShowPdf" runat="server" Text="İmza Sirküleri Göster" CssClass="button secondary" 
                     OnClick="BtnShowPdf_Click" Enabled="false" />
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
-
                 <div class="image-wrapper">
-                    <asp:Image ID="imgSignature" runat="server" style="max-width: 100%; max-height: 100%;" />
+                    <asp:Image ID="imgSignature" runat="server" />
                     <div id="selection"></div>
                 </div>
             </div>
@@ -149,18 +209,24 @@
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
 
+            function getMousePosition(e, element) {
+                var rect = element.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left + element.scrollLeft,
+                    y: e.clientY - rect.top + element.scrollTop
+                };
+            }
 
             function startSelection(e) {
                 isSelecting = true;
                 var imageWrapper = document.querySelector('.image-wrapper');
-                var rect = e.target.getBoundingClientRect();
+                var pos = getMousePosition(e, imageWrapper);
                 
-                // Scroll pozisyonlarını hesaba kat
-                startX = e.clientX - rect.left + imageWrapper.scrollLeft;
-                startY = e.clientY - rect.top + imageWrapper.scrollTop;
+                startX = pos.x;
+                startY = pos.y;
 
-                selectionBox.style.left = (e.clientX - rect.left) + 'px';
-                selectionBox.style.top = (e.clientY - rect.top) + 'px';
+                selectionBox.style.left = startX + 'px';
+                selectionBox.style.top = startY + 'px';
                 selectionBox.style.width = '0px';
                 selectionBox.style.height = '0px';
                 selectionBox.style.display = 'block';
@@ -170,14 +236,12 @@
                 if (!isSelecting) return;
 
                 var imageWrapper = document.querySelector('.image-wrapper');
-                var rect = e.target.getBoundingClientRect();
-                var currentX = e.clientX - rect.left + imageWrapper.scrollLeft;
-                var currentY = e.clientY - rect.top + imageWrapper.scrollTop;
-
-                var x = Math.min(startX, currentX) - imageWrapper.scrollLeft;
-                var y = Math.min(startY, currentY) - imageWrapper.scrollTop;
-                var w = Math.abs(currentX - startX);
-                var h = Math.abs(currentY - startY);
+                var pos = getMousePosition(e, imageWrapper);
+                
+                var x = Math.min(startX, pos.x);
+                var y = Math.min(startY, pos.y);
+                var w = Math.abs(pos.x - startX);
+                var h = Math.abs(pos.y - startY);
 
                 selectionBox.style.left = x + 'px';
                 selectionBox.style.top = y + 'px';
@@ -190,14 +254,12 @@
                 isSelecting = false;
 
                 var imageWrapper = document.querySelector('.image-wrapper');
-                var rect = e.target.getBoundingClientRect();
-                var currentX = e.clientX - rect.left + imageWrapper.scrollLeft;
-                var currentY = e.clientY - rect.top + imageWrapper.scrollTop;
-
-                var x = Math.min(startX, currentX) - imageWrapper.scrollLeft;
-                var y = Math.min(startY, currentY) - imageWrapper.scrollTop;
-                var w = Math.abs(currentX - startX);
-                var h = Math.abs(currentY - startY);
+                var pos = getMousePosition(e, imageWrapper);
+                
+                var x = Math.min(startX, pos.x);
+                var y = Math.min(startY, pos.y);
+                var w = Math.abs(pos.x - startX);
+                var h = Math.abs(pos.y - startY);
 
                 if (w < 10 || h < 10) {
                     selectionBox.style.display = 'none';
@@ -255,7 +317,6 @@
                 }
             }
 
-            // Sayfa yüklendiğinde ve görüntü değiştiğinde olayları başlat
             if (window.addEventListener) {
                 window.addEventListener('load', function() {
                     initializeImageEvents();
@@ -263,7 +324,6 @@
                 });
             }
 
-            // Pencere boyutu değiştiğinde seçimi yeniden konumlandır
             window.addEventListener('resize', function() {
                 if (selectionBox.style.display !== 'none') {
                     restoreSelection();
