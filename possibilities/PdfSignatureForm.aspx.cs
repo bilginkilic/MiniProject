@@ -156,7 +156,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(), 
                 "showNotification", 
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', 'error');", 
+                String.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)), 
                 true);
         }
 
@@ -164,7 +164,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(), 
                 "showNotification", 
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', '{type}');", 
+                String.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type), 
                 true);
         }
     }
