@@ -287,8 +287,7 @@ namespace AspxExamples
                                     "saveSuccess",
                                     String.Format(@"
                                         showNotification('İmza başarıyla kaydedildi: {0}', 'success');
-                                        clearSelection();
-                                        hideLoading();
+                                        if(typeof clearSelection === 'function') {{ clearSelection(); }}
                                     ", outputFileName),
                                     true);
                             }

@@ -667,6 +667,12 @@
                         showNotification('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
                         args.set_errorHandled(true);
                         btnSave.disabled = false;
+                    } else {
+                        // Başarılı işlem sonrası sadece seçimi temizle, sayfayı yeniden yükleme
+                        if (currentSelection) {
+                            clearSelection();
+                            btnSave.disabled = true;
+                        }
                     }
                 });
 
