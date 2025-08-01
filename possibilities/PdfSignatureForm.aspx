@@ -162,6 +162,10 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .loading-message {
             color: #333;
             font-size: 16px;
@@ -311,6 +315,8 @@
             var currentSelection = null;
 
             function startSelection(e) {
+                e.preventDefault(); // Mouse olayını engelle
+                
                 if (currentSelection) {
                     // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
                     var imageWrapper = document.querySelector('.image-wrapper');
@@ -323,8 +329,8 @@
                     
                     if (!isInsideSelection) {
                         clearSelection();
-                        return;
                     }
+                    return;
                 }
 
                 isSelecting = true;
@@ -339,9 +345,16 @@
                 selectionBox.style.width = '0px';
                 selectionBox.style.height = '0px';
                 selectionBox.style.display = 'block';
+
+                // Mouse hareketlerini takip etmek için event listener'ları ekle
+                imageWrapper.addEventListener('mousemove', updateSelection);
+                imageWrapper.addEventListener('mouseup', endSelection);
+                imageWrapper.addEventListener('mouseleave', endSelection);
             }
 
             function updateSelection(e) {
+                e.preventDefault(); // Mouse olayını engelle
+                
                 if (!isSelecting) return;
 
                 var imageWrapper = document.querySelector('.image-wrapper');
@@ -366,6 +379,8 @@
             }
 
             function endSelection(e) {
+                e.preventDefault(); // Mouse olayını engelle
+                
                 if (!isSelecting) return;
                 isSelecting = false;
 
@@ -398,19 +413,18 @@
 
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
+
+                // Event listener'ları kaldır
+                imageWrapper.removeEventListener('mousemove', updateSelection);
+                imageWrapper.removeEventListener('mouseup', endSelection);
+                imageWrapper.removeEventListener('mouseleave', endSelection);
             }
 
             function initializeImageEvents() {
                 var img = document.querySelector('#<%= imgSignature.ClientID %>');
                 if (img) {
-                    img.addEventListener('mousedown', startSelection);
-                    img.addEventListener('mousemove', updateSelection);
-                    img.addEventListener('mouseup', endSelection);
-                    img.addEventListener('mouseleave', function(e) {
-                        if (isSelecting) {
-                            endSelection(e);
-                        }
-                    });
+                    var imageWrapper = document.querySelector('.image-wrapper');
+                    imageWrapper.addEventListener('mousedown', startSelection);
                 }
             }
 
