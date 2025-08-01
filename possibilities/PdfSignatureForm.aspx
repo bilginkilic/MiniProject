@@ -305,6 +305,7 @@
 
             <div class="footer">
                 <asp:HiddenField ID="hdnSelection" runat="server" />
+                <asp:HiddenField ID="hdnPageCount" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
                     CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
                 
@@ -345,7 +346,7 @@
 
             var isSelecting = false;
             var startX, startY;
-            var selectionBox = document.getElementById('selection');
+            var selectionBox = null;
             var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
@@ -398,40 +399,29 @@
                     
                     wrapper.appendChild(img);
                     content.appendChild(wrapper);
-                    contentsContainer.appendChild(content);
-                }
-
-                // Selection box'ı her tab content'e ekle
-                document.querySelectorAll('.tab-content').forEach(content => {
+                    
+                    // Selection box ekle
                     const selection = document.createElement('div');
-                    selection.id = `selection_${content.getAttribute('data-page')}`;
+                    selection.id = `selection_${i}`;
                     selection.className = 'selection';
                     selection.style.cssText = 'position: absolute; border: 2px solid #dc3545; background-color: rgba(220,53,69,0.1); pointer-events: none; display: none; z-index: 1000; border-radius: 4px;';
                     content.appendChild(selection);
-                });
+                    
+                    contentsContainer.appendChild(content);
+                }
 
                 // Event listener'ları ekle
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.addEventListener('mousedown', startSelection);
+                document.querySelectorAll('.image-wrapper').forEach(wrapper => {
+                    wrapper.addEventListener('mousedown', startSelection);
                 });
             }
 
-            // Seçim işlemleri için aktif sayfayı takip et
-            let currentPage = 1;
-
             function getCurrentSelectionBox() {
-                return document.querySelector(`.tab-content[data-page="${currentPage}"] .selection`);
+                return document.querySelector(`.tab-content.active .selection`);
             }
 
             function startSelection(e) {
                 e.preventDefault();
-                
-                // Tıklanan sayfayı belirle
-                const tabContent = e.target.closest('.tab-content');
-                if (!tabContent) return;
-                
-                currentPage = parseInt(tabContent.getAttribute('data-page'));
-                selectionBox = getCurrentSelectionBox();
                 
                 if (currentSelection) {
                     clearSelection();
@@ -439,30 +429,31 @@
                 }
 
                 isSelecting = true;
-                const pos = getMousePosition(e, tabContent);
+                const wrapper = e.currentTarget;
+                const pos = getMousePosition(e, wrapper);
                 
                 startX = pos.x;
                 startY = pos.y;
 
-                selectionBox.style.left = startX + 'px';
-                selectionBox.style.top = startY + 'px';
-                selectionBox.style.width = '0px';
-                selectionBox.style.height = '0px';
-                selectionBox.style.display = 'block';
+                selectionBox = getCurrentSelectionBox();
+                if (selectionBox) {
+                    selectionBox.style.left = startX + 'px';
+                    selectionBox.style.top = startY + 'px';
+                    selectionBox.style.width = '0px';
+                    selectionBox.style.height = '0px';
+                    selectionBox.style.display = 'block';
 
-                tabContent.addEventListener('mousemove', updateSelection);
-                tabContent.addEventListener('mouseup', endSelection);
-                tabContent.addEventListener('mouseleave', endSelection);
+                    document.addEventListener('mousemove', updateSelection);
+                    document.addEventListener('mouseup', endSelection);
+                }
             }
 
             function updateSelection(e) {
                 e.preventDefault();
-                if (!isSelecting) return;
+                if (!isSelecting || !selectionBox) return;
 
-                const tabContent = e.target.closest('.tab-content');
-                if (!tabContent) return;
-
-                const pos = getMousePosition(e, tabContent);
+                const wrapper = document.querySelector('.tab-content.active .image-wrapper');
+                const pos = getMousePosition(e, wrapper);
                 
                 const x = Math.min(startX, pos.x);
                 const y = Math.min(startY, pos.y);
@@ -477,13 +468,11 @@
 
             function endSelection(e) {
                 e.preventDefault();
-                if (!isSelecting) return;
+                if (!isSelecting || !selectionBox) return;
                 
-                const tabContent = e.target.closest('.tab-content');
-                if (!tabContent) return;
-
                 isSelecting = false;
-                const pos = getMousePosition(e, tabContent);
+                const wrapper = document.querySelector('.tab-content.active .image-wrapper');
+                const pos = getMousePosition(e, wrapper);
                 
                 const x = Math.min(startX, pos.x);
                 const y = Math.min(startY, pos.y);
@@ -494,6 +483,9 @@
                     selectionBox.style.display = 'none';
                     return;
                 }
+
+                const activeTab = document.querySelector('.tab.active');
+                const currentPage = parseInt(activeTab.getAttribute('data-page'));
 
                 currentSelection = {
                     page: currentPage,
@@ -514,9 +506,8 @@
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
 
-                tabContent.removeEventListener('mousemove', updateSelection);
-                tabContent.removeEventListener('mouseup', endSelection);
-                tabContent.removeEventListener('mouseleave', endSelection);
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
             }
 
             function clearSelection() {
@@ -526,6 +517,9 @@
                 currentSelection = null;
                 btnSave.disabled = true;
                 hiddenField.value = '';
+                
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
             }
 
             function initializeImageEvents() {
@@ -614,7 +608,7 @@
                 
                 prm.add_endRequest(function(sender, args) {
                     hideLoading();
-                    // Sayfa sayısını al (hidden field'dan veya başka bir kaynaktan)
+                    // Sayfa sayısını al
                     var pageCount = parseInt(document.getElementById('<%= hdnPageCount.ClientID %>').value) || 1;
                     initializeTabs(pageCount);
                 });
@@ -628,7 +622,7 @@
             }
 
             window.addEventListener('resize', function() {
-                if (selectionBox.style.display !== 'none') {
+                if (selectionBox && selectionBox.style.display !== 'none') {
                     restoreSelection();
                 }
             });
