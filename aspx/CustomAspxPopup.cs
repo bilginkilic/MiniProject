@@ -66,7 +66,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"ASPX sayfası yüklenirken hata: {ex.Message}",
+                    String.Format("ASPX sayfası yüklenirken hata: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
@@ -105,7 +105,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Özel popup açılırken hata oluştu: " + ex.Message,
+                    String.Format("Özel popup açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error

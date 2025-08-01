@@ -45,7 +45,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Popup açılırken hata oluştu: " + ex.Message,
+                    String.Format("Popup açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
@@ -56,12 +56,12 @@ namespace AspxExamples
         private void OpenJavaScriptPopup(string aspxFileName)
         {
             string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
-            string script = $@"
-                window.open('{aspxUrl}', 'AspxPopup', 
+            string script = String.Format(@"
+                window.open('{0}', 'AspxPopup', 
                 'width=800,height=600,status=0,toolbar=0,menubar=0,location=0,scrollbars=1');
-            ";
+            ", aspxUrl);
             
-            scriptBox.Html = $"<script>{script}</script>";
+            scriptBox.Html = String.Format("<script>{0}</script>", script);
         }
     }
 }

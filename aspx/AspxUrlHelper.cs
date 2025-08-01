@@ -18,29 +18,29 @@ namespace AspxExamples
                 }
 
                 var request = context.Request;
-                string baseUrl = $"{request.Url.Scheme}://{request.Url.Authority}";
+                string baseUrl = String.Format("{0}://{1}", request.Url.Scheme, request.Url.Authority);
                 string applicationPath = request.ApplicationPath.TrimEnd('/');
                 
                 // Fiziksel yolu kontrol et
-                string physicalPath = context.Server.MapPath($"~/aspx/{fileName}");
+                string physicalPath = context.Server.MapPath(String.Format("~/aspx/{0}", fileName));
                 if (!File.Exists(physicalPath))
                 {
-                    throw new FileNotFoundException($"ASPX dosyası bulunamadı: {fileName}");
+                    throw new FileNotFoundException(String.Format("ASPX dosyası bulunamadı: {0}", fileName));
                 }
 
                 // URL'yi oluştur
-                return $"{baseUrl}{applicationPath}/aspx/{fileName}";
+                return String.Format("{0}{1}/aspx/{2}", baseUrl, applicationPath, fileName);
             }
             catch (Exception ex)
             {
-                throw new Exception($"ASPX URL oluşturulurken hata: {ex.Message}", ex);
+                throw new Exception(String.Format("ASPX URL oluşturulurken hata: {0}", ex.Message), ex);
             }
         }
 
         public static string GetRelativeAspxUrl(string fileName)
         {
             // Relative URL'yi oluştur
-            return VirtualPathUtility.ToAbsolute($"~/aspx/{fileName}");
+            return VirtualPathUtility.ToAbsolute(String.Format("~/aspx/{0}", fileName));
         }
 
         public static string GetDebugUrl(string fileName)
@@ -54,19 +54,21 @@ namespace AspxExamples
                 }
 
                 var request = context.Request;
-                string baseUrl = $"{request.Url.Scheme}://{request.Url.Authority}";
+                string baseUrl = String.Format("{0}://{1}", request.Url.Scheme, request.Url.Authority);
                 string applicationPath = request.ApplicationPath;
-                string physicalPath = context.Server.MapPath($"~/aspx/{fileName}");
+                string physicalPath = context.Server.MapPath(String.Format("~/aspx/{0}", fileName));
                 
-                return $"Debug Info:\n" +
-                       $"Base URL: {baseUrl}\n" +
-                       $"App Path: {applicationPath}\n" +
-                       $"Physical Path: {physicalPath}\n" +
-                       $"File Exists: {File.Exists(physicalPath)}";
+                return String.Format(
+                    "Debug Info:\nBase URL: {0}\nApp Path: {1}\nPhysical Path: {2}\nFile Exists: {3}",
+                    baseUrl,
+                    applicationPath,
+                    physicalPath,
+                    File.Exists(physicalPath)
+                );
             }
             catch (Exception ex)
             {
-                return $"Debug Error: {ex.Message}";
+                return String.Format("Debug Error: {0}", ex.Message);
             }
         }
     }

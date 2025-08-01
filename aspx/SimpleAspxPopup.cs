@@ -20,7 +20,7 @@ namespace AspxExamples
         {
             // Form ayarları
             this.Text = "ASPX Popup";
-            this.Size = new Size(800, 700);  // Yüksekliği arttırdık
+            this.Size = new Size(800, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -57,7 +57,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"ASPX sayfası yüklenirken hata: {ex.Message}\n\nDebug Info:\n{lblDebug.Text}",
+                    String.Format("ASPX sayfası yüklenirken hata: {0}\n\nDebug Info:\n{1}", ex.Message, lblDebug.Text),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
@@ -81,7 +81,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Popup açılırken hata oluştu: " + ex.Message,
+                    String.Format("Popup açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
