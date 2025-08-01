@@ -10,17 +10,29 @@ namespace AspxExamples
 {
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
-        private readonly string _cdn = Path.Combine(HttpRuntime.AppDomainAppPath, "cdn");
+        private string _cdn = @"\\trrgap3027\files\circular\cdn";
+        private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
+
         protected HiddenField hdnPageCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                // CDN klasörünü oluştur
+                // CDN klasörünü kontrol et
                 if (!Directory.Exists(_cdn))
                 {
-                    Directory.CreateDirectory(_cdn);
+                    try
+                    {
+                        Directory.CreateDirectory(_cdn);
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturuldu: {0}", _cdn));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
+                        ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
+                        return;
+                    }
                 }
 
                 // Başlangıç mesajını göster
@@ -42,10 +54,7 @@ namespace AspxExamples
                     }
 
                     // Önceki dosyaları temizle
-                    foreach (string file in Directory.GetFiles(_cdn, "page_*.png"))
-                    {
-                        try { File.Delete(file); } catch { }
-                    }
+                    CleanupOldFiles();
 
                     string pdfPath = Path.Combine(_cdn, fileName);
                     fileUpload.SaveAs(pdfPath);
@@ -62,7 +71,32 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(String.Format("Dosya yükleme hatası: {0}", ex.Message));
                 ShowError(String.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
+            }
+        }
+
+        private void CleanupOldFiles()
+        {
+            try
+            {
+                // Tüm PNG dosyalarını temizle
+                foreach (string file in Directory.GetFiles(_cdn, "*.png"))
+                {
+                    try { File.Delete(file); } catch { }
+                }
+
+                // Tüm PDF dosyalarını temizle
+                foreach (string file in Directory.GetFiles(_cdn, "*.pdf"))
+                {
+                    try { File.Delete(file); } catch { }
+                }
+
+                System.Diagnostics.Debug.WriteLine("Eski dosyalar temizlendi");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(String.Format("Dosya temizleme hatası: {0}", ex.Message));
             }
         }
 
@@ -75,11 +109,18 @@ namespace AspxExamples
                 return;
             }
 
+            if (!File.Exists(pdfPath))
+            {
+                ShowError("Yüklenen PDF dosyası bulunamadı. Lütfen tekrar yükleyiniz.");
+                return;
+            }
+
             try
             {
-                // PDF'yi PNG'ye çevir
                 System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü başlıyor. PDF yolu: {0}", pdfPath));
+                System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü: {0}", _cdn));
                 
+                // PDF'yi PNG'ye çevir
                 int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
                 System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
 
@@ -110,10 +151,11 @@ namespace AspxExamples
                 // Sayfa sayısını hidden field'a kaydet
                 hdnPageCount.Value = pageCount.ToString();
                 
-                // JavaScript'e sayfa sayısını gönder
+                // JavaScript'e sayfa sayısını ve CDN yolunu gönder
                 ScriptManager.RegisterStartupScript(this, GetType(),
                     "initTabs",
-                    String.Format("initializeTabs({0});", pageCount),
+                    String.Format("var cdnPath = '{0}'; initializeTabs({1});", 
+                        _cdnVirtualPath, pageCount),
                     true);
 
                 ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
@@ -163,21 +205,9 @@ namespace AspxExamples
 
                     using (var sourceImage = new Bitmap(imagePath))
                     {
-                        // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
-                        float scaleX = (float)sourceImage.Width / sourceImage.Width;
-                        float scaleY = (float)sourceImage.Height / sourceImage.Height;
-
-                        Rectangle cropRect = new Rectangle(
-                            (int)(selectionRect.X * scaleX),
-                            (int)(selectionRect.Y * scaleY),
-                            (int)(selectionRect.Width * scaleX),
-                            (int)(selectionRect.Height * scaleY)
-                        );
-
-                        // Kırpma alanının resim sınırları içinde olduğunu kontrol et
-                        if (cropRect.X < 0 || cropRect.Y < 0 ||
-                            cropRect.Right > sourceImage.Width ||
-                            cropRect.Bottom > sourceImage.Height)
+                        if (selectionRect.X < 0 || selectionRect.Y < 0 ||
+                            selectionRect.Right > sourceImage.Width ||
+                            selectionRect.Bottom > sourceImage.Height)
                         {
                             ShowError("Seçilen alan resim sınırları dışında. Lütfen tekrar seçim yapınız.");
                             return;
@@ -187,23 +217,24 @@ namespace AspxExamples
                         string outputPath = Path.Combine(_cdn, outputFileName);
 
                         // Kırpma işlemi
-                        using (var cropImage = new Bitmap(cropRect.Width, cropRect.Height, PixelFormat.Format32bppArgb))
+                        using (var bitmap = new Bitmap(selectionRect.Width, selectionRect.Height, PixelFormat.Format32bppArgb))
                         {
-                            cropImage.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
+                            bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
-                            using (var g = Graphics.FromImage(cropImage))
+                            using (var graphics = Graphics.FromImage(bitmap))
                             {
-                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                                g.DrawImage(sourceImage, new Rectangle(0, 0, cropRect.Width, cropRect.Height),
-                                          cropRect, GraphicsUnit.Pixel);
+                                graphics.DrawImage(sourceImage,
+                                    new Rectangle(0, 0, selectionRect.Width, selectionRect.Height),
+                                    selectionRect,
+                                    GraphicsUnit.Pixel);
                             }
 
-                            // Dosyayı kaydet
-                            cropImage.Save(outputPath, ImageFormat.Png);
+                            bitmap.Save(outputPath, ImageFormat.Png);
 
                             // Dosyanın oluşturulduğunu kontrol et
                             if (File.Exists(outputPath))
@@ -211,9 +242,8 @@ namespace AspxExamples
                                 ShowMessage(String.Format("İmza başarıyla kaydedildi: {0}. Yeni bir seçim yapmak için görüntü üzerine tıklayabilirsiniz.",
                                     outputFileName), "success");
 
-                                // Debug bilgisi
-                                Debug.WriteLine(String.Format("İmza dosyası oluşturuldu: {0}", outputPath));
-                                Debug.WriteLine(String.Format("Dosya boyutu: {0} bytes", new FileInfo(outputPath).Length));
+                                System.Diagnostics.Debug.WriteLine(String.Format("İmza dosyası oluşturuldu: {0}", outputPath));
+                                System.Diagnostics.Debug.WriteLine(String.Format("Dosya boyutu: {0} bytes", new FileInfo(outputPath).Length));
                             }
                             else
                             {
@@ -229,8 +259,8 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
                 ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
-                Debug.WriteLine(String.Format("Hata detayı: {0}", ex.ToString()));
             }
         }
 

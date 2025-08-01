@@ -383,6 +383,7 @@
                 contentsContainer.innerHTML = '';
                 
                 console.log('Initializing tabs with page count:', pageCount);
+                console.log('CDN path:', cdnPath);
                 
                 // Her sayfa için tab ve içerik oluştur
                 for (let i = 1; i <= pageCount; i++) {
@@ -407,13 +408,13 @@
                     const img = document.createElement('img');
                     img.id = formatString('imgSignature_{0}', i);
                     const timestamp = new Date().getTime();
-                    img.src = formatString('cdn/page_{0}.png?t={1}', i, timestamp);
+                    img.src = formatString('{0}/page_{1}.png?t={2}', cdnPath, i, timestamp);
                     
                     // Resim yükleme hatası kontrolü
                     img.onerror = function() {
-                        console.error('Image load error for page:', i);
+                        console.error(formatString('Image load error for page {0}: {1}', i, this.src));
                         this.style.display = 'none';
-                        wrapper.innerHTML += '<div class="error-message">Resim yüklenemedi</div>';
+                        wrapper.innerHTML += '<div class="error-message" style="color: #dc3545; padding: 20px; text-align: center;">Resim yüklenemedi. Lütfen sayfayı yenileyin.</div>';
                     };
                     
                     // Resim yükleme başarılı
