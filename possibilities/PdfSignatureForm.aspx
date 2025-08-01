@@ -344,6 +344,15 @@
                 document.getElementById('loadingMessage').textContent = message;
             }
 
+            function formatString(format) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                return format.replace(/{(\d+)}/g, function(match, number) { 
+                    return typeof args[number] != 'undefined'
+                        ? args[number] 
+                        : match;
+                });
+            }
+
             var isSelecting = false;
             var startX, startY;
             var selectionBox = null;
@@ -381,7 +390,7 @@
                     const tab = document.createElement('div');
                     tab.className = 'tab' + (i === 1 ? ' active' : '');
                     tab.setAttribute('data-page', i);
-                    tab.textContent = `Sayfa ${i}`;
+                    tab.textContent = formatString('Sayfa {0}', i);
                     tab.onclick = () => showPage(i);
                     tabsContainer.appendChild(tab);
                     
@@ -396,9 +405,9 @@
                     
                     // Resmi oluştur
                     const img = document.createElement('img');
-                    img.id = `imgSignature_${i}`;
+                    img.id = formatString('imgSignature_{0}', i);
                     const timestamp = new Date().getTime();
-                    img.src = String.Format("cdn/page_{0}.png?t={1}", i, timestamp);
+                    img.src = formatString('cdn/page_{0}.png?t={1}', i, timestamp);
                     
                     // Resim yükleme hatası kontrolü
                     img.onerror = function() {
@@ -418,7 +427,7 @@
                     
                     // Selection box ekle
                     const selection = document.createElement('div');
-                    selection.id = `selection_${i}`;
+                    selection.id = formatString('selection_{0}', i);
                     selection.className = 'selection';
                     selection.style.cssText = 'position: absolute; border: 2px solid #dc3545; background-color: rgba(220,53,69,0.1); pointer-events: none; display: none; z-index: 1000; border-radius: 4px;';
                     content.appendChild(selection);
