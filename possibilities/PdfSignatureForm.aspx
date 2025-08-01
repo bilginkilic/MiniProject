@@ -373,6 +373,8 @@
                 tabsContainer.innerHTML = '';
                 contentsContainer.innerHTML = '';
                 
+                console.log('Initializing tabs with page count:', pageCount);
+                
                 // Her sayfa için tab ve içerik oluştur
                 for (let i = 1; i <= pageCount; i++) {
                     // Tab oluştur
@@ -395,7 +397,21 @@
                     // Resmi oluştur
                     const img = document.createElement('img');
                     img.id = `imgSignature_${i}`;
-                    img.src = `cdn/page_${i}.png?t=${new Date().getTime()}`;
+                    const timestamp = new Date().getTime();
+                    img.src = String.Format("cdn/page_{0}.png?t={1}", i, timestamp);
+                    
+                    // Resim yükleme hatası kontrolü
+                    img.onerror = function() {
+                        console.error('Image load error for page:', i);
+                        this.style.display = 'none';
+                        wrapper.innerHTML += '<div class="error-message">Resim yüklenemedi</div>';
+                    };
+                    
+                    // Resim yükleme başarılı
+                    img.onload = function() {
+                        console.log('Image loaded successfully for page:', i);
+                        this.style.display = 'block';
+                    };
                     
                     wrapper.appendChild(img);
                     content.appendChild(wrapper);
@@ -414,6 +430,8 @@
                 document.querySelectorAll('.image-wrapper').forEach(wrapper => {
                     wrapper.addEventListener('mousedown', startSelection);
                 });
+                
+                console.log('Tabs initialization completed');
             }
 
             function getCurrentSelectionBox() {

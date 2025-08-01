@@ -78,22 +78,50 @@ namespace AspxExamples
             try
             {
                 // PDF'yi PNG'ye çevir
-                int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü başlıyor. PDF yolu: {0}", pdfPath));
                 
-                // Sayfa sayısını client'a gönder
+                int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
+
+                // Her sayfanın oluşturulduğunu kontrol et
+                bool allPagesExist = true;
+                for (int i = 1; i <= pageCount; i++)
+                {
+                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
+                    if (!File.Exists(imagePath))
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa bulunamadı: {0}", imagePath));
+                        allPagesExist = false;
+                        break;
+                    }
+                    else
+                    {
+                        var fileInfo = new FileInfo(imagePath);
+                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa oluşturuldu: {0}, Boyut: {1} bytes", imagePath, fileInfo.Length));
+                    }
+                }
+
+                if (!allPagesExist)
+                {
+                    ShowError("PDF sayfaları dönüştürülürken bir hata oluştu. Lütfen tekrar deneyiniz.");
+                    return;
+                }
+
+                // Sayfa sayısını hidden field'a kaydet
+                hdnPageCount.Value = pageCount.ToString();
+                
+                // JavaScript'e sayfa sayısını gönder
                 ScriptManager.RegisterStartupScript(this, GetType(),
                     "initTabs",
                     String.Format("initializeTabs({0});", pageCount),
                     true);
-
-                // Sayfa sayısını hidden field'a kaydet
-                hdnPageCount.Value = pageCount.ToString();
 
                 ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
                 btnSaveSignature.Enabled = true;
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
                 ShowError(String.Format("İmza sirkülerini görüntülerken bir hata oluştu: {0}", ex.Message));
             }
         }
