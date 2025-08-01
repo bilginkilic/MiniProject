@@ -10,8 +10,6 @@ namespace AspxExamples
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private readonly string _cdn = Path.Combine(HttpRuntime.AppDomainAppPath, "cdn");
-        private const int DEFAULT_IMAGE_WIDTH = 800;  // Varsayılan görüntü genişliği
-        private const int DEFAULT_IMAGE_HEIGHT = 500; // Varsayılan görüntü yüksekliği
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -119,8 +117,8 @@ namespace AspxExamples
                     using (var sourceImage = Image.FromFile(imagePath))
                     {
                         // Seçim koordinatlarını orijinal resim boyutuna göre ölçekle
-                        float scaleX = (float)sourceImage.Width / DEFAULT_IMAGE_WIDTH;
-                        float scaleY = (float)sourceImage.Height / DEFAULT_IMAGE_HEIGHT;
+                        float scaleX = (float)sourceImage.Width / imageContainer.ClientIDMode;
+                        float scaleY = (float)sourceImage.Height / imageContainer.ClientIDMode;
 
                         Rectangle cropRect = new Rectangle(
                             (int)(selectionRect.X * scaleX),

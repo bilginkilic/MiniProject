@@ -5,24 +5,61 @@
 <head runat="server">
     <title>İmza Sirkülerinden İmza Seçimi</title>
     <style type="text/css">
-        body { 
-            margin: 20px; 
+        html, body { 
+            margin: 0; 
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: Arial, sans-serif;
         }
+        form {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
         .container {
-            width: 900px;
-            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            max-width: 100%;
+            height: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 20px;
         }
         .upload-panel {
+            display: flex;
+            gap: 10px;
+            align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .image-container {
             position: relative;
-            width: 800px;
-            height: 500px;
+            flex: 1;
+            min-height: 0;
             border: 1px solid #ccc;
-            margin: 20px 0;
             background: white;
+            overflow: hidden;
+        }
+        .image-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
         }
         #selection {
             position: absolute;
@@ -36,16 +73,71 @@
             padding: 8px 15px;
             margin-right: 10px;
             cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            transition: background-color 0.3s;
         }
-        .hidden {
-            display: none;
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .footer {
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .message.error {
+            background-color: #ffe6e6;
+            border: 1px solid #ff9999;
+        }
+        .message.success {
+            background-color: #e6ffe6;
+            border: 1px solid #99ff99;
+        }
+        /* Tam ekran butonu stilleri */
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        /* Tam ekran modu stilleri */
+        .fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background: white !important;
         }
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
+        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
+        
         <div class="container">
-            <h2>İmza Sirkülerinden İmza Seçimi</h2>
+            <div class="header">
+                <h2>İmza Sirkülerinden İmza Seçimi</h2>
+            </div>
             
             <div class="upload-panel">
                 <asp:FileUpload ID="fileUpload" runat="server" />
@@ -55,15 +147,22 @@
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
-                <asp:Image ID="imgSignature" runat="server" Width="100%" Height="100%" />
-                <div id="selection"></div>
+                <button type="button" class="fullscreen-btn" onclick="toggleFullscreen()">
+                    <span class="fullscreen-icon">⛶</span>
+                </button>
+                <div class="image-wrapper">
+                    <asp:Image ID="imgSignature" runat="server" style="max-width: 100%; max-height: 100%;" />
+                    <div id="selection"></div>
+                </div>
             </div>
 
-            <asp:HiddenField ID="hdnSelection" runat="server" />
-            <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
-                CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
-            
-            <asp:Label ID="lblMessage" runat="server" ForeColor="Red"></asp:Label>
+            <div class="footer">
+                <asp:HiddenField ID="hdnSelection" runat="server" />
+                <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
+                    CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
+                
+                <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
+            </div>
         </div>
 
         <script type="text/javascript">
@@ -73,10 +172,35 @@
             var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+            var isFullscreen = false;
+
+            function toggleFullscreen() {
+                var container = document.getElementById('<%= imageContainer.ClientID %>');
+                if (!isFullscreen) {
+                    container.classList.add('fullscreen');
+                    document.querySelector('.fullscreen-icon').textContent = '⛶';
+                } else {
+                    container.classList.remove('fullscreen');
+                    document.querySelector('.fullscreen-icon').textContent = '⛶';
+                }
+                isFullscreen = !isFullscreen;
+                
+                // Seçim kutusunu sıfırla
+                if (selectionBox) {
+                    selectionBox.style.display = 'none';
+                }
+                
+                // Görüntüyü yeniden boyutlandır
+                setTimeout(function() {
+                    if (window.dispatchEvent) {
+                        window.dispatchEvent(new Event('resize'));
+                    }
+                }, 100);
+            }
 
             function startSelection(e) {
                 isSelecting = true;
-                var rect = imageContainer.getBoundingClientRect();
+                var rect = e.target.getBoundingClientRect();
                 startX = e.clientX - rect.left;
                 startY = e.clientY - rect.top;
 
@@ -90,7 +214,7 @@
             function updateSelection(e) {
                 if (!isSelecting) return;
 
-                var rect = imageContainer.getBoundingClientRect();
+                var rect = e.target.getBoundingClientRect();
                 var currentX = e.clientX - rect.left;
                 var currentY = e.clientY - rect.top;
 
@@ -109,7 +233,7 @@
                 if (!isSelecting) return;
                 isSelecting = false;
 
-                var rect = imageContainer.getBoundingClientRect();
+                var rect = e.target.getBoundingClientRect();
                 var currentX = e.clientX - rect.left;
                 var currentY = e.clientY - rect.top;
 
@@ -132,21 +256,28 @@
 
                 hiddenField.value = selectionData;
                 btnSave.disabled = false;
-                __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                
+                if (typeof __doPostBack === 'function') {
+                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                } else {
+                    btnSave.click();
+                }
             }
 
-            if (imageContainer) {
-                imageContainer.addEventListener('mousedown', startSelection);
-                imageContainer.addEventListener('mousemove', updateSelection);
-                imageContainer.addEventListener('mouseup', endSelection);
-                imageContainer.addEventListener('mouseleave', function(e) {
-                    if (isSelecting) {
-                        endSelection(e);
-                    }
-                });
+            function initializeImageEvents() {
+                var img = document.querySelector('#<%= imgSignature.ClientID %>');
+                if (img) {
+                    img.addEventListener('mousedown', startSelection);
+                    img.addEventListener('mousemove', updateSelection);
+                    img.addEventListener('mouseup', endSelection);
+                    img.addEventListener('mouseleave', function(e) {
+                        if (isSelecting) {
+                            endSelection(e);
+                        }
+                    });
+                }
             }
 
-            // Son seçimi geri yükle
             function restoreSelection() {
                 var savedData = hiddenField.value;
                 if (savedData) {
@@ -167,7 +298,20 @@
                 }
             }
 
-            window.onload = restoreSelection;
+            // Sayfa yüklendiğinde ve görüntü değiştiğinde olayları başlat
+            if (window.addEventListener) {
+                window.addEventListener('load', function() {
+                    initializeImageEvents();
+                    restoreSelection();
+                });
+            }
+
+            // Pencere boyutu değiştiğinde seçimi yeniden konumlandır
+            window.addEventListener('resize', function() {
+                if (selectionBox.style.display !== 'none') {
+                    restoreSelection();
+                }
+            });
         </script>
     </form>
 </body>
