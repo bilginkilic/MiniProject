@@ -271,6 +271,8 @@ namespace AspxExamples
                                     String.Format(@"
                                         showNotification('İmza başarıyla kaydedildi: {0}', 'success');
                                         if(typeof clearSelection === 'function') {{ clearSelection(); }}
+                                        // Sayfayı yeniden yükleme yapmadan seçimi temizle
+                                        btnSaveSignature.disabled = false;
                                     ", outputFileName),
                                     true);
                             }

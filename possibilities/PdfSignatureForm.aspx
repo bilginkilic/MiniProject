@@ -124,11 +124,11 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            padding: 20px;
+            padding: 0;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             position: relative;
         }
         .image-wrapper img {
@@ -697,7 +697,8 @@
                         // Başarılı işlem sonrası sadece seçimi temizle, sayfayı yeniden yükleme
                         if (currentSelection) {
                             clearSelection();
-                            btnSave.disabled = true;
+                            // Seçim butonunu aktif bırak, böylece yeni seçim yapılabilir
+                            btnSave.disabled = false;
                         }
                     }
                 });
