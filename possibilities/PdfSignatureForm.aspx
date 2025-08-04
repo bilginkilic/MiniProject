@@ -350,19 +350,16 @@
 
         <script type="text/javascript">
             function getMousePosition(e, element) {
-                var rect = element.getBoundingClientRect();
                 var wrapper = element.closest('.image-wrapper');
-                var scrollLeft = wrapper ? wrapper.scrollLeft : 0;
-                var scrollTop = wrapper ? wrapper.scrollTop : 0;
-                
-                // Görüntünün gerçek konumunu hesapla
-                var imageElement = wrapper.querySelector('img');
-                var imageRect = imageElement.getBoundingClientRect();
-                var imageOffsetLeft = imageRect.left - rect.left;
-                
+                var image = wrapper.querySelector('img');
+                var imageRect = image.getBoundingClientRect();
+                var scrollLeft = wrapper.scrollLeft;
+                var scrollTop = wrapper.scrollTop;
+
+                // Fare pozisyonunu resmin koordinat sistemine göre hesapla
                 return {
-                    x: e.clientX - rect.left - imageOffsetLeft + scrollLeft,
-                    y: e.clientY - rect.top + scrollTop
+                    x: e.clientX - imageRect.left + scrollLeft,
+                    y: e.clientY - imageRect.top + scrollTop
                 };
             }
 
@@ -515,15 +512,20 @@
                 if (!isSelecting || !selectionBox) return;
 
                 const wrapper = document.querySelector('.tab-content.active .image-wrapper');
+                const image = wrapper.querySelector('img');
+                const imageRect = image.getBoundingClientRect();
                 const pos = getMousePosition(e, wrapper);
                 
+                // Seçim koordinatlarını hesapla
                 const x = Math.min(startX, pos.x);
                 const y = Math.min(startY, pos.y);
                 const w = Math.abs(pos.x - startX);
                 const h = Math.abs(pos.y - startY);
 
-                selectionBox.style.left = (x - wrapper.scrollLeft) + 'px';
-                selectionBox.style.top = (y - wrapper.scrollTop) + 'px';
+                // Seçim kutusunu resmin üzerine yerleştir
+                selectionBox.style.position = 'absolute';
+                selectionBox.style.left = x + 'px';
+                selectionBox.style.top = y + 'px';
                 selectionBox.style.width = w + 'px';
                 selectionBox.style.height = h + 'px';
             }

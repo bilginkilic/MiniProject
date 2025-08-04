@@ -48,9 +48,9 @@ namespace Possibilities
                             var resolution = new Resolution(300);
                             var pngDevice = new PngDevice(resolution);
                             
-                            // Sayfanın gerçek boyutlarını kullan
-                            pngDevice.Width = (int)page.ArtBox.Width;
-                            pngDevice.Height = (int)page.ArtBox.Height;
+                            // Sayfanın tam fiziksel boyutlarını kullan
+                            pngDevice.Width = (int)page.MediaBox.Width;
+                            pngDevice.Height = (int)page.MediaBox.Height;
                             
                             // Sayfa işleme kalitesi ayarları
                             pngDevice.Process(page, imageStream);
