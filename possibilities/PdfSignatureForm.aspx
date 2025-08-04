@@ -656,16 +656,47 @@
                 
                 // Butonu devre dışı bırak
                 btnSave.disabled = true;
-                
-                // Form submit
-                try {
-                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
-                } catch (error) {
-                    console.error('Save error:', error);
+
+                // AJAX çağrısı yap
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', window.location.href, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                xhr.onload = function() {
                     hideLoading();
-                    showNotification('İmza kaydedilirken bir hata oluştu: ' + error.message, 'error');
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                showNotification('İmza başarıyla kaydedildi: ' + response.fileName, 'success');
+                                clearSelection();
+                                btnSave.disabled = false; // Yeni seçim için butonu aktif et
+                            } else {
+                                showNotification(response.error || 'İmza kaydedilirken bir hata oluştu', 'error');
+                                btnSave.disabled = false;
+                            }
+                        } catch (e) {
+                            showNotification('İmza kaydedilirken bir hata oluştu', 'error');
+                            btnSave.disabled = false;
+                        }
+                    } else {
+                        showNotification('İmza kaydedilirken bir hata oluştu', 'error');
+                        btnSave.disabled = false;
+                    }
+                };
+
+                xhr.onerror = function() {
+                    hideLoading();
+                    showNotification('İmza kaydedilirken bir hata oluştu', 'error');
                     btnSave.disabled = false;
-                }
+                };
+
+                // AJAX isteğini gönder
+                var data = 'hdnSelection=' + encodeURIComponent(hiddenField.value) + 
+                          '&btnSaveSignature=1' +
+                          '&__EVENTTARGET=' + encodeURIComponent('<%= btnSaveSignature.UniqueID %>');
+                xhr.send(data);
                 
                 return false;
             }

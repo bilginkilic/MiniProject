@@ -265,16 +265,26 @@ namespace AspxExamples
                                 var fileInfo = new FileInfo(outputPath);
                                 System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydedildi: {0}, Boyut: {1} bytes", outputPath, fileInfo.Length));
 
-                                // JavaScript'e başarı mesajı gönder ve seçimi temizle
-                                ScriptManager.RegisterStartupScript(this, GetType(),
-                                    "saveSuccess",
-                                    String.Format(@"
-                                        showNotification('İmza başarıyla kaydedildi: {0}', 'success');
-                                        if(typeof clearSelection === 'function') {{ clearSelection(); }}
-                                        // Sayfayı yeniden yükleme yapmadan seçimi temizle
-                                        btnSaveSignature.disabled = false;
-                                    ", outputFileName),
-                                    true);
+                                // AJAX yanıtı gönder
+                                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                {
+                                    Response.Clear();
+                                    Response.ContentType = "application/json";
+                                    Response.Write(String.Format("{{\"success\":true,\"fileName\":\"{0}\"}}", outputFileName));
+                                    Response.End();
+                                }
+                                else
+                                {
+                                    // Normal postback için eski davranış
+                                    ScriptManager.RegisterStartupScript(this, GetType(),
+                                        "saveSuccess",
+                                        String.Format(@"
+                                            showNotification('İmza başarıyla kaydedildi: {0}', 'success');
+                                            if(typeof clearSelection === 'function') {{ clearSelection(); }}
+                                            btnSaveSignature.disabled = false;
+                                        ", outputFileName),
+                                        true);
+                                }
                             }
                         }
                         catch (Exception ex)
