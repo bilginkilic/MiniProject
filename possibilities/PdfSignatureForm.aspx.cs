@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Script.Serialization;
 
 namespace AspxExamples
 {
@@ -268,14 +269,20 @@ namespace AspxExamples
                                 // AJAX yanıtı gönder
                                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                                 {
-                                    var jsonResponse = String.Format("{{\"success\":true,\"fileName\":\"{0}\",\"message\":\"İmza başarıyla kaydedildi\"}}", 
-                                        HttpUtility.JavaScriptStringEncode(outputFileName));
+                                    var virtualPath = Path.Combine(_cdnVirtualPath, outputFileName);
+                                    var response = new {
+                                        success = true,
+                                        fileName = outputFileName,
+                                        filePath = virtualPath.Replace("\\", "/"),
+                                        message = "İmza başarıyla kaydedildi"
+                                    };
                                     
+                                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                                    var jsonResponse = serializer.Serialize(response);
                                     Response.Clear();
                                     Response.ContentType = "application/json";
                                     Response.Write(jsonResponse);
                                     Response.Flush();
-                                    // Response.End() yerine HttpContext.Current.ApplicationInstance.CompleteRequest() kullanıyoruz
                                     HttpContext.Current.ApplicationInstance.CompleteRequest();
                                 }
                                 else
@@ -311,9 +318,13 @@ namespace AspxExamples
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    var jsonError = String.Format("{{\"success\":false,\"error\":\"İmza kaydedilirken bir hata oluştu: {0}\"}}", 
-                        HttpUtility.JavaScriptStringEncode(ex.Message));
+                    var response = new {
+                        success = false,
+                        error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
+                    };
                     
+                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                    var jsonError = serializer.Serialize(response);
                     Response.Clear();
                     Response.ContentType = "application/json";
                     Response.Write(jsonError);
