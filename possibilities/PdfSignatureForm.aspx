@@ -313,6 +313,7 @@
                 </div>
                 <asp:FileUpload ID="fileUpload" runat="server" />
                 <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
+                <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
