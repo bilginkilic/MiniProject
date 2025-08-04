@@ -60,11 +60,81 @@ namespace AspxExamples
 
                     string pdfPath = Path.Combine(_cdn, fileName);
                     fileUpload.SaveAs(pdfPath);
-
-                    btnShowPdf.Enabled = true;
                     Session["LastUploadedPdf"] = pdfPath;
 
-                    ShowMessage("İmza sirküleri başarıyla yüklendi. Şimdi 'İmza Sirküleri Göster' butonuna tıklayarak devam edebilirsiniz.", "success");
+                    // PDF'i hemen göster
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü başlıyor. PDF yolu: {0}", pdfPath));
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü: {0}", _cdn));
+                        
+                        // PDF'yi PNG'ye çevir
+                        int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
+
+                        // Her sayfanın oluşturulduğunu kontrol et ve base64'e çevir
+                        var imageDataList = new System.Collections.Generic.List<string>();
+                        bool allPagesExist = true;
+
+                        for (int i = 1; i <= pageCount; i++)
+                        {
+                            string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
+                            if (!File.Exists(imagePath))
+                            {
+                                System.Diagnostics.Debug.WriteLine(String.Format("Sayfa bulunamadı: {0}", imagePath));
+                                allPagesExist = false;
+                                break;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    using (var image = System.Drawing.Image.FromFile(imagePath))
+                                    using (var ms = new MemoryStream())
+                                    {
+                                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                        byte[] imageBytes = ms.ToArray();
+                                        string base64String = Convert.ToBase64String(imageBytes);
+                                        imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
+                                        
+                                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi, Boyut: {1} bytes", i, imageBytes.Length));
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine(String.Format("Base64 dönüşüm hatası: {0}", ex.Message));
+                                    allPagesExist = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!allPagesExist)
+                        {
+                            ShowError("PDF sayfaları dönüştürülürken bir hata oluştu. Lütfen tekrar deneyiniz.");
+                            return;
+                        }
+
+                        // Sayfa sayısını hidden field'a kaydet
+                        hdnPageCount.Value = pageCount.ToString();
+                        
+                        // JavaScript'e sayfa sayısını ve resim verilerini gönder
+                        var imageDataJson = String.Format("[{0}]", String.Join(",", imageDataList.Select(x => String.Format("'{0}'", x))));
+                        
+                        ScriptManager.RegisterStartupScript(this, GetType(),
+                            "initTabs",
+                            String.Format("var imageDataList = {0}; console.log('Image data loaded, count:', {1}); initializeTabs({1});", 
+                                imageDataJson, pageCount),
+                            true);
+
+                        ShowMessage("İmza sirküleri yüklendi ve görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "success");
+                        btnSaveSignature.Enabled = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
+                        ShowError(String.Format("İmza sirkülerini görüntülerken bir hata oluştu: {0}", ex.Message));
+                    }
                 }
                 else
                 {
@@ -102,94 +172,7 @@ namespace AspxExamples
             }
         }
 
-        protected void BtnShowPdf_Click(object sender, EventArgs e)
-        {
-            string pdfPath = Session["LastUploadedPdf"] as string;
-            if (string.IsNullOrEmpty(pdfPath))
-            {
-                ShowError("Lütfen önce bir imza sirkülerini yükleyiniz.");
-                return;
-            }
 
-            if (!File.Exists(pdfPath))
-            {
-                ShowError("Yüklenen PDF dosyası bulunamadı. Lütfen tekrar yükleyiniz.");
-                return;
-            }
-
-            try
-            {
-                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü başlıyor. PDF yolu: {0}", pdfPath));
-                System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü: {0}", _cdn));
-                
-                // PDF'yi PNG'ye çevir
-                int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
-                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
-
-                // Her sayfanın oluşturulduğunu kontrol et ve base64'e çevir
-                var imageDataList = new System.Collections.Generic.List<string>();
-                bool allPagesExist = true;
-
-                for (int i = 1; i <= pageCount; i++)
-                {
-                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
-                    if (!File.Exists(imagePath))
-                    {
-                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa bulunamadı: {0}", imagePath));
-                        allPagesExist = false;
-                        break;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            using (var image = System.Drawing.Image.FromFile(imagePath))
-                            using (var ms = new MemoryStream())
-                            {
-                                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                                byte[] imageBytes = ms.ToArray();
-                                string base64String = Convert.ToBase64String(imageBytes);
-                                imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
-                                
-                                System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi, Boyut: {1} bytes", i, imageBytes.Length));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine(String.Format("Base64 dönüşüm hatası: {0}", ex.Message));
-                            allPagesExist = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (!allPagesExist)
-                {
-                    ShowError("PDF sayfaları dönüştürülürken bir hata oluştu. Lütfen tekrar deneyiniz.");
-                    return;
-                }
-
-                // Sayfa sayısını hidden field'a kaydet
-                hdnPageCount.Value = pageCount.ToString();
-                
-                // JavaScript'e sayfa sayısını ve resim verilerini gönder
-                var imageDataJson = String.Format("[{0}]", String.Join(",", imageDataList.Select(x => String.Format("'{0}'", x))));
-                
-                ScriptManager.RegisterStartupScript(this, GetType(),
-                    "initTabs",
-                    String.Format("var imageDataList = {0}; console.log('Image data loaded, count:', {1}); initializeTabs({1});", 
-                        imageDataJson, pageCount),
-                    true);
-
-                ShowMessage("İmza sirkülerini görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "info");
-                btnSaveSignature.Enabled = true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
-                ShowError(String.Format("İmza sirkülerini görüntülerken bir hata oluştu: {0}", ex.Message));
-            }
-        }
 
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {

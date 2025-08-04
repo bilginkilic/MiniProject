@@ -307,15 +307,12 @@
                 <div class="instructions">
                     <strong>Nasıl Kullanılır:</strong>
                     <ol>
-                        <li>PDF formatındaki imza sirkülerinizi seçin ve "Yükle" butonuna tıklayın</li>
-                        <li>"İmza Sirküleri Göster" butonuna tıklayarak dökümanı görüntüleyin</li>
+                        <li>PDF formatındaki imza sirkülerinizi seçin ve "İmza Sirkülerini Yükle ve Göster" butonuna tıklayın</li>
                         <li>Mouse ile imza alanını seçin - seçim tamamlandığında otomatik kaydedilecektir</li>
                     </ol>
                 </div>
                 <asp:FileUpload ID="fileUpload" runat="server" />
-                <asp:Button ID="btnUpload" runat="server" Text="Yükle" CssClass="button" OnClick="BtnUpload_Click" />
-                <asp:Button ID="btnShowPdf" runat="server" Text="İmza Sirküleri Göster" CssClass="button secondary" 
-                    OnClick="BtnShowPdf_Click" Enabled="false" />
+                <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
             </div>
 
             <div id="imageContainer" runat="server" class="image-container">
@@ -353,10 +350,17 @@
         <script type="text/javascript">
             function getMousePosition(e, element) {
                 var rect = element.getBoundingClientRect();
-                var scrollLeft = element.scrollLeft;
-                var scrollTop = element.scrollTop;
+                var wrapper = element.closest('.image-wrapper');
+                var scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+                var scrollTop = wrapper ? wrapper.scrollTop : 0;
+                
+                // Görüntünün gerçek konumunu hesapla
+                var imageElement = wrapper.querySelector('img');
+                var imageRect = imageElement.getBoundingClientRect();
+                var imageOffsetLeft = imageRect.left - rect.left;
+                
                 return {
-                    x: e.clientX - rect.left + scrollLeft,
+                    x: e.clientX - rect.left - imageOffsetLeft + scrollLeft,
                     y: e.clientY - rect.top + scrollTop
                 };
             }
