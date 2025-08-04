@@ -41,16 +41,16 @@ namespace Possibilities
                         using (FileStream imageStream = new FileStream(imagePath, FileMode.Create))
                         {
                             // Yüksek kaliteli çıktı için çözünürlük ayarları
-                            // Sayfa boyutlarını al
+                            // Sayfa boyutlarını al ve ayarla
                             var page = pdfDocument.Pages[pageNumber];
-                            var pageSize = page.PageInfo.Size;
                             
-                            // Çözünürlük ve sayfa boyutlarını ayarla
+                            // Çözünürlük ayarla ve sayfanın tamamını kapsayacak şekilde boyutlandır
                             var resolution = new Resolution(300);
                             var pngDevice = new PngDevice(resolution);
                             
-                            // Sayfanın tamamını kapsayacak şekilde boyutları ayarla
-                            pngDevice.PageSize = pageSize;
+                            // Sayfanın gerçek boyutlarını kullan
+                            pngDevice.Width = (int)page.ArtBox.Width;
+                            pngDevice.Height = (int)page.ArtBox.Height;
                             
                             // Sayfa işleme kalitesi ayarları
                             pngDevice.Process(page, imageStream);
