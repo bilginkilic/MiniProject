@@ -268,11 +268,15 @@ namespace AspxExamples
                                 // AJAX yanıtı gönder
                                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                                 {
+                                    var jsonResponse = String.Format("{{\"success\":true,\"fileName\":\"{0}\",\"message\":\"İmza başarıyla kaydedildi\"}}", 
+                                        HttpUtility.JavaScriptStringEncode(outputFileName));
+                                    
                                     Response.Clear();
                                     Response.ContentType = "application/json";
-                                    Response.Write(String.Format("{{\"success\":true,\"fileName\":\"{0}\",\"message\":\"İmza başarıyla kaydedildi\"}}", 
-                                        HttpUtility.JavaScriptStringEncode(outputFileName)));
-                                    Response.End();
+                                    Response.Write(jsonResponse);
+                                    Response.Flush();
+                                    // Response.End() yerine HttpContext.Current.ApplicationInstance.CompleteRequest() kullanıyoruz
+                                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                                 }
                                 else
                                 {
@@ -307,11 +311,14 @@ namespace AspxExamples
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
+                    var jsonError = String.Format("{{\"success\":false,\"error\":\"İmza kaydedilirken bir hata oluştu: {0}\"}}", 
+                        HttpUtility.JavaScriptStringEncode(ex.Message));
+                    
                     Response.Clear();
                     Response.ContentType = "application/json";
-                    Response.Write(String.Format("{{\"success\":false,\"error\":\"İmza kaydedilirken bir hata oluştu: {0}\"}}", 
-                        HttpUtility.JavaScriptStringEncode(ex.Message)));
-                    Response.End();
+                    Response.Write(jsonError);
+                    Response.Flush();
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                 }
                 else
                 {
