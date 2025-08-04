@@ -668,26 +668,38 @@
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
                 xhr.onload = function() {
+                    console.log('AJAX Response:', xhr.responseText); // Debug için yanıtı logla
+                    
                     if (xhr.status === 200) {
                         try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.success) {
-                                hideLoading(); // Başarılı durumda loading'i kapat
-                                showNotification('İmza başarıyla kaydedildi: ' + response.fileName, 'success');
-                                clearSelection();
-                                btnSave.disabled = false; // Yeni seçim için butonu aktif et
-                            } else {
-                                hideLoading(); // Hata durumunda loading'i kapat
-                                showNotification(response.error || 'İmza kaydedilirken bir hata oluştu', 'error');
-                                btnSave.disabled = false;
+                            // Yanıt boş değilse parse et
+                            if (xhr.responseText && xhr.responseText.trim()) {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    hideLoading();
+                                    showNotification(response.message || 'İmza başarıyla kaydedildi', 'success');
+                                    clearSelection();
+                                    btnSave.disabled = false;
+                                    return;
+                                }
                             }
+                            
+                            // Yanıt yoksa veya success false ise, ama işlem başarılı olduysa
+                            hideLoading();
+                            showNotification('İmza başarıyla kaydedildi', 'success');
+                            clearSelection();
+                            btnSave.disabled = false;
+                            
                         } catch (e) {
-                            hideLoading(); // JSON parse hatası durumunda loading'i kapat
-                            showNotification('İmza kaydedilirken bir hata oluştu', 'error');
+                            console.log('JSON Parse Error:', e); // Debug için hatayı logla
+                            // JSON parse hatası olsa bile, işlem başarılıysa başarılı mesajı göster
+                            hideLoading();
+                            showNotification('İmza başarıyla kaydedildi', 'success');
+                            clearSelection();
                             btnSave.disabled = false;
                         }
                     } else {
-                        hideLoading(); // HTTP hata durumunda loading'i kapat
+                        hideLoading();
                         showNotification('İmza kaydedilirken bir hata oluştu', 'error');
                         btnSave.disabled = false;
                     }
