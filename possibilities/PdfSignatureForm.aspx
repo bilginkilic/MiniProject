@@ -383,6 +383,10 @@
                 document.getElementById('loadingMessage').textContent = message || 'İşlem yapılıyor...';
             }
 
+            function hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+
             function updateLoadingMessage(message) {
                 document.getElementById('loadingMessage').textContent = message;
             }
