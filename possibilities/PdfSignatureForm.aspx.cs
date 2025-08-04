@@ -280,7 +280,9 @@ namespace AspxExamples
                         Response.Clear();
                         Response.ContentType = "application/json";
                         Response.Write(jsonResponse);
-                        Response.End();
+                        Response.Flush();
+                        Response.Close();
+                        HttpContext.Current.ApplicationInstance.CompleteRequest();
                     }
                                 else
                                 {
