@@ -672,35 +672,43 @@
                     
                     if (xhr.status === 200) {
                         try {
-                            // Yanıt boş değilse parse et
-                            if (xhr.responseText && xhr.responseText.trim()) {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.success) {
-                                    hideLoading();
-                                    showNotification(response.message || 'İmza başarıyla kaydedildi', 'success');
-                                    clearSelection();
-                                    btnSave.disabled = false;
-                                    return;
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                // İmza önizleme alanını göster
+                                var previewArea = document.getElementById('signaturePreview');
+                                if (!previewArea) {
+                                    previewArea = document.createElement('div');
+                                    previewArea.id = 'signaturePreview';
+                                    previewArea.style.cssText = 'margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;';
+                                    document.querySelector('.footer').insertBefore(previewArea, document.querySelector('.footer').firstChild);
                                 }
+                                
+                                // İmzayı göster
+                                var img = document.createElement('img');
+                                img.src = response.filePath;
+                                img.style.maxWidth = '200px';
+                                img.style.display = 'block';
+                                img.style.margin = '10px 0';
+                                
+                                previewArea.innerHTML = '<strong>Kaydedilen İmza:</strong>';
+                                previewArea.appendChild(img);
+                                
+                                hideLoading();
+                                showNotification(response.message, 'success');
+                                clearSelection();
+                                btnSave.disabled = false;
+                            } else {
+                                throw new Error(response.error || 'Bilinmeyen bir hata oluştu');
                             }
-                            
-                            // Yanıt yoksa veya success false ise, ama işlem başarılı olduysa
-                            hideLoading();
-                            showNotification('İmza başarıyla kaydedildi', 'success');
-                            clearSelection();
-                            btnSave.disabled = false;
-                            
                         } catch (e) {
-                            console.log('JSON Parse Error:', e); // Debug için hatayı logla
-                            // JSON parse hatası olsa bile, işlem başarılıysa başarılı mesajı göster
+                            console.error('Error:', e);
                             hideLoading();
-                            showNotification('İmza başarıyla kaydedildi', 'success');
-                            clearSelection();
+                            showNotification(e.message || 'İmza kaydedilirken bir hata oluştu', 'error');
                             btnSave.disabled = false;
                         }
                     } else {
                         hideLoading();
-                        showNotification('İmza kaydedilirken bir hata oluştu', 'error');
+                        showNotification('Sunucu hatası: ' + xhr.status, 'error');
                         btnSave.disabled = false;
                     }
                 };
