@@ -48,9 +48,15 @@ namespace Possibilities
                             var resolution = new Resolution(300);
                             var pngDevice = new PngDevice(resolution);
                             
-                            // Sayfanın tam fiziksel boyutlarını kullan
-                            pngDevice.Width = (int)page.MediaBox.Width;
-                            pngDevice.Height = (int)page.MediaBox.Height;
+                            // A4 boyutunu 300 DPI'da piksel olarak ayarla
+                            pngDevice.Resolution = new Resolution(300);
+                            pngDevice.JpegQuality = 100;
+                            pngDevice.BackgroundColor = System.Drawing.Color.White;
+                            pngDevice.RenderingOptions.OptimizeTextRendering = true;
+                            pngDevice.RenderingOptions.HorizontalResolution = 300;
+                            pngDevice.RenderingOptions.VerticalResolution = 300;
+                            pngDevice.Width = 2480;  // A4 genişlik (300 DPI'da)
+                            pngDevice.Height = 3508; // A4 yükseklik (300 DPI'da)
                             
                             // Sayfa işleme kalitesi ayarları
                             pngDevice.Process(page, imageStream);

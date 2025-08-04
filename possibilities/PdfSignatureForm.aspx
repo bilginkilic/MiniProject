@@ -126,13 +126,17 @@
             box-sizing: border-box;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
+            position: relative;
         }
         .image-wrapper img {
-            max-width: none;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
             display: block;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            object-fit: contain;
         }
         #selection {
             position: absolute;
@@ -353,13 +357,19 @@
                 var wrapper = element.closest('.image-wrapper');
                 var image = wrapper.querySelector('img');
                 var imageRect = image.getBoundingClientRect();
-                var scrollLeft = wrapper.scrollLeft;
-                var scrollTop = wrapper.scrollTop;
+                var wrapperRect = wrapper.getBoundingClientRect();
 
-                // Fare pozisyonunu resmin koordinat sistemine göre hesapla
+                // Resmin gerçek boyutları ve görüntülenen boyutları arasındaki oranı hesapla
+                var scaleX = image.naturalWidth / imageRect.width;
+                var scaleY = image.naturalHeight / imageRect.height;
+
+                // Fare pozisyonunu resmin orijinal koordinat sistemine göre hesapla
+                var x = (e.clientX - imageRect.left) * scaleX;
+                var y = (e.clientY - imageRect.top) * scaleY;
+
                 return {
-                    x: e.clientX - imageRect.left + scrollLeft,
-                    y: e.clientY - imageRect.top + scrollTop
+                    x: Math.max(0, Math.min(x, image.naturalWidth)),
+                    y: Math.max(0, Math.min(y, image.naturalHeight))
                 };
             }
 
@@ -522,12 +532,20 @@
                 const w = Math.abs(pos.x - startX);
                 const h = Math.abs(pos.y - startY);
 
+                // Görüntülenen koordinatlara dönüştür
+                const scaleX = imageRect.width / image.naturalWidth;
+                const scaleY = imageRect.height / image.naturalHeight;
+                const displayX = x * scaleX + imageRect.left - wrapper.getBoundingClientRect().left;
+                const displayY = y * scaleY + imageRect.top - wrapper.getBoundingClientRect().top;
+                const displayW = w * scaleX;
+                const displayH = h * scaleY;
+
                 // Seçim kutusunu resmin üzerine yerleştir
                 selectionBox.style.position = 'absolute';
-                selectionBox.style.left = x + 'px';
-                selectionBox.style.top = y + 'px';
-                selectionBox.style.width = w + 'px';
-                selectionBox.style.height = h + 'px';
+                selectionBox.style.left = displayX + 'px';
+                selectionBox.style.top = displayY + 'px';
+                selectionBox.style.width = displayW + 'px';
+                selectionBox.style.height = displayH + 'px';
             }
 
             function endSelection(e) {
