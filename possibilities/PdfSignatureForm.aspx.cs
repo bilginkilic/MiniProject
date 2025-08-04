@@ -270,11 +270,8 @@ namespace AspxExamples
                                 {
                                     Response.Clear();
                                     Response.ContentType = "application/json";
-                                    Response.Write(System.Web.Helpers.Json.Encode(new { 
-                                        success = true, 
-                                        fileName = outputFileName,
-                                        message = "İmza başarıyla kaydedildi"
-                                    }));
+                                    Response.Write(String.Format("{{\"success\":true,\"fileName\":\"{0}\",\"message\":\"İmza başarıyla kaydedildi\"}}", 
+                                        HttpUtility.JavaScriptStringEncode(outputFileName)));
                                     Response.End();
                                 }
                                 else
@@ -312,10 +309,8 @@ namespace AspxExamples
                 {
                     Response.Clear();
                     Response.ContentType = "application/json";
-                    Response.Write(System.Web.Helpers.Json.Encode(new { 
-                        success = false, 
-                        error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
-                    }));
+                    Response.Write(String.Format("{{\"success\":false,\"error\":\"İmza kaydedilirken bir hata oluştu: {0}\"}}", 
+                        HttpUtility.JavaScriptStringEncode(ex.Message)));
                     Response.End();
                 }
                 else
