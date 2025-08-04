@@ -668,23 +668,26 @@
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
                 xhr.onload = function() {
-                    hideLoading();
                     if (xhr.status === 200) {
                         try {
                             var response = JSON.parse(xhr.responseText);
                             if (response.success) {
+                                hideLoading(); // Başarılı durumda loading'i kapat
                                 showNotification('İmza başarıyla kaydedildi: ' + response.fileName, 'success');
                                 clearSelection();
                                 btnSave.disabled = false; // Yeni seçim için butonu aktif et
                             } else {
+                                hideLoading(); // Hata durumunda loading'i kapat
                                 showNotification(response.error || 'İmza kaydedilirken bir hata oluştu', 'error');
                                 btnSave.disabled = false;
                             }
                         } catch (e) {
+                            hideLoading(); // JSON parse hatası durumunda loading'i kapat
                             showNotification('İmza kaydedilirken bir hata oluştu', 'error');
                             btnSave.disabled = false;
                         }
                     } else {
+                        hideLoading(); // HTTP hata durumunda loading'i kapat
                         showNotification('İmza kaydedilirken bir hata oluştu', 'error');
                         btnSave.disabled = false;
                     }
