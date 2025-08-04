@@ -696,10 +696,18 @@
                     btnSave.disabled = false;
                 };
 
+                // Form verilerini topla
+                var formData = new FormData();
+                
+                // ASP.NET form verilerini ekle
+                formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
+                formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
+                formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
+                formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
+                formData.append('hdnSelection', hiddenField.value);
+                
                 // AJAX isteğini gönder
-                var data = 'hdnSelection=' + encodeURIComponent(hiddenField.value) + 
-                          '&btnSaveSignature=1' +
-                          '&__EVENTTARGET=' + encodeURIComponent('<%= btnSaveSignature.UniqueID %>');
+                var data = new URLSearchParams(formData).toString();
                 xhr.send(data);
                 
                 return false;

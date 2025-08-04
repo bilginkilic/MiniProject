@@ -270,7 +270,11 @@ namespace AspxExamples
                                 {
                                     Response.Clear();
                                     Response.ContentType = "application/json";
-                                    Response.Write(String.Format("{{\"success\":true,\"fileName\":\"{0}\"}}", outputFileName));
+                                    Response.Write(System.Web.Helpers.Json.Encode(new { 
+                                        success = true, 
+                                        fileName = outputFileName,
+                                        message = "İmza başarıyla kaydedildi"
+                                    }));
                                     Response.End();
                                 }
                                 else
@@ -303,7 +307,21 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
-                ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    Response.Clear();
+                    Response.ContentType = "application/json";
+                    Response.Write(System.Web.Helpers.Json.Encode(new { 
+                        success = false, 
+                        error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
+                    }));
+                    Response.End();
+                }
+                else
+                {
+                    ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
+                }
             }
         }
 
