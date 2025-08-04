@@ -674,43 +674,22 @@
                         try {
                             var response = JSON.parse(xhr.responseText);
                             if (response.success) {
-                                // İmza önizleme alanını göster
-                                var previewArea = document.getElementById('signaturePreview');
-                                if (!previewArea) {
-                                    previewArea = document.createElement('div');
-                                    previewArea.id = 'signaturePreview';
-                                    previewArea.style.cssText = 'margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;';
-                                    document.querySelector('.footer').insertBefore(previewArea, document.querySelector('.footer').firstChild);
-                                }
-                                
-                                // İmzayı göster
-                                var img = document.createElement('img');
-                                img.src = response.filePath;
-                                img.style.maxWidth = '200px';
-                                img.style.display = 'block';
-                                img.style.margin = '10px 0';
-                                
-                                previewArea.innerHTML = '<strong>Kaydedilen İmza:</strong>';
-                                previewArea.appendChild(img);
-                                
-                                hideLoading();
-                                showNotification(response.message, 'success');
+                                showNotification('İmza kaydedildi', 'success');
                                 clearSelection();
                                 btnSave.disabled = false;
                             } else {
-                                throw new Error(response.error || 'Bilinmeyen bir hata oluştu');
+                                throw new Error('İşlem başarısız');
                             }
                         } catch (e) {
                             console.error('Error:', e);
-                            hideLoading();
-                            showNotification(e.message || 'İmza kaydedilirken bir hata oluştu', 'error');
+                            showNotification('Hata oluştu', 'error');
                             btnSave.disabled = false;
                         }
                     } else {
-                        hideLoading();
-                        showNotification('Sunucu hatası: ' + xhr.status, 'error');
+                        showNotification('Sunucu hatası', 'error');
                         btnSave.disabled = false;
                     }
+                    hideLoading();
                 };
 
                 xhr.onerror = function() {

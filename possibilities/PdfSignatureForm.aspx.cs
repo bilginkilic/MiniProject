@@ -266,25 +266,22 @@ namespace AspxExamples
                                 var fileInfo = new FileInfo(outputPath);
                                 System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydedildi: {0}, Boyut: {1} bytes", outputPath, fileInfo.Length));
 
-                                // AJAX yanıtı gönder
-                                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                                {
-                                    var virtualPath = Path.Combine(_cdnVirtualPath, outputFileName);
-                                    var response = new {
-                                        success = true,
-                                        fileName = outputFileName,
-                                        filePath = virtualPath.Replace("\\", "/"),
-                                        message = "İmza başarıyla kaydedildi"
-                                    };
-                                    
-                                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-                                    var jsonResponse = serializer.Serialize(response);
-                                    Response.Clear();
-                                    Response.ContentType = "application/json";
-                                    Response.Write(jsonResponse);
-                                    Response.Flush();
-                                    HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                }
+                                                    // AJAX yanıtı gönder
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        var response = new {
+                            success = true,
+                            path = outputFileName,
+                            message = "OK"
+                        };
+                        
+                        var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                        var jsonResponse = serializer.Serialize(response);
+                        Response.Clear();
+                        Response.ContentType = "application/json";
+                        Response.Write(jsonResponse);
+                        Response.End();
+                    }
                                 else
                                 {
                                     // Normal postback için eski davranış
