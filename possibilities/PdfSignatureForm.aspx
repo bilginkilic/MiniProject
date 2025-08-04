@@ -715,14 +715,6 @@
             if (uploadButton) {
                 uploadButton.addEventListener('click', function() {
                     showLoading('Dosya yükleniyor...');
-                });
-            }
-
-            // Modify PDF show event
-            var showPdfButton = document.getElementById('<%= btnShowPdf.ClientID %>');
-            if (showPdfButton) {
-                showPdfButton.addEventListener('click', function() {
-                    showLoading('PDF dosyası yükleniyor...');
                     setTimeout(() => updateLoadingMessage('PDF sayfaları görüntüye dönüştürülüyor...'), 1000);
                     setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
                 });
