@@ -82,6 +82,7 @@
             min-height: 0;
             position: relative;
             overflow: hidden;
+            background: #f5f5f5;
         }
         .tabs {
             display: flex;
@@ -115,7 +116,7 @@
             right: 0;
             bottom: 0;
             display: none;
-            overflow: auto;
+            overflow: hidden;
         }
         .tab-content.active {
             display: block;
@@ -123,13 +124,15 @@
         .image-wrapper {
             width: 100%;
             height: 100%;
-            overflow: auto;
-            padding: 0;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            padding: 20px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             position: relative;
+            background: #f5f5f5;
         }
         .image-wrapper img {
             width: 80%; /* Sayfanın genişliğinin %80'ini kaplasın */
@@ -138,6 +141,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             background: white;
             margin: 0 auto;
+            margin-bottom: 20px;
         }
         #selection {
             position: absolute;
