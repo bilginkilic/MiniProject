@@ -75,6 +75,7 @@
             background: #fff;
             margin: 10px 0;
             overflow: hidden;
+            height: calc(100vh - 300px); /* Sayfanın geri kalanı için yer bırak */
         }
         #pageContents {
             flex: 1;
@@ -114,6 +115,7 @@
             right: 0;
             bottom: 0;
             display: none;
+            overflow: auto;
         }
         .tab-content.active {
             display: block;
@@ -130,13 +132,12 @@
             position: relative;
         }
         .image-wrapper img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
+            width: 80%; /* Sayfanın genişliğinin %80'ini kaplasın */
             height: auto;
             display: block;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            object-fit: contain;
+            background: white;
+            margin: 0 auto;
         }
         #selection {
             position: absolute;
