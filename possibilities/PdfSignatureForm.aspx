@@ -433,17 +433,17 @@
                     <div class="signature-slot" data-slot="1">
                         <div class="slot-placeholder">İmza 1</div>
                         <div class="slot-image"></div>
-                        <button class="delete-signature" style="display: none;">Sil</button>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
                     </div>
                     <div class="signature-slot" data-slot="2">
                         <div class="slot-placeholder">İmza 2</div>
                         <div class="slot-image"></div>
-                        <button class="delete-signature" style="display: none;">Sil</button>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
                     </div>
                     <div class="signature-slot" data-slot="3">
                         <div class="slot-placeholder">İmza 3</div>
                         <div class="slot-image"></div>
-                        <button class="delete-signature" style="display: none;">Sil</button>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
                     </div>
                 </div>
             </div>
@@ -772,11 +772,27 @@
                 btnSave.disabled = selectedSignatures.length === 0;
             }
 
-            function deleteSignature(index) {
+            function deleteSignature(index, event) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                // Mevcut aktif sayfayı kaydet
+                const currentActiveTab = document.querySelector('.tab.active');
+                const currentPage = currentActiveTab ? parseInt(currentActiveTab.getAttribute('data-page')) : 1;
+                
                 selectedSignatures.splice(index, 1);
                 updateSignatureSlots();
                 hiddenSignatures.value = JSON.stringify(selectedSignatures);
+                
+                // Silme işleminden sonra aynı sayfayı göster
+                if (currentPage) {
+                    showPage(currentPage);
+                }
+                
                 showNotification('İmza silindi', 'success');
+                return false; // Prevent any form submission
             }
 
             function clearSelection() {
@@ -978,7 +994,7 @@
                     slots.forEach((slot, index) => {
                         const deleteBtn = slot.querySelector('.delete-signature');
                         if (deleteBtn) {
-                            deleteBtn.onclick = () => deleteSignature(index);
+                            deleteBtn.onclick = (e) => deleteSignature(index, e);
                         }
                     });
 
