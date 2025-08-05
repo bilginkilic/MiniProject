@@ -301,6 +301,98 @@
             z-index: 1000;
             border-radius: 4px;
         }
+
+        /* Selected Signatures Styles */
+        .selected-signatures {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .selected-signatures h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .signature-slots {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .signature-slot {
+            width: 200px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .signature-slot.filled {
+            border: 2px solid #28a745;
+            background: #fff;
+        }
+
+        .slot-placeholder {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .slot-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .delete-signature {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .delete-signature:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .signature-slot.filled .slot-image {
+            display: block;
+        }
+
+        .signature-slot.filled .slot-placeholder {
+            display: none;
+        }
+
+        .signature-slot.filled .delete-signature {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -334,9 +426,32 @@
                 </div>
             </div>
 
+            <!-- Selected Signatures Container -->
+            <div class="selected-signatures">
+                <h3>Seçilen İmzalar</h3>
+                <div class="signature-slots">
+                    <div class="signature-slot" data-slot="1">
+                        <div class="slot-placeholder">İmza 1</div>
+                        <div class="slot-image"></div>
+                        <button class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                    <div class="signature-slot" data-slot="2">
+                        <div class="slot-placeholder">İmza 2</div>
+                        <div class="slot-image"></div>
+                        <button class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                    <div class="signature-slot" data-slot="3">
+                        <div class="slot-placeholder">İmza 3</div>
+                        <div class="slot-image"></div>
+                        <button class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="footer">
                 <asp:HiddenField ID="hdnSelection" runat="server" />
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
+                <asp:HiddenField ID="hdnSignatures" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
                     CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
                 
@@ -404,9 +519,12 @@
             var startX, startY;
             var selectionBox = null;
             var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
+            var hiddenSignatures = document.getElementById('<%= hdnSignatures.ClientID %>');
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
             var currentSelection = null;
+            var selectedSignatures = [];
+            const MAX_SIGNATURES = 3;
 
             function showPage(pageNumber) {
                 // Tüm tabları ve içerikleri gizle
@@ -575,6 +693,12 @@
                     return;
                 }
 
+                if (selectedSignatures.length >= MAX_SIGNATURES) {
+                    showNotification('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
+                    clearSelection();
+                    return;
+                }
+
                 const activeTab = document.querySelector('.tab.active');
                 const currentPage = parseInt(activeTab.getAttribute('data-page'));
 
@@ -586,20 +710,73 @@
                     height: Math.round(h)
                 };
 
-                var selectionData = [
-                    currentSelection.page,
-                    currentSelection.x,
-                    currentSelection.y,
-                    currentSelection.width,
-                    currentSelection.height
-                ].join(',');
+                // Capture the selected area as an image
+                const img = wrapper.querySelector('img');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to selection size
+                canvas.width = w;
+                canvas.height = h;
+                
+                // Draw the selected portion of the image
+                ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+                
+                // Convert to base64
+                const imageData = canvas.toDataURL('image/png');
 
-                console.log('Selection data:', selectionData);
-                hiddenField.value = selectionData;
-                btnSave.disabled = false;
+                // Add to selected signatures
+                const signatureData = {
+                    page: currentPage,
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    width: Math.round(w),
+                    height: Math.round(h),
+                    image: imageData
+                };
 
+                selectedSignatures.push(signatureData);
+                updateSignatureSlots();
+
+                // Update hidden field with all signatures
+                hiddenSignatures.value = JSON.stringify(selectedSignatures);
+                
+                clearSelection();
                 document.removeEventListener('mousemove', updateSelection);
                 document.removeEventListener('mouseup', endSelection);
+            }
+
+            function updateSignatureSlots() {
+                const slots = document.querySelectorAll('.signature-slot');
+                
+                slots.forEach((slot, index) => {
+                    const signature = selectedSignatures[index];
+                    const slotImage = slot.querySelector('.slot-image');
+                    const deleteBtn = slot.querySelector('.delete-signature');
+                    
+                    if (signature) {
+                        slot.classList.add('filled');
+                        slotImage.style.backgroundImage = `url(${signature.image})`;
+                        deleteBtn.style.display = 'flex';
+                        
+                        // Update delete button click handler
+                        deleteBtn.onclick = () => deleteSignature(index);
+                    } else {
+                        slot.classList.remove('filled');
+                        slotImage.style.backgroundImage = '';
+                        deleteBtn.style.display = 'none';
+                    }
+                });
+                
+                // Enable/disable save button based on selections
+                btnSave.disabled = selectedSignatures.length === 0;
+            }
+
+            function deleteSignature(index) {
+                selectedSignatures.splice(index, 1);
+                updateSignatureSlots();
+                hiddenSignatures.value = JSON.stringify(selectedSignatures);
+                showNotification('İmza silindi', 'success');
             }
 
             function clearSelection() {
@@ -795,7 +972,25 @@
             if (window.addEventListener) {
                 window.addEventListener('load', function() {
                     initializeImageEvents();
-                    restoreSelection();
+                    
+                    // Initialize signature slots
+                    const slots = document.querySelectorAll('.signature-slot');
+                    slots.forEach((slot, index) => {
+                        const deleteBtn = slot.querySelector('.delete-signature');
+                        if (deleteBtn) {
+                            deleteBtn.onclick = () => deleteSignature(index);
+                        }
+                    });
+
+                    // Restore any saved signatures
+                    if (hiddenSignatures.value) {
+                        try {
+                            selectedSignatures = JSON.parse(hiddenSignatures.value);
+                            updateSignatureSlots();
+                        } catch (e) {
+                            console.error('Error restoring signatures:', e);
+                        }
+                    }
                 });
             }
 
