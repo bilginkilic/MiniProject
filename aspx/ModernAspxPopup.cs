@@ -5,56 +5,24 @@ using Gizmox.WebGUI.Common;
 
 namespace AspxExamples
 {
-    public class SignatureResult
-    {
-        public List<SignatureInfo> SelectedSignatures { get; set; }
-        public List<string> AddedPdfPaths { get; set; }
-        public List<string> RemovedPdfPaths { get; set; }
-    }
-
-    public class SignatureInfo
-    {
-        public string SourcePdfPath { get; set; }
-        public string SavedImagePath { get; set; }
-        public Rectangle SignatureArea { get; set; }
-        public int PageNumber { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
-    }
-
     public class ModernAspxPopup : Form
     {
         private HtmlBox htmlBox;
         private ToolStrip toolStrip;
+        private StatusStrip statusStrip;
         private ToolStripButton btnFullScreen;
         private ToolStripButton btnZoomIn;
         private ToolStripButton btnZoomOut;
         private ToolStripButton btnPrint;
+        private ToolStripStatusLabel statusLabel;
         private float currentZoom = 1.0f;
         private bool isFullScreen = false;
         private Size previousSize;
         private Point previousLocation;
         private FormWindowState previousState;
-        private List<string> initialPdfPaths;
-        private List<string> currentPdfPaths;
-        public SignatureResult Result { get; private set; }
-        
-        // Event to notify when signatures are selected
-        public event EventHandler<SignatureResult> SignaturesSelected;
 
-        public ModernAspxPopup(string aspxFileName, List<string> pdfPaths = null)
+        public ModernAspxPopup(string aspxFileName)
         {
-            initialPdfPaths = pdfPaths ?? new List<string>();
-            currentPdfPaths = new List<string>(initialPdfPaths);
-            Result = new SignatureResult
-            {
-                SelectedSignatures = new List<SignatureInfo>(),
-                AddedPdfPaths = new List<string>(),
-                RemovedPdfPaths = new List<string>()
-            };
-
             InitializeComponent();
             LoadAspxContent(aspxFileName);
         }
@@ -73,6 +41,9 @@ namespace AspxExamples
             // ToolStrip oluşturma
             CreateToolStrip();
 
+            // StatusStrip oluşturma
+            CreateStatusStrip();
+
             // HtmlBox ayarları
             htmlBox = new HtmlBox();
             htmlBox.Dock = DockStyle.Fill;
@@ -86,7 +57,7 @@ namespace AspxExamples
             contentPanel.Padding = new Padding(10);
             contentPanel.Controls.Add(htmlBox);
 
-            this.Controls.AddRange(new Control[] { toolStrip, contentPanel });
+            this.Controls.AddRange(new Control[] { toolStrip, contentPanel, statusStrip });
         }
 
         private void CreateToolStrip()
@@ -132,28 +103,21 @@ namespace AspxExamples
             });
         }
 
-
+        private void CreateStatusStrip()
+        {
+            statusStrip = new StatusStrip();
+            statusLabel = new ToolStripStatusLabel();
+            statusLabel.Text = "Hazır";
+            statusStrip.Items.Add(statusLabel);
+        }
 
         private void LoadAspxContent(string aspxFileName)
         {
             try
             {
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
-                
-                // PDF listesini URL parametresi olarak ekle
-                if (currentPdfPaths != null && currentPdfPaths.Count > 0)
-                {
-                    string pdfListParam = string.Join(",", currentPdfPaths);
-                    aspxUrl += (aspxUrl.Contains("?") ? "&" : "?") + "pdfList=" + Uri.EscapeDataString(pdfListParam);
-                }
-                
                 htmlBox.Url = aspxUrl;
-
-                // Form kapanırken sonuçları topla
-                this.FormClosing += (s, e) => 
-                {
-                    CollectResults();
-                };
+                UpdateStatus("Sayfa yüklendi");
             }
             catch (Exception ex)
             {
@@ -163,82 +127,7 @@ namespace AspxExamples
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
-            }
-        }
-
-        private void CollectResults()
-        {
-            try
-            {
-                // Seçilen imzaları al
-                string signaturesScript = @"
-                    (function() {
-                        try {
-                            var hdnSignatures = document.getElementById(""hdnSignatures"");
-                            if (!hdnSignatures) return ""[]"";
-                            
-                            var signatures = JSON.parse(hdnSignatures.value || ""[]"");
-                            if (!Array.isArray(signatures)) return ""[]"";
-
-                            for (var i = 0; i < signatures.length; i++) {
-                                var sig = signatures[i];
-                                var slot = document.querySelector("".signature-slot[data-slot='"" + (i + 1) + ""']"");
-                                if (!slot) continue;
-
-                                var image = slot.querySelector("".slot-image"");
-                                if (!image) continue;
-
-
-                            }
-                            return JSON.stringify(signatures);
-                        } catch(e) {
-                            console.error(""Signature script error:"", e);
-                            return ""[]"";
-                        }
-                    })();
-                ";
-                string signatures = htmlBox.EvaluateScript(signaturesScript)?.ToString();
-                if (!string.IsNullOrEmpty(signatures))
-                {
-                    Result.SelectedSignatures = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SignatureInfo>>(signatures);
-                }
-                
-                // PDF listesindeki değişiklikleri kontrol et
-                string pdfListScript = "document.getElementById('hdnCurrentPdfList') ? document.getElementById('hdnCurrentPdfList').value : ''";
-                string currentPdfList = htmlBox.EvaluateScript(pdfListScript)?.ToString();
-                if (!string.IsNullOrEmpty(currentPdfList))
-                {
-                    var finalPdfPaths = currentPdfList.Split(',').ToList();
-                    
-                    // Eklenen PDFler
-                    Result.AddedPdfPaths = finalPdfPaths.Except(initialPdfPaths).ToList();
-                    
-                    // Silinen PDFler
-                    Result.RemovedPdfPaths = initialPdfPaths.Except(finalPdfPaths).ToList();
-                }
-
-                // Event'i tetikle
-                SignaturesSelected?.Invoke(this, Result);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    String.Format("Sonuçlar alınırken hata: {0}", ex.Message),
-                    "Hata",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-            }
-        }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    String.Format("ASPX sayfası yüklenirken hata: {0}", ex.Message),
-                    "Hata",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
+                UpdateStatus("Hata: Sayfa yüklenemedi");
             }
         }
 
@@ -267,12 +156,14 @@ namespace AspxExamples
             }
 
             isFullScreen = !isFullScreen;
+            UpdateStatus(isFullScreen ? "Tam ekran modu" : "Normal mod");
         }
 
         private void AdjustZoom(float delta)
         {
             currentZoom = Math.Max(0.5f, Math.Min(2.0f, currentZoom + delta));
             htmlBox.ZoomFactor = currentZoom;
+            UpdateStatus(String.Format("Zoom: {0:P0}", currentZoom));
         }
 
         private void PrintContent()
@@ -280,6 +171,7 @@ namespace AspxExamples
             try
             {
                 htmlBox.Print();
+                UpdateStatus("Yazdırma işlemi başlatıldı");
             }
             catch (Exception ex)
             {
@@ -289,62 +181,36 @@ namespace AspxExamples
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+                UpdateStatus("Hata: Yazdırılamadı");
             }
         }
 
-
+        private void UpdateStatus(string message)
+        {
+            statusLabel.Text = message;
+        }
     }
 
     // Örnek kullanım sınıfı
     public class ModernPopupExample
     {
-        public static SignatureResult ShowPdfSignatureForm(List<string> pdfPaths)
+        public static void ShowModernPopup(string aspxFileName)
         {
             try
             {
-                using (var popup = new ModernAspxPopup("PdfSignatureForm.aspx", pdfPaths))
+                using (var popup = new ModernAspxPopup(aspxFileName))
                 {
-                    // İmza seçildiğinde çalışacak event handler
-                    popup.SignaturesSelected += (sender, result) =>
-                    {
-                        // İmzalar seçildiğinde yapılacak işlemler
-                        if (result.SelectedSignatures != null && result.SelectedSignatures.Count > 0)
-                        {
-                            foreach (var signature in result.SelectedSignatures)
-                            {
-                                // İmza bilgilerini kullan
-                                var sourcePdf = signature.SourcePdfPath;
-                                var savedImage = signature.SavedImagePath;
-                                var area = signature.SignatureArea;
-                                var page = signature.PageNumber;
-                            }
-                        }
-
-                        // PDF listesi değişikliklerini kontrol et
-                        if (result.AddedPdfPaths != null && result.AddedPdfPaths.Count > 0)
-                        {
-                            // Yeni eklenen PDF'ler
-                        }
-
-                        if (result.RemovedPdfPaths != null && result.RemovedPdfPaths.Count > 0)
-                        {
-                            // Silinen PDF'ler
-                        }
-                    };
-
                     popup.ShowDialog();
-                    return popup.Result;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    String.Format("İmza seçim penceresi açılırken hata oluştu: {0}", ex.Message),
+                    String.Format("Modern popup açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
-                return null;
             }
         }
     }
