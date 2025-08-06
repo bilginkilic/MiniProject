@@ -164,7 +164,6 @@ namespace AspxExamples
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
-                UpdateStatus("Hata: Sayfa yüklenemedi");
             }
         }
 
@@ -174,17 +173,32 @@ namespace AspxExamples
             {
                 // Seçilen imzaları al
                 string signaturesScript = @"
-                    var signatures = document.getElementById('hdnSignatures') ? JSON.parse(document.getElementById('hdnSignatures').value) : [];
-                    signatures.forEach(function(sig) {
-                        var slot = document.querySelector('.signature-slot[data-slot=\'' + (signatures.indexOf(sig) + 1) + '\']');
-                        if (slot) {
-                            var image = slot.querySelector('.slot-image');
-                            if (image) {
-                                sig.SignatureImageUrl = window.getComputedStyle(image).backgroundImage.slice(4, -1).replace(/['"]/g, '');
-                            }
+                    (function() {
+                        try {
+                            var signatures = document.getElementById('hdnSignatures') ? JSON.parse(document.getElementById('hdnSignatures').value) : [];
+                            signatures.forEach(function(sig, index) {
+                                var slot = document.querySelector('.signature-slot[data-slot=\'' + (index + 1) + '\']');
+                                if (slot) {
+                                    var image = slot.querySelector('.slot-image');
+                                    if (image) {
+                                        var style = window.getComputedStyle(image);
+                                        var bgImage = style.backgroundImage;
+                                        // url('data:image/png;base64,...') formatından base64 kısmını çıkar
+                                        if (bgImage && bgImage.startsWith('url(')) {
+                                            var urlContent = bgImage.slice(4, -1).replace(/['"]/g, '');
+                                            if (urlContent.startsWith('data:image')) {
+                                                sig.SignatureImageUrl = urlContent;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            return JSON.stringify(signatures);
+                        } catch(e) {
+                            console.error('Signature script error:', e);
+                            return '[]';
                         }
-                    });
-                    JSON.stringify(signatures)
+                    })()
                 ";
                 string signatures = htmlBox.EvaluateScript(signaturesScript)?.ToString();
                 if (!string.IsNullOrEmpty(signatures))
