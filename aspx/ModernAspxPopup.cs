@@ -5,6 +5,21 @@ using Gizmox.WebGUI.Common;
 
 namespace AspxExamples
 {
+    public class SignatureResult
+    {
+        public List<SignatureInfo> SelectedSignatures { get; set; }
+        public List<string> AddedPdfPaths { get; set; }
+        public List<string> RemovedPdfPaths { get; set; }
+    }
+
+    public class SignatureInfo
+    {
+        public string SourcePdfPath { get; set; }
+        public byte[] SignatureImage { get; set; }
+        public Rectangle SignatureArea { get; set; }
+        public int PageNumber { get; set; }
+    }
+
     public class ModernAspxPopup : Form
     {
         private HtmlBox htmlBox;
@@ -20,9 +35,22 @@ namespace AspxExamples
         private Size previousSize;
         private Point previousLocation;
         private FormWindowState previousState;
+        
+        private List<string> initialPdfPaths;
+        private List<string> currentPdfPaths;
+        public SignatureResult Result { get; private set; }
 
-        public ModernAspxPopup(string aspxFileName)
+        public ModernAspxPopup(string aspxFileName, List<string> pdfPaths = null)
         {
+            initialPdfPaths = pdfPaths ?? new List<string>();
+            currentPdfPaths = new List<string>(initialPdfPaths);
+            Result = new SignatureResult
+            {
+                SelectedSignatures = new List<SignatureInfo>(),
+                AddedPdfPaths = new List<string>(),
+                RemovedPdfPaths = new List<string>()
+            };
+
             InitializeComponent();
             LoadAspxContent(aspxFileName);
         }
@@ -116,8 +144,52 @@ namespace AspxExamples
             try
             {
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
+                
+                // PDF listesini URL parametresi olarak ekle
+                if (currentPdfPaths != null && currentPdfPaths.Count > 0)
+                {
+                    string pdfListParam = string.Join(",", currentPdfPaths);
+                    aspxUrl += (aspxUrl.Contains("?") ? "&" : "?") + "pdfList=" + Uri.EscapeDataString(pdfListParam);
+                }
+                
                 htmlBox.Url = aspxUrl;
                 UpdateStatus("Sayfa yüklendi");
+                
+                // Sayfa kapanırken sonuçları topla
+                htmlBox.Disposed += (s, e) =>
+                {
+                    try
+                    {
+                        // Seçilen imzaları al
+                        var signatures = htmlBox.Document.GetElementById("hdnSignatures")?.GetAttribute("value");
+                        if (!string.IsNullOrEmpty(signatures))
+                        {
+                            Result.SelectedSignatures = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SignatureInfo>>(signatures);
+                        }
+                        
+                        // PDF listesindeki değişiklikleri kontrol et
+                        var currentPdfList = htmlBox.Document.GetElementById("hdnCurrentPdfList")?.GetAttribute("value");
+                        if (!string.IsNullOrEmpty(currentPdfList))
+                        {
+                            var finalPdfPaths = currentPdfList.Split(',').ToList();
+                            
+                            // Eklenen PDFler
+                            Result.AddedPdfPaths = finalPdfPaths.Except(initialPdfPaths).ToList();
+                            
+                            // Silinen PDFler
+                            Result.RemovedPdfPaths = initialPdfPaths.Except(finalPdfPaths).ToList();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            String.Format("Sonuçlar alınırken hata: {0}", ex.Message),
+                            "Hata",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error
+                        );
+                    }
+                };
             }
             catch (Exception ex)
             {

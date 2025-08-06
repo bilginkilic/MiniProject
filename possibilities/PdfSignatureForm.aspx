@@ -302,6 +302,64 @@
             border-radius: 4px;
         }
 
+        /* PDF List Panel Styles */
+        .pdf-list-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .pdf-list-panel h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .pdf-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pdf-item:hover {
+            background: #f0f0f0;
+        }
+
+        .pdf-item.active {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .pdf-item-name {
+            margin-right: 10px;
+        }
+
+        .pdf-item-remove {
+            color: #dc3545;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .pdf-item-remove:hover {
+            background: #dc3545;
+            color: white;
+        }
+
         /* Selected Signatures Styles */
         .selected-signatures {
             margin: 20px 0;
@@ -404,12 +462,21 @@
                 <h2>İmza Sirkülerinden İmza Seçimi</h2>
             </div>
             
+            <div class="pdf-list-panel">
+                <h3>Mevcut PDF Listesi</h3>
+                <div class="pdf-list" id="pdfList">
+                    <!-- PDF listesi buraya dinamik olarak eklenecek -->
+                </div>
+                <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
+            </div>
+
             <div class="upload-panel">
                 <div class="instructions">
                     <strong>Nasıl Kullanılır:</strong>
                     <ol>
-                        <li>PDF formatındaki imza sirkülerinizi seçin ve "İmza Sirkülerini Yükle ve Göster" butonuna tıklayın</li>
-                        <li>Mouse ile imza alanını seçin - seçim tamamlandığında otomatik kaydedilecektir</li>
+                        <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
+                        <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
+                        <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
                     </ol>
                 </div>
                 <asp:FileUpload ID="fileUpload" runat="server" />
@@ -725,6 +792,9 @@
                 // Convert to base64
                 const imageData = canvas.toDataURL('image/png');
 
+                // Get current active PDF path
+                const currentPdfPath = pdfList.length > 0 ? pdfList[0] : ''; // Default to first PDF in list
+
                 // Add to selected signatures
                 const signatureData = {
                     page: currentPage,
@@ -732,7 +802,8 @@
                     y: Math.round(y),
                     width: Math.round(w),
                     height: Math.round(h),
-                    image: imageData
+                    image: imageData,
+                    sourcePdfPath: currentPdfPath
                 };
 
                 selectedSignatures.push(signatureData);
@@ -985,9 +1056,63 @@
                 });
             }
 
+            // PDF listesi yönetimi
+            let pdfList = [];
+            const pdfListContainer = document.getElementById('pdfList');
+            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>');
+
+            function initializePdfList() {
+                // URL'den PDF listesini al
+                const urlParams = new URLSearchParams(window.location.search);
+                const pdfListParam = urlParams.get('pdfList');
+                
+                if (pdfListParam) {
+                    pdfList = decodeURIComponent(pdfListParam).split(',');
+                    hdnCurrentPdfList.value = pdfListParam;
+                    updatePdfListUI();
+                }
+            }
+
+            function updatePdfListUI() {
+                pdfListContainer.innerHTML = '';
+                pdfList.forEach((pdfPath, index) => {
+                    const pdfItem = document.createElement('div');
+                    pdfItem.className = 'pdf-item';
+                    pdfItem.innerHTML = `
+                        <span class="pdf-item-name">${pdfPath.split('/').pop()}</span>
+                        <span class="pdf-item-remove" onclick="removePdf(${index}, event)">✕</span>
+                    `;
+                    pdfItem.onclick = () => loadPdf(pdfPath);
+                    pdfListContainer.appendChild(pdfItem);
+                });
+            }
+
+            function loadPdf(pdfPath) {
+                // PDF yükleme işlemi için mevcut form mekanizmasını kullan
+                showLoading('PDF yükleniyor...');
+                // TODO: PDF yükleme işlemi için sunucu tarafında gerekli değişiklikleri yap
+            }
+
+            function removePdf(index, event) {
+                event.stopPropagation();
+                pdfList.splice(index, 1);
+                hdnCurrentPdfList.value = pdfList.join(',');
+                updatePdfListUI();
+                showNotification('PDF listeden kaldırıldı', 'success');
+            }
+
+            function addPdfToList(pdfPath) {
+                if (!pdfList.includes(pdfPath)) {
+                    pdfList.push(pdfPath);
+                    hdnCurrentPdfList.value = pdfList.join(',');
+                    updatePdfListUI();
+                }
+            }
+
             if (window.addEventListener) {
                 window.addEventListener('load', function() {
                     initializeImageEvents();
+                    initializePdfList();
                     
                     // Initialize signature slots
                     const slots = document.querySelectorAll('.signature-slot');
