@@ -165,14 +165,16 @@ namespace AspxExamples
                     try
                     {
                         // Seçilen imzaları al
-                        var signatures = htmlBox.Document.GetElementById("hdnSignatures")?.GetAttribute("value");
+                        string signaturesScript = "document.getElementById('hdnSignatures') ? document.getElementById('hdnSignatures').value : ''";
+                        string signatures = htmlBox.EvaluateScript(signaturesScript)?.ToString();
                         if (!string.IsNullOrEmpty(signatures))
                         {
                             Result.SelectedSignatures = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SignatureInfo>>(signatures);
                         }
                         
                         // PDF listesindeki değişiklikleri kontrol et
-                        var currentPdfList = htmlBox.Document.GetElementById("hdnCurrentPdfList")?.GetAttribute("value");
+                        string pdfListScript = "document.getElementById('hdnCurrentPdfList') ? document.getElementById('hdnCurrentPdfList').value : ''";
+                        string currentPdfList = htmlBox.EvaluateScript(pdfListScript)?.ToString();
                         if (!string.IsNullOrEmpty(currentPdfList))
                         {
                             var finalPdfPaths = currentPdfList.Split(',').ToList();
