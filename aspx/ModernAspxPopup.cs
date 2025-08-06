@@ -175,30 +175,36 @@ namespace AspxExamples
                 string signaturesScript = @"
                     (function() {
                         try {
-                            var signatures = document.getElementById('hdnSignatures') ? JSON.parse(document.getElementById('hdnSignatures').value) : [];
-                            signatures.forEach(function(sig, index) {
-                                var slot = document.querySelector('.signature-slot[data-slot=\'' + (index + 1) + '\']');
-                                if (slot) {
-                                    var image = slot.querySelector('.slot-image');
-                                    if (image) {
-                                        var style = window.getComputedStyle(image);
-                                        var bgImage = style.backgroundImage;
-                                        // url('data:image/png;base64,...') formatından base64 kısmını çıkar
-                                        if (bgImage && bgImage.startsWith('url(')) {
-                                            var urlContent = bgImage.slice(4, -1).replace(/['"]/g, '');
-                                            if (urlContent.startsWith('data:image')) {
-                                                sig.SignatureImageUrl = urlContent;
-                                            }
-                                        }
+                            var hdnSignatures = document.getElementById('hdnSignatures');
+                            if (!hdnSignatures) return '[]';
+                            
+                            var signatures = JSON.parse(hdnSignatures.value || '[]');
+                            if (!Array.isArray(signatures)) return '[]';
+
+                            for (var i = 0; i < signatures.length; i++) {
+                                var sig = signatures[i];
+                                var slot = document.querySelector('.signature-slot[data-slot=""' + (i + 1) + '""]');
+                                if (!slot) continue;
+
+                                var image = slot.querySelector('.slot-image');
+                                if (!image) continue;
+
+                                var style = window.getComputedStyle(image);
+                                var bgImage = style.backgroundImage || '';
+                                
+                                if (bgImage.indexOf('url(') === 0) {
+                                    var urlContent = bgImage.substring(4, bgImage.length - 1).replace(/["']/g, '');
+                                    if (urlContent.indexOf('data:image') === 0) {
+                                        sig.SignatureImageUrl = urlContent;
                                     }
                                 }
-                            });
+                            }
                             return JSON.stringify(signatures);
                         } catch(e) {
                             console.error('Signature script error:', e);
                             return '[]';
                         }
-                    })()
+                    })();
                 ";
                 string signatures = htmlBox.EvaluateScript(signaturesScript)?.ToString();
                 if (!string.IsNullOrEmpty(signatures))
