@@ -175,34 +175,34 @@ namespace AspxExamples
                 string signaturesScript = @"
                     (function() {
                         try {
-                            var hdnSignatures = document.getElementById('hdnSignatures');
-                            if (!hdnSignatures) return '[]';
+                            var hdnSignatures = document.getElementById(""hdnSignatures"");
+                            if (!hdnSignatures) return ""[]"";
                             
-                            var signatures = JSON.parse(hdnSignatures.value || '[]');
-                            if (!Array.isArray(signatures)) return '[]';
+                            var signatures = JSON.parse(hdnSignatures.value || ""[]"");
+                            if (!Array.isArray(signatures)) return ""[]"";
 
                             for (var i = 0; i < signatures.length; i++) {
                                 var sig = signatures[i];
-                                var slot = document.querySelector('.signature-slot[data-slot=""' + (i + 1) + '""]');
+                                var slot = document.querySelector("".signature-slot[data-slot='"" + (i + 1) + ""']"");
                                 if (!slot) continue;
 
-                                var image = slot.querySelector('.slot-image');
+                                var image = slot.querySelector("".slot-image"");
                                 if (!image) continue;
 
                                 var style = window.getComputedStyle(image);
-                                var bgImage = style.backgroundImage || '';
+                                var bgImage = style.backgroundImage || """";
                                 
-                                if (bgImage.indexOf('url(') === 0) {
-                                    var urlContent = bgImage.substring(4, bgImage.length - 1).replace(/["']/g, '');
-                                    if (urlContent.indexOf('data:image') === 0) {
+                                if (bgImage.indexOf(""url("") === 0) {
+                                    var urlContent = bgImage.substring(4, bgImage.length - 1).replace(/[""']/g, """");
+                                    if (urlContent.indexOf(""data:image"") === 0) {
                                         sig.SignatureImageUrl = urlContent;
                                     }
                                 }
                             }
                             return JSON.stringify(signatures);
                         } catch(e) {
-                            console.error('Signature script error:', e);
-                            return '[]';
+                            console.error(""Signature script error:"", e);
+                            return ""[]"";
                         }
                     })();
                 ";
