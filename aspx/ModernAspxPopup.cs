@@ -29,12 +29,10 @@ namespace AspxExamples
     {
         private HtmlBox htmlBox;
         private ToolStrip toolStrip;
-        private StatusStrip statusStrip;
         private ToolStripButton btnFullScreen;
         private ToolStripButton btnZoomIn;
         private ToolStripButton btnZoomOut;
         private ToolStripButton btnPrint;
-        private ToolStripStatusLabel statusLabel;
         private float currentZoom = 1.0f;
         private bool isFullScreen = false;
         private Size previousSize;
@@ -76,9 +74,6 @@ namespace AspxExamples
             // ToolStrip oluşturma
             CreateToolStrip();
 
-            // StatusStrip oluşturma
-            CreateStatusStrip();
-
             // HtmlBox ayarları
             htmlBox = new HtmlBox();
             htmlBox.Dock = DockStyle.Fill;
@@ -92,7 +87,7 @@ namespace AspxExamples
             contentPanel.Padding = new Padding(10);
             contentPanel.Controls.Add(htmlBox);
 
-            this.Controls.AddRange(new Control[] { toolStrip, contentPanel, statusStrip });
+            this.Controls.AddRange(new Control[] { toolStrip, contentPanel });
         }
 
         private void CreateToolStrip()
@@ -138,13 +133,7 @@ namespace AspxExamples
             });
         }
 
-        private void CreateStatusStrip()
-        {
-            statusStrip = new StatusStrip();
-            statusLabel = new ToolStripStatusLabel();
-            statusLabel.Text = "Hazır";
-            statusStrip.Items.Add(statusLabel);
-        }
+
 
         private void LoadAspxContent(string aspxFileName)
         {
@@ -160,13 +149,11 @@ namespace AspxExamples
                 }
                 
                 htmlBox.Url = aspxUrl;
-                UpdateStatus("Sayfa yüklendi");
 
                 // Form kapanırken sonuçları topla
                 this.FormClosing += (s, e) => 
                 {
                     CollectResults();
-                    UpdateStatus("İmza seçimi tamamlandı");
                 };
             }
             catch (Exception ex)
@@ -241,7 +228,6 @@ namespace AspxExamples
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
-                UpdateStatus("Hata: Sayfa yüklenemedi");
             }
         }
 
@@ -270,14 +256,12 @@ namespace AspxExamples
             }
 
             isFullScreen = !isFullScreen;
-            UpdateStatus(isFullScreen ? "Tam ekran modu" : "Normal mod");
         }
 
         private void AdjustZoom(float delta)
         {
             currentZoom = Math.Max(0.5f, Math.Min(2.0f, currentZoom + delta));
             htmlBox.ZoomFactor = currentZoom;
-            UpdateStatus(String.Format("Zoom: {0:P0}", currentZoom));
         }
 
         private void PrintContent()
@@ -285,7 +269,6 @@ namespace AspxExamples
             try
             {
                 htmlBox.Print();
-                UpdateStatus("Yazdırma işlemi başlatıldı");
             }
             catch (Exception ex)
             {
@@ -295,14 +278,10 @@ namespace AspxExamples
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
-                UpdateStatus("Hata: Yazdırılamadı");
             }
         }
 
-        private void UpdateStatus(string message)
-        {
-            statusLabel.Text = message;
-        }
+
     }
 
     // Örnek kullanım sınıfı
