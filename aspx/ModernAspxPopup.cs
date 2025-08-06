@@ -15,9 +15,13 @@ namespace AspxExamples
     public class SignatureInfo
     {
         public string SourcePdfPath { get; set; }
-        public byte[] SignatureImage { get; set; }
+        public string SavedImagePath { get; set; }
         public Rectangle SignatureArea { get; set; }
         public int PageNumber { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
     }
 
     public class ModernAspxPopup : Form
