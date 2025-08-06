@@ -16,7 +16,6 @@ namespace AspxExamples
     {
         public string SourcePdfPath { get; set; }
         public string SavedImagePath { get; set; }
-        public string SignatureImageUrl { get; set; }  // Base64 imza resmi URL'si
         public Rectangle SignatureArea { get; set; }
         public int PageNumber { get; set; }
         public int X { get; set; }
@@ -189,15 +188,7 @@ namespace AspxExamples
                                 var image = slot.querySelector("".slot-image"");
                                 if (!image) continue;
 
-                                var style = window.getComputedStyle(image);
-                                var bgImage = style.backgroundImage || """";
-                                
-                                if (bgImage.indexOf(""url("") === 0) {
-                                    var urlContent = bgImage.substring(4, bgImage.length - 1).replace(/[""']/g, """");
-                                    if (urlContent.indexOf(""data:image"") === 0) {
-                                        sig.SignatureImageUrl = urlContent;
-                                    }
-                                }
+
                             }
                             return JSON.stringify(signatures);
                         } catch(e) {
