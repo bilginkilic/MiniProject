@@ -239,7 +239,7 @@ namespace AspxExamples
         {
             currentZoom = Math.Max(0.5f, Math.Min(2.0f, currentZoom + delta));
             htmlBox.ZoomFactor = currentZoom;
-            UpdateStatus($"Zoom: {currentZoom:P0}");
+            UpdateStatus(String.Format("Zoom: {0:P0}", currentZoom));
         }
 
         private void PrintContent()
