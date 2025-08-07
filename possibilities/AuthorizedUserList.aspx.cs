@@ -69,61 +69,80 @@ namespace AspxExamples
 
         protected void BtnAddNew_Click(object sender, EventArgs e)
         {
-            // Form alanlarını temizle
-            txtYetkiliKontNo.Text = string.Empty;
-            txtYetkiBitisTarihi.Text = string.Empty;
-            ddlYetkiSekli.SelectedIndex = 0;
-            ddlYetkiGrubu.SelectedIndex = 0;
-            txtSinirliYetkiDetaylari.Text = string.Empty;
-            ddlYetkiTurleri.SelectedIndex = 0;
-            txtYetkiTutari.Text = string.Empty;
-            ddlYetkiDovizCinsi.SelectedIndex = 0;
-            ddlYetkiDurumu.SelectedIndex = 0;
-
-            // JavaScript ile modal'ı aç
-            ScriptManager.RegisterStartupScript(this, GetType(), "OpenUserForm", "openUserFormModal();", true);
-        }
-
-        protected void BtnSelectSignature_Click(object sender, EventArgs e)
-        {
-            if (Page.IsValid)
+            // Yeni boş satır ekle
+            var users = GetCurrentUsers();
+            users.Insert(0, new AuthorizedUser
             {
-                // Mevcut form verilerini Session'da sakla
-                SaveFormDataToSession();
-                
-                // İmza formunu aç
-                OpenSignatureForm();
-            }
+                YetkiliKontNo = string.Format("{0:D7}", (DateTime.Now.Ticks % 10000000)),
+                YetkiSekli = "Müştereken",
+                YetkiSuresi = DateTime.Now.AddYears(1),
+                YetkiBitisTarihi = DateTime.Now.AddYears(1),
+                YetkiGrubu = "A Grubu",
+                YetkiTurleri = "Kredi İşlemleri, Hazine İşlemleri",
+                YetkiTutari = 0,
+                YetkiDovizCinsi = "USD",
+                YetkiDurumu = "Aktif"
+            });
+
+            gvAuthorizedUsers.DataSource = users;
+            gvAuthorizedUsers.DataBind();
         }
 
-        protected void BtnSaveUser_Click(object sender, EventArgs e)
+        private List<AuthorizedUser> GetCurrentUsers()
         {
-            if (Page.IsValid)
+            // GridView'dan mevcut verileri al
+            var users = new List<AuthorizedUser>();
+            foreach (GridViewRow row in gvAuthorizedUsers.Rows)
+            {
+                var user = new AuthorizedUser
+                {
+                    YetkiliKontNo = ((TextBox)row.FindControl("txtYetkiliKontNo")).Text,
+                    YetkiSekli = ((DropDownList)row.FindControl("ddlYetkiSekli")).SelectedValue,
+                    YetkiBitisTarihi = DateTime.Parse(((TextBox)row.FindControl("txtYetkiBitisTarihi")).Text),
+                    YetkiSuresi = DateTime.Parse(((TextBox)row.FindControl("txtYetkiBitisTarihi")).Text),
+                    YetkiGrubu = ((DropDownList)row.FindControl("ddlYetkiGrubu")).SelectedValue,
+                    SinirliYetkiDetaylari = ((TextBox)row.FindControl("txtSinirliYetkiDetaylari")).Text,
+                    YetkiTurleri = ((DropDownList)row.FindControl("ddlYetkiTurleri")).SelectedValue,
+                    YetkiTutari = decimal.Parse(((TextBox)row.FindControl("txtYetkiTutari")).Text),
+                    YetkiDovizCinsi = ((DropDownList)row.FindControl("ddlYetkiDovizCinsi")).SelectedValue,
+                    YetkiDurumu = ((DropDownList)row.FindControl("ddlYetkiDurumu")).SelectedValue
+                };
+                users.Add(user);
+            }
+            return users;
+        }
+
+        protected void GvAuthorizedUsers_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            string yetkiliKontNo = e.CommandArgument.ToString();
+            
+            if (e.CommandName == "SaveUser")
             {
                 try
                 {
-                    // Form verilerini al
+                    // Grid satırından verileri al
+                    GridViewRow row = (GridViewRow)((Button)e.CommandSource).NamingContainer;
                     var user = new AuthorizedUser
                     {
-                        YetkiliKontNo = txtYetkiliKontNo.Text,
-                        YetkiSekli = ddlYetkiSekli.SelectedValue,
-                        YetkiSuresi = DateTime.Parse(txtYetkiBitisTarihi.Text),
-                        YetkiBitisTarihi = DateTime.Parse(txtYetkiBitisTarihi.Text),
-                        YetkiGrubu = ddlYetkiGrubu.SelectedValue,
-                        SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
-                        YetkiTurleri = ddlYetkiTurleri.SelectedValue,
-                        YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
-                        YetkiDovizCinsi = ddlYetkiDovizCinsi.SelectedValue,
-                        YetkiDurumu = ddlYetkiDurumu.SelectedValue
+                        YetkiliKontNo = ((TextBox)row.FindControl("txtYetkiliKontNo")).Text,
+                        YetkiSekli = ((DropDownList)row.FindControl("ddlYetkiSekli")).SelectedValue,
+                        YetkiBitisTarihi = DateTime.Parse(((TextBox)row.FindControl("txtYetkiBitisTarihi")).Text),
+                        YetkiSuresi = DateTime.Parse(((TextBox)row.FindControl("txtYetkiBitisTarihi")).Text),
+                        YetkiGrubu = ((DropDownList)row.FindControl("ddlYetkiGrubu")).SelectedValue,
+                        SinirliYetkiDetaylari = ((TextBox)row.FindControl("txtSinirliYetkiDetaylari")).Text,
+                        YetkiTurleri = ((DropDownList)row.FindControl("ddlYetkiTurleri")).SelectedValue,
+                        YetkiTutari = decimal.Parse(((TextBox)row.FindControl("txtYetkiTutari")).Text),
+                        YetkiDovizCinsi = ((DropDownList)row.FindControl("ddlYetkiDovizCinsi")).SelectedValue,
+                        YetkiDurumu = ((DropDownList)row.FindControl("ddlYetkiDurumu")).SelectedValue
                     };
 
                     // TODO: Veritabanına kaydet
                     // SaveUserToDatabase(user);
-
+                    
                     // Başarılı mesajı göster
-                    ScriptManager.RegisterStartupScript(this, GetType(), "SaveSuccess", 
-                        string.Format("showNotification('Yetkili kullanıcı başarıyla kaydedildi.', 'success'); closeUserFormModal();"), true);
-
+                    ScriptManager.RegisterStartupScript(this, GetType(), "SaveSuccess",
+                        string.Format("showNotification('Yetkili kullanıcı başarıyla kaydedildi.', 'success');"), true);
+                    
                     // Listeyi yenile
                     LoadAuthorizedUsers();
                 }
@@ -131,55 +150,7 @@ namespace AspxExamples
                 {
                     // Hata mesajı göster
                     ScriptManager.RegisterStartupScript(this, GetType(), "SaveError",
-                        string.Format("showNotification('Hata oluştu: {0}', 'error');", ex.Message), true);
-                }
-            }
-        }
-
-        private void SaveFormDataToSession()
-        {
-            Session["TempUserData"] = new AuthorizedUser
-            {
-                YetkiliKontNo = txtYetkiliKontNo.Text,
-                YetkiSekli = ddlYetkiSekli.SelectedValue,
-                YetkiSuresi = DateTime.Parse(txtYetkiBitisTarihi.Text),
-                YetkiBitisTarihi = DateTime.Parse(txtYetkiBitisTarihi.Text),
-                YetkiGrubu = ddlYetkiGrubu.SelectedValue,
-                SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
-                YetkiTurleri = ddlYetkiTurleri.SelectedValue,
-                YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
-                YetkiDovizCinsi = ddlYetkiDovizCinsi.SelectedValue,
-                YetkiDurumu = ddlYetkiDurumu.SelectedValue
-            };
-        }
-
-        protected void GvAuthorizedUsers_RowCommand(object sender, GridViewCommandEventArgs e)
-        {
-            string yetkiliKontNo = e.CommandArgument.ToString();
-            
-            if (e.CommandName == "EditUser")
-            {
-                // Düzenleme modunu aktifleştir
-                hdnEditMode.Value = "true";
-                hdnEditId.Value = yetkiliKontNo;
-                
-                // Kullanıcı bilgilerini getir
-                var user = GetUserByKontNo(yetkiliKontNo);
-                if (user != null)
-                {
-                    // Form alanlarını doldur
-                    txtYetkiliKontNo.Text = user.YetkiliKontNo;
-                    txtYetkiBitisTarihi.Text = user.YetkiBitisTarihi.ToString("yyyy-MM-dd");
-                    ddlYetkiSekli.SelectedValue = user.YetkiSekli;
-                    ddlYetkiGrubu.SelectedValue = user.YetkiGrubu;
-                    txtSinirliYetkiDetaylari.Text = user.SinirliYetkiDetaylari;
-                    ddlYetkiTurleri.SelectedValue = user.YetkiTurleri;
-                    txtYetkiTutari.Text = user.YetkiTutari.ToString();
-                    ddlYetkiDovizCinsi.SelectedValue = user.YetkiDovizCinsi;
-                    ddlYetkiDurumu.SelectedValue = user.YetkiDurumu;
-                    
-                    // Modal'ı aç
-                    ScriptManager.RegisterStartupScript(this, GetType(), "OpenUserForm", "openUserFormModal();", true);
+                        string.Format("showNotification('Kaydetme işlemi sırasında hata oluştu: {0}', 'error');", ex.Message), true);
                 }
             }
             else if (e.CommandName == "DeleteUser")
@@ -203,33 +174,11 @@ namespace AspxExamples
                         string.Format("showNotification('Silme işlemi sırasında hata oluştu: {0}', 'error');", ex.Message), true);
                 }
             }
-        }
-
-        private AuthorizedUser GetUserByKontNo(string kontNo)
-        {
-            // TODO: Veritabanından kullanıcı bilgilerini getir
-            // Bu örnek için statik veri dönüyoruz
-            if (kontNo == "5000711")
+            else if (e.CommandName == "SelectSignature")
             {
-                return new AuthorizedUser
-                {
-                    YetkiliKontNo = "5000711",
-                    YetkiliAdiSoyadi = "Toru Kawai",
-                    YetkiSekli = "Müştereken",
-                    YetkiSuresi = DateTime.Parse("14.07.2024"),
-                    YetkiBitisTarihi = DateTime.Parse("14.07.2024"),
-                    YetkiGrubu = "A Grubu",
-                    SinirliYetkiDetaylari = "C İLE BİRLİKTE 1.000.000 USD",
-                    YetkiTurleri = "Kredi Sözleşmeleri / Transfer İşlemleri",
-                    ImzaOrnegi1 = "http://example.com/signatures/signature1.png",
-                    ImzaOrnegi2 = "http://example.com/signatures/signature2.png",
-                    ImzaOrnegi3 = "http://example.com/signatures/signature3.png",
-                    YetkiTutari = 100000,
-                    YetkiDovizCinsi = "USD",
-                    YetkiDurumu = "Aktif"
-                };
+                // İmza seçim formunu aç
+                OpenSignatureForm(yetkiliKontNo);
             }
-            return null;
         }
 
         private void OpenSignatureForm(string yetkiliKontNo = null)
