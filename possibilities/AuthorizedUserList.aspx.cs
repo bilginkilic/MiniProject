@@ -36,7 +36,7 @@ namespace AspxExamples
         {
             // TODO: Veritabanında imza yolunu güncelle
             // Bu örnek için sadece debug log yazıyoruz
-            System.Diagnostics.Debug.WriteLine($"İmza yolu güncellendi: {signaturePath}");
+            System.Diagnostics.Debug.WriteLine(string.Format("İmza yolu güncellendi: {0}", signaturePath));
         }
 
         private void LoadAuthorizedUsers()
