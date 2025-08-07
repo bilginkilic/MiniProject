@@ -301,6 +301,156 @@
             z-index: 1000;
             border-radius: 4px;
         }
+
+        /* PDF List Panel Styles */
+        .pdf-list-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .pdf-list-panel h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .pdf-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pdf-item:hover {
+            background: #f0f0f0;
+        }
+
+        .pdf-item.active {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .pdf-item-name {
+            margin-right: 10px;
+        }
+
+        .pdf-item-remove {
+            color: #dc3545;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .pdf-item-remove:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Selected Signatures Styles */
+        .selected-signatures {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .selected-signatures h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .signature-slots {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .signature-slot {
+            width: 200px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .signature-slot.filled {
+            border: 2px solid #28a745;
+            background: #fff;
+        }
+
+        .slot-placeholder {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .slot-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .delete-signature {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .delete-signature:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .signature-slot.filled .slot-image {
+            display: block;
+        }
+
+        .signature-slot.filled .slot-placeholder {
+            display: none;
+        }
+
+        .signature-slot.filled .delete-signature {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -312,12 +462,21 @@
                 <h2>İmza Sirkülerinden İmza Seçimi</h2>
             </div>
             
+            <div class="pdf-list-panel">
+                <h3>Mevcut PDF Listesi</h3>
+                <div class="pdf-list" id="pdfList">
+                    <!-- PDF listesi buraya dinamik olarak eklenecek -->
+                </div>
+                <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
+            </div>
+
             <div class="upload-panel">
                 <div class="instructions">
                     <strong>Nasıl Kullanılır:</strong>
                     <ol>
-                        <li>PDF formatındaki imza sirkülerinizi seçin ve "İmza Sirkülerini Yükle ve Göster" butonuna tıklayın</li>
-                        <li>Mouse ile imza alanını seçin - seçim tamamlandığında otomatik kaydedilecektir</li>
+                        <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
+                        <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
+                        <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
                     </ol>
                 </div>
                 <asp:FileUpload ID="fileUpload" runat="server" />
@@ -334,9 +493,32 @@
                 </div>
             </div>
 
+            <!-- Selected Signatures Container -->
+            <div class="selected-signatures">
+                <h3>Seçilen İmzalar</h3>
+                <div class="signature-slots">
+                    <div class="signature-slot" data-slot="1">
+                        <div class="slot-placeholder">İmza 1</div>
+                        <div class="slot-image"></div>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                    <div class="signature-slot" data-slot="2">
+                        <div class="slot-placeholder">İmza 2</div>
+                        <div class="slot-image"></div>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                    <div class="signature-slot" data-slot="3">
+                        <div class="slot-placeholder">İmza 3</div>
+                        <div class="slot-image"></div>
+                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="footer">
                 <asp:HiddenField ID="hdnSelection" runat="server" />
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
+                <asp:HiddenField ID="hdnSignatures" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
                     CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
                 
@@ -404,9 +586,12 @@
             var startX, startY;
             var selectionBox = null;
             var hiddenField = document.getElementById('<%= hdnSelection.ClientID %>');
+            var hiddenSignatures = document.getElementById('<%= hdnSignatures.ClientID %>');
             var imageContainer = document.getElementById('<%= imageContainer.ClientID %>');
             var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
             var currentSelection = null;
+            var selectedSignatures = [];
+            const MAX_SIGNATURES = 3;
 
             function showPage(pageNumber) {
                 // Tüm tabları ve içerikleri gizle
@@ -575,6 +760,12 @@
                     return;
                 }
 
+                if (selectedSignatures.length >= MAX_SIGNATURES) {
+                    showNotification('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
+                    clearSelection();
+                    return;
+                }
+
                 const activeTab = document.querySelector('.tab.active');
                 const currentPage = parseInt(activeTab.getAttribute('data-page'));
 
@@ -586,20 +777,93 @@
                     height: Math.round(h)
                 };
 
-                var selectionData = [
-                    currentSelection.page,
-                    currentSelection.x,
-                    currentSelection.y,
-                    currentSelection.width,
-                    currentSelection.height
-                ].join(',');
+                // Capture the selected area as an image
+                const img = wrapper.querySelector('img');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to selection size
+                canvas.width = w;
+                canvas.height = h;
+                
+                // Draw the selected portion of the image
+                ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+                
+                // Convert to base64
+                const imageData = canvas.toDataURL('image/png');
 
-                console.log('Selection data:', selectionData);
-                hiddenField.value = selectionData;
-                btnSave.disabled = false;
+                // Get current active PDF path
+                const currentPdfPath = pdfList.length > 0 ? pdfList[0] : ''; // Default to first PDF in list
 
+                // Add to selected signatures
+                const signatureData = {
+                    page: currentPage,
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    width: Math.round(w),
+                    height: Math.round(h),
+                    image: imageData,
+                    sourcePdfPath: currentPdfPath
+                };
+
+                selectedSignatures.push(signatureData);
+                updateSignatureSlots();
+
+                // Update hidden field with all signatures
+                hiddenSignatures.value = JSON.stringify(selectedSignatures);
+                
+                clearSelection();
                 document.removeEventListener('mousemove', updateSelection);
                 document.removeEventListener('mouseup', endSelection);
+            }
+
+            function updateSignatureSlots() {
+                const slots = document.querySelectorAll('.signature-slot');
+                
+                slots.forEach((slot, index) => {
+                    const signature = selectedSignatures[index];
+                    const slotImage = slot.querySelector('.slot-image');
+                    const deleteBtn = slot.querySelector('.delete-signature');
+                    
+                    if (signature) {
+                        slot.classList.add('filled');
+                        slotImage.style.backgroundImage = `url(${signature.image})`;
+                        deleteBtn.style.display = 'flex';
+                        
+                        // Update delete button click handler
+                        deleteBtn.onclick = () => deleteSignature(index);
+                    } else {
+                        slot.classList.remove('filled');
+                        slotImage.style.backgroundImage = '';
+                        deleteBtn.style.display = 'none';
+                    }
+                });
+                
+                // Enable/disable save button based on selections
+                btnSave.disabled = selectedSignatures.length === 0;
+            }
+
+            function deleteSignature(index, event) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                // Mevcut aktif sayfayı kaydet
+                const currentActiveTab = document.querySelector('.tab.active');
+                const currentPage = currentActiveTab ? parseInt(currentActiveTab.getAttribute('data-page')) : 1;
+                
+                selectedSignatures.splice(index, 1);
+                updateSignatureSlots();
+                hiddenSignatures.value = JSON.stringify(selectedSignatures);
+                
+                // Silme işleminden sonra aynı sayfayı göster
+                if (currentPage) {
+                    showPage(currentPage);
+                }
+                
+                showNotification('İmza silindi', 'success');
+                return false; // Prevent any form submission
             }
 
             function clearSelection() {
@@ -651,21 +915,96 @@
             }
 
             function saveSignature() {
-                if (!currentSelection) return;
+                if (selectedSignatures.length === 0) {
+                    showNotification('Lütfen en az bir imza seçin', 'error');
+                    return;
+                }
                 
-                showLoading('İmza kaydediliyor...');
-                
-                // Seçim verilerini logla
-                console.log('Saving signature with data:', hiddenField.value);
+                showLoading('İmzalar kaydediliyor...');
                 
                 // Butonu devre dışı bırak
                 btnSave.disabled = true;
 
-                // AJAX çağrısı yap
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', window.location.href, true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                // Her bir imza için base64'ten dosya oluştur ve kaydet
+                const promises = selectedSignatures.map((signature, index) => {
+                    return new Promise((resolve, reject) => {
+                        // Base64'ü blob'a çevir
+                        const base64Data = signature.image.split(',')[1];
+                        const blob = base64ToBlob(base64Data, 'image/png');
+                        
+                        // FormData oluştur
+                        const formData = new FormData();
+                        formData.append('signatureImage', blob, `signature_${index}.png`);
+                        formData.append('sourcePdfPath', signature.sourcePdfPath);
+                        formData.append('page', signature.page);
+                        formData.append('x', signature.x);
+                        formData.append('y', signature.y);
+                        formData.append('width', signature.width);
+                        formData.append('height', signature.height);
+                        
+                        // AJAX çağrısı yap
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', 'SaveSignature.ashx', true);
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        // İmza yolunu güncelle
+                                        signature.savedImagePath = response.imagePath;
+                                        resolve(signature);
+                                    } else {
+                                        reject(new Error(response.error || 'Kayıt başarısız'));
+                                    }
+                                } catch (e) {
+                                    reject(new Error('Sunucu yanıtı işlenemedi'));
+                                }
+                            } else {
+                                reject(new Error('Sunucu hatası'));
+                            }
+                        };
+                        xhr.onerror = () => reject(new Error('Bağlantı hatası'));
+                        xhr.send(formData);
+                    });
+                });
+
+                // Tüm imzaların kaydedilmesini bekle
+                Promise.all(promises)
+                    .then(savedSignatures => {
+                        // Kaydedilen imza yollarını hidden field'a kaydet
+                        hiddenSignatures.value = JSON.stringify(savedSignatures);
+                        showNotification('Tüm imzalar başarıyla kaydedildi', 'success');
+                        
+                        // Formu kapat
+                        window.close();
+                    })
+                    .catch(error => {
+                        showNotification('Hata: ' + error.message, 'error');
+                        btnSave.disabled = false;
+                    })
+                    .finally(() => {
+                        hideLoading();
+                    });
+            }
+
+            function base64ToBlob(base64, mimeType) {
+                const byteCharacters = atob(base64);
+                const byteArrays = [];
+
+                for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                    const slice = byteCharacters.slice(offset, offset + 512);
+                    const byteNumbers = new Array(slice.length);
+                    
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
+                }
+
+                return new Blob(byteArrays, { type: mimeType });
+            }
 
                 xhr.onload = function() {
                     console.log('AJAX Response:', xhr.responseText); // Debug için yanıtı logla
@@ -792,10 +1131,82 @@
                 });
             }
 
+            // PDF listesi yönetimi
+            let pdfList = [];
+            const pdfListContainer = document.getElementById('pdfList');
+            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>');
+
+            function initializePdfList() {
+                // URL'den PDF listesini al
+                const urlParams = new URLSearchParams(window.location.search);
+                const pdfListParam = urlParams.get('pdfList');
+                
+                if (pdfListParam) {
+                    pdfList = decodeURIComponent(pdfListParam).split(',');
+                    hdnCurrentPdfList.value = pdfListParam;
+                    updatePdfListUI();
+                }
+            }
+
+            function updatePdfListUI() {
+                pdfListContainer.innerHTML = '';
+                pdfList.forEach((pdfPath, index) => {
+                    const pdfItem = document.createElement('div');
+                    pdfItem.className = 'pdf-item';
+                    pdfItem.innerHTML = `
+                        <span class="pdf-item-name">${pdfPath.split('/').pop()}</span>
+                        <span class="pdf-item-remove" onclick="removePdf(${index}, event)">✕</span>
+                    `;
+                    pdfItem.onclick = () => loadPdf(pdfPath);
+                    pdfListContainer.appendChild(pdfItem);
+                });
+            }
+
+            function loadPdf(pdfPath) {
+                // PDF yükleme işlemi için mevcut form mekanizmasını kullan
+                showLoading('PDF yükleniyor...');
+                // TODO: PDF yükleme işlemi için sunucu tarafında gerekli değişiklikleri yap
+            }
+
+            function removePdf(index, event) {
+                event.stopPropagation();
+                pdfList.splice(index, 1);
+                hdnCurrentPdfList.value = pdfList.join(',');
+                updatePdfListUI();
+                showNotification('PDF listeden kaldırıldı', 'success');
+            }
+
+            function addPdfToList(pdfPath) {
+                if (!pdfList.includes(pdfPath)) {
+                    pdfList.push(pdfPath);
+                    hdnCurrentPdfList.value = pdfList.join(',');
+                    updatePdfListUI();
+                }
+            }
+
             if (window.addEventListener) {
                 window.addEventListener('load', function() {
                     initializeImageEvents();
-                    restoreSelection();
+                    initializePdfList();
+                    
+                    // Initialize signature slots
+                    const slots = document.querySelectorAll('.signature-slot');
+                    slots.forEach((slot, index) => {
+                        const deleteBtn = slot.querySelector('.delete-signature');
+                        if (deleteBtn) {
+                            deleteBtn.onclick = (e) => deleteSignature(index, e);
+                        }
+                    });
+
+                    // Restore any saved signatures
+                    if (hiddenSignatures.value) {
+                        try {
+                            selectedSignatures = JSON.parse(hiddenSignatures.value);
+                            updateSignatureSlots();
+                        } catch (e) {
+                            console.error('Error restoring signatures:', e);
+                        }
+                    }
                 });
             }
 
