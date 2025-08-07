@@ -72,7 +72,7 @@ namespace AspxExamples
             }
 
             // PdfSignatureForm'u normal pencerede aç
-            string script = string.Format("window.open('{0}', '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');", url);
+            string script = "window.open('" + url + "', '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');";
             ScriptManager.RegisterStartupScript(this, GetType(), "OpenSignatureForm", script, true);
         }
 
