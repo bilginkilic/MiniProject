@@ -194,19 +194,22 @@ namespace AspxExamples
     // Örnek kullanım sınıfı
     public class ModernPopupExample
     {
-        public static void ShowModernPopup(string aspxFileName)
+        public static void ShowAuthorizedUserList()
         {
             try
             {
-                using (var popup = new ModernAspxPopup(aspxFileName))
+                using (var popup = new ModernAspxPopup("AuthorizedUserList.aspx"))
                 {
+                    popup.Text = "Yetkili Kullanıcı Listesi";
+                    popup.Size = new Size(1280, 900);
+                    popup.MinimumSize = new Size(1024, 768);
                     popup.ShowDialog();
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    String.Format("Modern popup açılırken hata oluştu: {0}", ex.Message),
+                    string.Format("Yetkili listesi açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
