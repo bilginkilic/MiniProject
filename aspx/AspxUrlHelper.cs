@@ -21,15 +21,26 @@ namespace AspxExamples
                 string baseUrl = String.Format("{0}://{1}", request.Url.Scheme, request.Url.Authority);
                 string applicationPath = request.ApplicationPath.TrimEnd('/');
                 
+                // Query string parametrelerini ayır
+                string baseFileName = fileName;
+                string queryString = "";
+                
+                int queryIndex = fileName.IndexOf('?');
+                if (queryIndex >= 0)
+                {
+                    baseFileName = fileName.Substring(0, queryIndex);
+                    queryString = fileName.Substring(queryIndex);
+                }
+
                 // Fiziksel yolu kontrol et
-                string physicalPath = context.Server.MapPath(String.Format("~/aspx/{0}", fileName));
+                string physicalPath = context.Server.MapPath(String.Format("~/aspx/{0}", baseFileName));
                 if (!File.Exists(physicalPath))
                 {
                     throw new FileNotFoundException(String.Format("ASPX dosyası bulunamadı: {0}", fileName));
                 }
 
                 // URL'yi oluştur
-                return String.Format("{0}{1}/aspx/{2}", baseUrl, applicationPath, fileName);
+                return String.Format("{0}{1}/aspx/{2}{3}", baseUrl, applicationPath, baseFileName, queryString);
             }
             catch (Exception ex)
             {
