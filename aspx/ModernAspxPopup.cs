@@ -194,11 +194,12 @@ namespace AspxExamples
     // Örnek kullanım sınıfı
     public class ModernPopupExample
     {
-        public static void ShowAuthorizedUserList()
+        public static void ShowAuthorizedUserList(string circularRefNumber)
         {
             try
             {
-                using (var popup = new ModernAspxPopup("AuthorizedUserList.aspx"))
+                string url = string.Format("AuthorizedUserList.aspx?ref={0}", circularRefNumber);
+                using (var popup = new ModernAspxPopup(url))
                 {
                     popup.Text = "Yetkili Kullanıcı Listesi";
                     popup.Size = new Size(1280, 900);
