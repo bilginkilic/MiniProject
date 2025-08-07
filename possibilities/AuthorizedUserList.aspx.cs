@@ -68,12 +68,12 @@ namespace AspxExamples
             string url = "PdfSignatureForm.aspx";
             if (!string.IsNullOrEmpty(yetkiliKontNo))
             {
-                url += $"?yetkiliKontNo={yetkiliKontNo}";
+                url += string.Format("?yetkiliKontNo={0}", yetkiliKontNo);
             }
 
             // ModernAspxPopup ile aç
             ScriptManager.RegisterStartupScript(this, GetType(), "OpenPopup",
-                $"CircularRef.ShowModernPopup('{url}');", true);
+                string.Format("CircularRef.ShowModernPopup('{0}');", url), true);
         }
 
         protected string GetSignatureUrl(object signaturePath)
@@ -82,7 +82,7 @@ namespace AspxExamples
                 return "";
 
             // TODO: CDN yolunu configden al
-            return $"/cdn/{signaturePath}";
+            return string.Format("/cdn/{0}", signaturePath);
         }
     }
 
