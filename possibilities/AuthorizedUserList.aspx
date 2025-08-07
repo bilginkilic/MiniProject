@@ -129,13 +129,13 @@
                             <ItemTemplate>
                                 <div style="display: flex; gap: 10px;">
                                     <asp:Image runat="server" ID="imgSignature1" CssClass="signature-preview" 
-                                        ImageUrl='<%# GetSignatureUrl(Eval("ImzaOrnegi1")) %>' 
+                                        ImageUrl='<%# Eval("ImzaOrnegi1") %>' 
                                         Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi1") as string) %>' />
                                     <asp:Image runat="server" ID="imgSignature2" CssClass="signature-preview" 
-                                        ImageUrl='<%# GetSignatureUrl(Eval("ImzaOrnegi2")) %>' 
+                                        ImageUrl='<%# Eval("ImzaOrnegi2") %>' 
                                         Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi2") as string) %>' />
                                     <asp:Image runat="server" ID="imgSignature3" CssClass="signature-preview" 
-                                        ImageUrl='<%# GetSignatureUrl(Eval("ImzaOrnegi3")) %>' 
+                                        ImageUrl='<%# Eval("ImzaOrnegi3") %>' 
                                         Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi3") as string) %>' />
                                 </div>
                             </ItemTemplate>

@@ -31,9 +31,9 @@ namespace AspxExamples
                     YetkiGrubu = "A Grubu",
                     SinirliYetkiDetaylari = "C İLE BİRLİKTE 1.000.000 USD",
                     YetkiTurleri = "Kredi Sözleşmeleri / Transfer İşlemleri",
-                    ImzaOrnegi1 = "signature1.png",
-                    ImzaOrnegi2 = "signature2.png",
-                    ImzaOrnegi3 = "signature3.png",
+                    ImzaOrnegi1 = "http://example.com/signatures/signature1.png",
+                    ImzaOrnegi2 = "http://example.com/signatures/signature2.png",
+                    ImzaOrnegi3 = "http://example.com/signatures/signature3.png",
                     YetkiTutari = 100000,
                     YetkiDovizCinsi = "USD",
                     YetkiDurumu = "Aktif"
@@ -76,14 +76,7 @@ namespace AspxExamples
             ScriptManager.RegisterStartupScript(this, GetType(), "OpenSignatureForm", script, true);
         }
 
-        protected string GetSignatureUrl(object signaturePath)
-        {
-            if (signaturePath == null || string.IsNullOrEmpty(signaturePath.ToString()))
-                return "";
 
-            // TODO: CDN yolunu configden al
-            return string.Format("/cdn/{0}", signaturePath);
-        }
     }
 
     public class AuthorizedUser
