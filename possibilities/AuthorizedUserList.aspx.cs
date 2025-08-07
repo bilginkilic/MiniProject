@@ -69,23 +69,38 @@ namespace AspxExamples
 
         protected void BtnAddNew_Click(object sender, EventArgs e)
         {
-            // Yeni boş satır ekle
+            // Mevcut verileri al
             var users = GetCurrentUsers();
+            
+            // Yeni satır için kontrol numarası oluştur
+            string newKontNo = string.Format("{0:D7}", (DateTime.Now.Ticks % 10000000));
+            
+            // Yeni satır ekle
             users.Insert(0, new AuthorizedUser
             {
-                YetkiliKontNo = string.Format("{0:D7}", (DateTime.Now.Ticks % 10000000)),
+                YetkiliKontNo = newKontNo,
+                YetkiliAdiSoyadi = "",
                 YetkiSekli = "Müştereken",
                 YetkiSuresi = DateTime.Now.AddYears(1),
                 YetkiBitisTarihi = DateTime.Now.AddYears(1),
                 YetkiGrubu = "A Grubu",
+                SinirliYetkiDetaylari = "",
                 YetkiTurleri = "Kredi İşlemleri, Hazine İşlemleri",
+                ImzaOrnegi1 = "",
+                ImzaOrnegi2 = "",
+                ImzaOrnegi3 = "",
                 YetkiTutari = 0,
                 YetkiDovizCinsi = "USD",
                 YetkiDurumu = "Aktif"
             });
 
+            // Grid'i güncelle
             gvAuthorizedUsers.DataSource = users;
             gvAuthorizedUsers.DataBind();
+            
+            // Yeni satırı vurgula
+            ScriptManager.RegisterStartupScript(this, GetType(), "HighlightNewRow",
+                string.Format("highlightRow('{0}');", newKontNo), true);
         }
 
         private List<AuthorizedUser> GetCurrentUsers()
@@ -186,12 +201,13 @@ namespace AspxExamples
             string url = "PdfSignatureForm.aspx";
             if (!string.IsNullOrEmpty(yetkiliKontNo))
             {
-                url += string.Format("?yetkiliKontNo={0}", yetkiliKontNo);
+                url += string.Format("?yetkiliKontNo={0}&returnUrl={1}", 
+                    yetkiliKontNo, 
+                    Server.UrlEncode(Request.RawUrl));
             }
 
-            // PdfSignatureForm'u modal olarak aç
-            string script = String.Format("openSignatureModal('{0}');", yetkiliKontNo);
-            ScriptManager.RegisterStartupScript(this, GetType(), "OpenSignatureForm", script, true);
+            // Yeni sayfaya yönlendir
+            Response.Redirect(url);
         }
 
 

@@ -183,10 +183,50 @@
             background-color: #6c757d;
             color: #fff;
         }
+        .signature-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 8px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        
+        .signature-previews {
+            display: flex;
+            gap: 10px;
+            min-height: 60px;
+            padding: 8px;
+            background: #f8f9fa;
+            border: 1px dashed #e0e0e0;
+            border-radius: 4px;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .signature-preview {
-            max-width: 100px;
+            max-width: 60px;
             max-height: 40px;
-            cursor: pointer;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            padding: 2px;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .signature-preview:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .highlight-row {
+            animation: highlightFade 2s ease-out;
+        }
+        
+        @keyframes highlightFade {
+            0% { background-color: #fff3cd; }
+            100% { background-color: transparent; }
         }
         .status-active {
             color: #dc3545; /* Kırmızı */
@@ -435,6 +475,16 @@
         <asp:HiddenField ID="hdnSignaturePath" runat="server" />
         
         <script type="text/javascript">
+            function highlightRow(kontNo) {
+                var row = document.querySelector(`tr[data-kontno="${kontNo}"]`);
+                if (row) {
+                    row.classList.add('highlight-row');
+                    setTimeout(() => {
+                        row.classList.remove('highlight-row');
+                    }, 2000);
+                }
+            }
+
             function openUserFormModal() {
                 var modal = document.getElementById('userFormModal');
                 modal.style.display = 'flex';
@@ -511,6 +561,11 @@
                                             Text='<%# Eval("YetkiliKontNo") %>' Enabled="false" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
+                                <asp:TemplateField>
+                                    <ItemTemplate>
+                                        <tr runat="server" data-kontno='<%# Eval("YetkiliKontNo") %>'></tr>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Yetki Şekli">
                                     <ItemTemplate>
                                         <asp:DropDownList ID="ddlYetkiSekli" runat="server" CssClass="grid-select">
@@ -550,21 +605,24 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="İmza Örnekleri">
                                     <ItemTemplate>
-                                        <div style="display: flex; gap: 10px;">
-                                            <asp:Image runat="server" ID="imgSignature1" CssClass="signature-preview" 
-                                                ImageUrl='<%# Eval("ImzaOrnegi1") %>' 
-                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi1") as string) %>' />
-                                            <asp:Image runat="server" ID="imgSignature2" CssClass="signature-preview" 
-                                                ImageUrl='<%# Eval("ImzaOrnegi2") %>' 
-                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi2") as string) %>' />
-                                            <asp:Image runat="server" ID="imgSignature3" CssClass="signature-preview" 
-                                                ImageUrl='<%# Eval("ImzaOrnegi3") %>' 
-                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi3") as string) %>' />
+                                        <div class="signature-container">
+                                            <div class="signature-previews">
+                                                <asp:Image runat="server" ID="imgSignature1" CssClass="signature-preview" 
+                                                    ImageUrl='<%# Eval("ImzaOrnegi1") %>' 
+                                                    Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi1") as string) %>' />
+                                                <asp:Image runat="server" ID="imgSignature2" CssClass="signature-preview" 
+                                                    ImageUrl='<%# Eval("ImzaOrnegi2") %>' 
+                                                    Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi2") as string) %>' />
+                                                <asp:Image runat="server" ID="imgSignature3" CssClass="signature-preview" 
+                                                    ImageUrl='<%# Eval("ImzaOrnegi3") %>' 
+                                                    Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi3") as string) %>' />
+                                            </div>
+                                            <asp:Button ID="btnSelectSignature" runat="server" Text="İmza Seç" 
+                                                CssClass="grid-button edit" CommandName="SelectSignature" 
+                                                CommandArgument='<%# Eval("YetkiliKontNo") %>' />
                                         </div>
-                                        <asp:Button ID="btnSelectSignature" runat="server" Text="İmza Seç" 
-                                            CssClass="grid-button edit" CommandName="SelectSignature" 
-                                            CommandArgument='<%# Eval("YetkiliKontNo") %>' />
                                     </ItemTemplate>
+                                    <ItemStyle Width="250px" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Yetki Tutarı">
                                     <ItemTemplate>
