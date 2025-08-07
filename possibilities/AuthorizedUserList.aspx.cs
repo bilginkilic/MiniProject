@@ -69,7 +69,88 @@ namespace AspxExamples
 
         protected void BtnAddNew_Click(object sender, EventArgs e)
         {
-            OpenSignatureForm();
+            // Form alanlarını temizle
+            txtYetkiliKontNo.Text = string.Empty;
+            txtYetkiBitisTarihi.Text = string.Empty;
+            ddlYetkiSekli.SelectedIndex = 0;
+            ddlYetkiGrubu.SelectedIndex = 0;
+            txtSinirliYetkiDetaylari.Text = string.Empty;
+            ddlYetkiTurleri.SelectedIndex = 0;
+            txtYetkiTutari.Text = string.Empty;
+            ddlYetkiDovizCinsi.SelectedIndex = 0;
+            ddlYetkiDurumu.SelectedIndex = 0;
+
+            // JavaScript ile modal'ı aç
+            ScriptManager.RegisterStartupScript(this, GetType(), "OpenUserForm", "openUserFormModal();", true);
+        }
+
+        protected void BtnSelectSignature_Click(object sender, EventArgs e)
+        {
+            if (Page.IsValid)
+            {
+                // Mevcut form verilerini Session'da sakla
+                SaveFormDataToSession();
+                
+                // İmza formunu aç
+                OpenSignatureForm();
+            }
+        }
+
+        protected void BtnSaveUser_Click(object sender, EventArgs e)
+        {
+            if (Page.IsValid)
+            {
+                try
+                {
+                    // Form verilerini al
+                    var user = new AuthorizedUser
+                    {
+                        YetkiliKontNo = txtYetkiliKontNo.Text,
+                        YetkiSekli = ddlYetkiSekli.SelectedValue,
+                        YetkiSuresi = DateTime.Parse(txtYetkiBitisTarihi.Text),
+                        YetkiBitisTarihi = DateTime.Parse(txtYetkiBitisTarihi.Text),
+                        YetkiGrubu = ddlYetkiGrubu.SelectedValue,
+                        SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
+                        YetkiTurleri = ddlYetkiTurleri.SelectedValue,
+                        YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
+                        YetkiDovizCinsi = ddlYetkiDovizCinsi.SelectedValue,
+                        YetkiDurumu = ddlYetkiDurumu.SelectedValue
+                    };
+
+                    // TODO: Veritabanına kaydet
+                    // SaveUserToDatabase(user);
+
+                    // Başarılı mesajı göster
+                    ScriptManager.RegisterStartupScript(this, GetType(), "SaveSuccess", 
+                        string.Format("showNotification('Yetkili kullanıcı başarıyla kaydedildi.', 'success'); closeUserFormModal();"), true);
+
+                    // Listeyi yenile
+                    LoadAuthorizedUsers();
+                }
+                catch (Exception ex)
+                {
+                    // Hata mesajı göster
+                    ScriptManager.RegisterStartupScript(this, GetType(), "SaveError",
+                        string.Format("showNotification('Hata oluştu: {0}', 'error');", ex.Message), true);
+                }
+            }
+        }
+
+        private void SaveFormDataToSession()
+        {
+            Session["TempUserData"] = new AuthorizedUser
+            {
+                YetkiliKontNo = txtYetkiliKontNo.Text,
+                YetkiSekli = ddlYetkiSekli.SelectedValue,
+                YetkiSuresi = DateTime.Parse(txtYetkiBitisTarihi.Text),
+                YetkiBitisTarihi = DateTime.Parse(txtYetkiBitisTarihi.Text),
+                YetkiGrubu = ddlYetkiGrubu.SelectedValue,
+                SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
+                YetkiTurleri = ddlYetkiTurleri.SelectedValue,
+                YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
+                YetkiDovizCinsi = ddlYetkiDovizCinsi.SelectedValue,
+                YetkiDurumu = ddlYetkiDurumu.SelectedValue
+            };
         }
 
         protected void GvAuthorizedUsers_RowCommand(object sender, GridViewCommandEventArgs e)

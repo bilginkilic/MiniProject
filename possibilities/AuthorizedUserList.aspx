@@ -193,6 +193,115 @@
             border: none;
             background: white;
         }
+        
+        /* Form Styles */
+        .form-container {
+            padding: 20px;
+            background: white;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            flex: 0 0 100%;
+        }
+        
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 2px rgba(220,53,69,0.25);
+            outline: none;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-control:disabled {
+            background: #f8f9fa;
+            cursor: not-allowed;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .form-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-message.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .form-message.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        /* Validation Styles */
+        .validation-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+        
+        .validation-summary {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .validation-summary ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .form-control.input-validation-error {
+            border-color: #dc3545;
+        }
+        
+        .form-control.input-validation-error:focus {
+            box-shadow: 0 0 0 2px rgba(220,53,69,0.25);
+        }
     </style>
 </head>
 <body>
@@ -201,6 +310,16 @@
         <asp:HiddenField ID="hdnSignaturePath" runat="server" />
         
         <script type="text/javascript">
+            function openUserFormModal() {
+                var modal = document.getElementById('userFormModal');
+                modal.style.display = 'flex';
+            }
+            
+            function closeUserFormModal() {
+                var modal = document.getElementById('userFormModal');
+                modal.style.display = 'none';
+            }
+            
             function openSignatureModal(yetkiliKontNo) {
                 var modal = document.getElementById('signatureModal');
                 var iframe = document.getElementById('signatureFrame');
@@ -255,6 +374,122 @@
                     <div class="header">
                         <h2>Yetkili Kullanıcı Listesi</h2>
                         <asp:Button ID="btnAddNew" runat="server" Text="Yeni Yetkili Ekle" CssClass="button" OnClick="BtnAddNew_Click" />
+                    </div>
+
+                    <!-- Yetkili Kullanıcı Form Modal -->
+                    <div id="userFormModal" class="modal-overlay">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Yetkili Kullanıcı Bilgileri</h2>
+                                <button type="button" class="modal-close" onclick="closeUserFormModal()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-container">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="txtYetkiliKontNo">Yetkili Kontakt No:</label>
+                                            <asp:TextBox ID="txtYetkiliKontNo" runat="server" CssClass="form-control" required="required" />
+                                            <asp:RequiredFieldValidator ID="rfvYetkiliKontNo" runat="server" 
+                                                ControlToValidate="txtYetkiliKontNo"
+                                                ErrorMessage="Yetkili Kontakt No gereklidir"
+                                                Display="Dynamic"
+                                                CssClass="validation-error"
+                                                ValidationGroup="UserForm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="txtYetkiBitisTarihi">Yetki Bitiş Tarihi:</label>
+                                            <asp:TextBox ID="txtYetkiBitisTarihi" runat="server" CssClass="form-control" TextMode="Date" required="required" />
+                                            <asp:RequiredFieldValidator ID="rfvYetkiBitisTarihi" runat="server"
+                                                ControlToValidate="txtYetkiBitisTarihi"
+                                                ErrorMessage="Yetki Bitiş Tarihi gereklidir"
+                                                Display="Dynamic"
+                                                CssClass="validation-error"
+                                                ValidationGroup="UserForm" />
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="ddlYetkiSekli">Yetki Şekli:</label>
+                                            <asp:DropDownList ID="ddlYetkiSekli" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="Müştereken" Value="Müştereken" />
+                                                <asp:ListItem Text="Münferiden" Value="Münferiden" />
+                                            </asp:DropDownList>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="ddlYetkiGrubu">Yetki Grubu:</label>
+                                            <asp:DropDownList ID="ddlYetkiGrubu" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="A Grubu" Value="A Grubu" />
+                                                <asp:ListItem Text="B Grubu" Value="B Grubu" />
+                                                <asp:ListItem Text="C Grubu" Value="C Grubu" />
+                                            </asp:DropDownList>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group full-width">
+                                            <label for="txtSinirliYetkiDetaylari">Sınırlı Yetki Detayları:</label>
+                                            <asp:TextBox ID="txtSinirliYetkiDetaylari" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" />
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="ddlYetkiTurleri">Yetki Türleri:</label>
+                                            <asp:DropDownList ID="ddlYetkiTurleri" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="Kredi İşlemleri, Hazine İşlemleri" Value="Kredi İşlemleri, Hazine İşlemleri" />
+                                                <asp:ListItem Text="Kredi Sözleşmeleri / Transfer İşlemleri" Value="Kredi Sözleşmeleri / Transfer İşlemleri" />
+                                            </asp:DropDownList>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="txtYetkiTutari">Yetki Tutarı:</label>
+                                            <asp:TextBox ID="txtYetkiTutari" runat="server" CssClass="form-control" TextMode="Number" required="required" />
+                                            <asp:RequiredFieldValidator ID="rfvYetkiTutari" runat="server"
+                                                ControlToValidate="txtYetkiTutari"
+                                                ErrorMessage="Yetki Tutarı gereklidir"
+                                                Display="Dynamic"
+                                                CssClass="validation-error"
+                                                ValidationGroup="UserForm" />
+                                            <asp:RangeValidator ID="rvYetkiTutari" runat="server"
+                                                ControlToValidate="txtYetkiTutari"
+                                                Type="Double"
+                                                MinimumValue="0"
+                                                MaximumValue="999999999"
+                                                ErrorMessage="Geçerli bir tutar giriniz"
+                                                Display="Dynamic"
+                                                CssClass="validation-error"
+                                                ValidationGroup="UserForm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="ddlYetkiDovizCinsi">Yetki Döviz Cinsi:</label>
+                                            <asp:DropDownList ID="ddlYetkiDovizCinsi" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="USD" Value="USD" />
+                                                <asp:ListItem Text="EUR" Value="EUR" />
+                                                <asp:ListItem Text="TRY" Value="TRY" />
+                                            </asp:DropDownList>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="ddlYetkiDurumu">Yetki Durumu:</label>
+                                            <asp:DropDownList ID="ddlYetkiDurumu" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="Aktif" Value="Aktif" />
+                                                <asp:ListItem Text="Pasif" Value="Pasif" />
+                                            </asp:DropDownList>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group full-width">
+                                            <asp:Button ID="btnSelectSignature" runat="server" Text="İmza Seç" CssClass="button" OnClick="BtnSelectSignature_Click" ValidationGroup="UserForm" />
+                                            <asp:Button ID="btnSaveUser" runat="server" Text="Kaydet" CssClass="button" OnClick="BtnSaveUser_Click" ValidationGroup="UserForm" />
+                                            <asp:ValidationSummary ID="ValidationSummary1" runat="server" 
+                                                ValidationGroup="UserForm"
+                                                DisplayMode="BulletList"
+                                                ShowMessageBox="false"
+                                                ShowSummary="true"
+                                                CssClass="validation-summary" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="grid-container">
