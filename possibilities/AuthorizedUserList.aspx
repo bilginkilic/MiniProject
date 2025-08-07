@@ -17,34 +17,43 @@
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(220,53,69,0.1);
+            border: 1px solid rgba(220,53,69,0.1);
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
+            padding: 15px;
+            border-bottom: 2px solid #dc3545;
+            background-color: #f8f9fa;
+            border-radius: 6px;
         }
         .header h2 {
             margin: 0;
-            color: #333;
+            color: #dc3545;
+            font-weight: 500;
         }
         .button {
             padding: 8px 16px;
-            background-color: #007bff;
+            background-color: #dc3545; /* Kırmızı */
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.3s ease;
         }
         .button:hover {
-            background-color: #0056b3;
+            background-color: #c82333; /* Koyu kırmızı */
+            transform: translateY(-1px);
         }
         .button.secondary {
-            background-color: #6c757d;
+            background-color: #6c757d; /* Gri */
+        }
+        .button.secondary:hover {
+            background-color: #5a6268; /* Koyu gri */
         }
         .grid-container {
             margin-top: 20px;
@@ -55,11 +64,12 @@
             border-collapse: collapse;
         }
         .grid th {
-            background-color: #f8f9fa;
+            background-color: #dc3545; /* Kırmızı */
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #dee2e6;
-            color: #495057;
+            border-bottom: 2px solid #c82333; /* Koyu kırmızı */
+            color: white;
+            font-weight: 500;
         }
         .grid td {
             padding: 12px;
@@ -75,11 +85,11 @@
             cursor: pointer;
         }
         .status-active {
-            color: #28a745;
+            color: #dc3545; /* Kırmızı */
             font-weight: bold;
         }
         .status-inactive {
-            color: #dc3545;
+            color: #6c757d; /* Gri */
             font-weight: bold;
         }
         .action-buttons {
@@ -94,29 +104,60 @@
             font-size: 12px;
         }
         .edit-button {
-            background-color: #ffc107;
-            color: #000;
+            background-color: #6c757d; /* Gri */
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .edit-button:hover {
+            background-color: #5a6268; /* Koyu gri */
+            transform: translateY(-1px);
         }
         .delete-button {
-            background-color: #dc3545;
+            background-color: #dc3545; /* Kırmızı */
             color: white;
+            transition: all 0.3s ease;
+        }
+        .delete-button:hover {
+            background-color: #c82333; /* Koyu kırmızı */
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
         <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
+        <asp:HiddenField ID="hdnSignaturePath" runat="server" />
+        
+        <script type="text/javascript">
+            function handleSignatureReturn(signaturePath) {
+                // İmza yolunu hidden field'a kaydet
+                var hdnSignaturePath = document.getElementById('<%= hdnSignaturePath.ClientID %>');
+                if (hdnSignaturePath) {
+                    hdnSignaturePath.value = signaturePath;
+                    
+                    // UpdatePanel'i güncelle
+                    if (typeof(Sys) !== 'undefined' && Sys.WebForms) {
+                        var prm = Sys.WebForms.PageRequestManager.getInstance();
+                        if (prm) {
+                            prm._doPostBack('UpdatePanel1', '');
+                        }
+                    }
+                }
+            }
+        </script>
         
         <div class="container">
-            <div class="header">
-                <h2>Yetkili Kullanıcı Listesi</h2>
-                <asp:Button ID="btnAddNew" runat="server" Text="Yeni Yetkili Ekle" CssClass="button" OnClick="BtnAddNew_Click" />
-            </div>
+            <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+                <ContentTemplate>
+                    <div class="header">
+                        <h2>Yetkili Kullanıcı Listesi</h2>
+                        <asp:Button ID="btnAddNew" runat="server" Text="Yeni Yetkili Ekle" CssClass="button" OnClick="BtnAddNew_Click" />
+                    </div>
 
-            <div class="grid-container">
-                <asp:GridView ID="gvAuthorizedUsers" runat="server" CssClass="grid" AutoGenerateColumns="false"
-                    OnRowCommand="GvAuthorizedUsers_RowCommand" DataKeyNames="YetkiliKontNo">
-                    <Columns>
+                    <div class="grid-container">
+                        <asp:GridView ID="gvAuthorizedUsers" runat="server" CssClass="grid" AutoGenerateColumns="false"
+                            OnRowCommand="GvAuthorizedUsers_RowCommand" DataKeyNames="YetkiliKontNo">
+                            <Columns>
                         <asp:BoundField DataField="YetkiliKontNo" HeaderText="Yetkili Kont. No" />
                         <asp:BoundField DataField="YetkiliAdiSoyadi" HeaderText="Yetkili Adı Soyadı" />
                         <asp:BoundField DataField="YetkiSekli" HeaderText="Yetki Şekli" />
@@ -163,6 +204,8 @@
                     </Columns>
                 </asp:GridView>
             </div>
+                </ContentTemplate>
+            </asp:UpdatePanel>
         </div>
     </form>
 </body>

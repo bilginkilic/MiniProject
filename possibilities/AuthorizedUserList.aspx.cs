@@ -14,6 +14,29 @@ namespace AspxExamples
             {
                 LoadAuthorizedUsers();
             }
+            else
+            {
+                // İmza yolu dönüşünü kontrol et
+                string signaturePath = hdnSignaturePath.Value;
+                if (!string.IsNullOrEmpty(signaturePath))
+                {
+                    // İmza yolunu temizle
+                    hdnSignaturePath.Value = "";
+                    
+                    // İmza yolunu kullanarak veritabanını güncelle
+                    UpdateSignaturePath(signaturePath);
+                    
+                    // Listeyi yenile
+                    LoadAuthorizedUsers();
+                }
+            }
+        }
+
+        private void UpdateSignaturePath(string signaturePath)
+        {
+            // TODO: Veritabanında imza yolunu güncelle
+            // Bu örnek için sadece debug log yazıyoruz
+            System.Diagnostics.Debug.WriteLine($"İmza yolu güncellendi: {signaturePath}");
         }
 
         private void LoadAuthorizedUsers()
@@ -71,8 +94,29 @@ namespace AspxExamples
                 url += string.Format("?yetkiliKontNo={0}", yetkiliKontNo);
             }
 
-            // PdfSignatureForm'u normal pencerede aç
-            string script = "window.open('" + url + "', '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');";
+            // PdfSignatureForm'u modal pencerede aç ve sonucu handle et
+            string script = @"
+                var signatureWindow = window.open('" + url + @"', 'SignatureForm', 'width=1024,height=768,scrollbars=yes,resizable=yes');
+                
+                // Pencere kapandığında sonucu kontrol et
+                var checkWindowClosed = setInterval(function() {
+                    if (signatureWindow.closed) {
+                        clearInterval(checkWindowClosed);
+                        
+                        // Sunucudan güncel verileri almak için sayfayı yenile
+                        if (typeof(Sys) !== 'undefined' && Sys.WebForms) {
+                            var prm = Sys.WebForms.PageRequestManager.getInstance();
+                            if (prm) {
+                                prm._doPostBack('UpdatePanel1', '');
+                            } else {
+                                window.location.reload();
+                            }
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                }, 500);";
+            
             ScriptManager.RegisterStartupScript(this, GetType(), "OpenSignatureForm", script, true);
         }
 

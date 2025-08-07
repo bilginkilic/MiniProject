@@ -11,6 +11,27 @@ using System.Web.Script.Serialization;
 
 namespace AspxExamples
 {
+    public class SignatureData
+    {
+        public int Page { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public string Image { get; set; }
+        public string SourcePdfPath { get; set; }
+    }
+
+    public class SavedSignature
+    {
+        public string Path { get; set; }
+        public int Page { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
+
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
@@ -179,60 +200,53 @@ namespace AspxExamples
         {
             try
             {
-                string selectionData = hdnSelection.Value;
-                System.Diagnostics.Debug.WriteLine(String.Format("Seçim verisi alındı: {0}", selectionData));
+                string signaturesJson = Request.Form["hdnSignatures"];
+                System.Diagnostics.Debug.WriteLine($"İmza verileri alındı: {signaturesJson}");
 
-                if (string.IsNullOrEmpty(selectionData))
+                if (string.IsNullOrEmpty(signaturesJson))
                 {
-                    ShowError("Lütfen önce bir imza alanı seçiniz.");
+                    ShowError("Lütfen en az bir imza seçiniz.");
                     return;
                 }
 
-                string[] parts = selectionData.Split(',');
-                if (parts.Length >= 5) // page,x,y,width,height
+                var serializer = new JavaScriptSerializer();
+                var signatures = serializer.Deserialize<List<SignatureData>>(signaturesJson);
+
+                if (signatures == null || signatures.Count == 0)
                 {
-                    int page = int.Parse(parts[0]);
-                    int x = int.Parse(parts[1]);
-                    int y = int.Parse(parts[2]);
-                    int width = int.Parse(parts[3]);
-                    int height = int.Parse(parts[4]);
+                    ShowError("Geçersiz imza verisi.");
+                    return;
+                }
 
-                    System.Diagnostics.Debug.WriteLine(String.Format("Seçim koordinatları: Sayfa={0}, X={1}, Y={2}, Genişlik={3}, Yükseklik={4}", 
-                        page, x, y, width, height));
+                var savedSignatures = new List<SavedSignature>();
 
-                    if (width <= 0 || height <= 0)
-                    {
-                        ShowError("Geçersiz seçim boyutları. Lütfen tekrar seçim yapınız.");
-                        return;
-                    }
-
-                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", page));
-                    System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim yolu: {0}", imagePath));
+                foreach (var signature in signatures)
+                {
+                    string imagePath = Path.Combine(_cdn, $"page_{signature.Page}.png");
+                    System.Diagnostics.Debug.WriteLine($"Kaynak resim yolu: {imagePath}");
 
                     if (!File.Exists(imagePath))
                     {
-                        ShowError("Seçilen sayfanın görüntüsü bulunamadı. Lütfen sayfayı yenileyin.");
-                        return;
+                        ShowError($"Sayfa {signature.Page} için görüntü bulunamadı.");
+                        continue;
                     }
 
                     using (var sourceImage = new System.Drawing.Bitmap(imagePath))
                     {
-                        System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim boyutları: {0}x{1}", sourceImage.Width, sourceImage.Height));
-
-                        if (x < 0 || y < 0 || x + width > sourceImage.Width || y + height > sourceImage.Height)
+                        if (signature.X < 0 || signature.Y < 0 || 
+                            signature.X + signature.Width > sourceImage.Width || 
+                            signature.Y + signature.Height > sourceImage.Height)
                         {
-                            ShowError("Seçilen alan resim sınırları dışında. Lütfen tekrar seçim yapınız.");
-                            return;
+                            ShowError($"Sayfa {signature.Page} için seçilen alan resim sınırları dışında.");
+                            continue;
                         }
 
-                        string outputFileName = String.Format("signature_{0}.png", DateTime.Now.Ticks);
+                        string outputFileName = $"signature_{DateTime.Now.Ticks}_{signatures.IndexOf(signature)}.png";
                         string outputPath = Path.Combine(_cdn, outputFileName);
-                        System.Diagnostics.Debug.WriteLine(String.Format("Hedef resim yolu: {0}", outputPath));
 
                         try
                         {
-                            // Kırpma işlemi
-                            using (var bitmap = new System.Drawing.Bitmap(width, height))
+                            using (var bitmap = new System.Drawing.Bitmap(signature.Width, signature.Height))
                             {
                                 bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
 
@@ -243,86 +257,95 @@ namespace AspxExamples
                                     graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
                                     graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                                    var sourceRect = new System.Drawing.Rectangle(x, y, width, height);
-                                    var destRect = new System.Drawing.Rectangle(0, 0, width, height);
-
-                                    System.Diagnostics.Debug.WriteLine(String.Format("Kırpma koordinatları: Kaynak={0}, Hedef={1}", 
-                                        sourceRect.ToString(), destRect.ToString()));
+                                    var sourceRect = new System.Drawing.Rectangle(signature.X, signature.Y, signature.Width, signature.Height);
+                                    var destRect = new System.Drawing.Rectangle(0, 0, signature.Width, signature.Height);
 
                                     graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
                                 }
 
-                                // Önce geçici dosyaya kaydet
-                                string tempPath = Path.Combine(_cdn, String.Format("temp_{0}", outputFileName));
+                                string tempPath = Path.Combine(_cdn, $"temp_{outputFileName}");
                                 bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
 
-                                // Başarılı olursa asıl konuma taşı
                                 if (File.Exists(outputPath))
                                 {
                                     File.Delete(outputPath);
                                 }
                                 File.Move(tempPath, outputPath);
 
-                                var fileInfo = new FileInfo(outputPath);
-                                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydedildi: {0}, Boyut: {1} bytes", outputPath, fileInfo.Length));
-
-                                                    // AJAX yanıtı gönder
-                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    {
-                        var response = new {
-                            success = true,
-                            path = outputFileName,
-                            message = "OK"
-                        };
-                        
-                        var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-                        var jsonResponse = serializer.Serialize(response);
-                        Response.Clear();
-                        Response.ContentType = "application/json";
-                        Response.Write(jsonResponse);
-                        Response.Flush();
-                        Response.Close();
-                        HttpContext.Current.ApplicationInstance.CompleteRequest();
-                    }
-                                else
+                                savedSignatures.Add(new SavedSignature
                                 {
-                                    // Normal postback için eski davranış
-                                    ScriptManager.RegisterStartupScript(this, GetType(),
-                                        "saveSuccess",
-                                        String.Format(@"
-                                            showNotification('İmza başarıyla kaydedildi: {0}', 'success');
-                                            if(typeof clearSelection === 'function') {{ clearSelection(); }}
-                                            btnSaveSignature.disabled = false;
-                                        ", outputFileName),
-                                        true);
-                                }
+                                    Path = _cdnVirtualPath + "/" + outputFileName,
+                                    Page = signature.Page,
+                                    X = signature.X,
+                                    Y = signature.Y,
+                                    Width = signature.Width,
+                                    Height = signature.Height
+                                });
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine(String.Format("Dosya kaydetme hatası: {0}", ex.Message));
-                            throw;
+                            System.Diagnostics.Debug.WriteLine($"İmza kaydetme hatası: {ex.Message}");
+                            ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
+                            continue;
                         }
                     }
                 }
+
+                // İmzaları kaydet ve yanıt gönder
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    var response = new {
+                        success = savedSignatures.Count > 0,
+                        signatures = savedSignatures,
+                        message = savedSignatures.Count > 0 ? "İmzalar başarıyla kaydedildi" : "İmza kaydedilemedi"
+                    };
+                    
+                    var jsonResponse = serializer.Serialize(response);
+                    Response.Clear();
+                    Response.ContentType = "application/json";
+                    Response.Write(jsonResponse);
+                    Response.Flush();
+                    Response.Close();
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
+                }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine(String.Format("Geçersiz seçim verisi parça sayısı: {0}", parts.Length));
-                    ShowError("Seçim verileri geçersiz. Lütfen tekrar seçim yapınız.");
+                    if (savedSignatures.Count > 0)
+                    {
+                        // Normal postback için yeni davranış
+                        string virtualPath = savedSignatures[0].Path; // İlk imzayı kullan
+                        ScriptManager.RegisterStartupScript(this, GetType(),
+                            "saveSuccess",
+                            String.Format(@"
+                                if (window.opener && !window.opener.closed) {{
+                                    if (typeof window.opener.handleSignatureReturn === 'function') {{
+                                        window.opener.handleSignatureReturn('{0}');
+                                    }}
+                                }}
+                                showNotification('İmzalar başarıyla kaydedildi', 'success');
+                                setTimeout(function() {{ window.close(); }}, 1500);
+                            ", virtualPath),
+                            true);
+                    }
+                    else
+                    {
+                        ShowError("İmzalar kaydedilemedi. Lütfen tekrar deneyiniz.");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
+                System.Diagnostics.Debug.WriteLine($"İmza kaydetme hatası: {ex.Message}\nStack Trace: {ex.StackTrace}");
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     var response = new {
                         success = false,
-                        error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
+                        error = $"İmza kaydedilirken bir hata oluştu: {ex.Message}"
                     };
                     
-                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                    var serializer = new JavaScriptSerializer();
                     var jsonError = serializer.Serialize(response);
                     Response.Clear();
                     Response.ContentType = "application/json";
@@ -332,7 +355,7 @@ namespace AspxExamples
                 }
                 else
                 {
-                    ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
+                    ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
                 }
             }
         }

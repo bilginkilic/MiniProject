@@ -143,15 +143,6 @@
             margin: 0 auto;
             margin-bottom: 20px;
         }
-        #selection {
-            position: absolute;
-            border: 2px solid #dc3545;
-            background-color: rgba(220,53,69,0.1);
-            pointer-events: none;
-            display: none;
-            z-index: 1000;
-            border-radius: 4px;
-        }
         .button {
             padding: 10px 20px;
             margin-right: 10px;
@@ -917,74 +908,65 @@
             function saveSignature() {
                 if (selectedSignatures.length === 0) {
                     showNotification('Lütfen en az bir imza seçin', 'error');
-                    return;
+                    return false;
                 }
                 
                 showLoading('İmzalar kaydediliyor...');
                 
                 // Butonu devre dışı bırak
-                btnSave.disabled = true;
+                var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                if (btnSave) {
+                    btnSave.disabled = true;
+                }
 
                 // Her bir imza için base64'ten dosya oluştur ve kaydet
-                const promises = selectedSignatures.map((signature, index) => {
-                    return new Promise((resolve, reject) => {
-                        // Base64'ü blob'a çevir
-                        const base64Data = signature.image.split(',')[1];
-                        const blob = base64ToBlob(base64Data, 'image/png');
-                        
-                        // FormData oluştur
-                        const formData = new FormData();
-                        formData.append('signatureImage', blob, `signature_${index}.png`);
-                        formData.append('sourcePdfPath', signature.sourcePdfPath);
-                        formData.append('page', signature.page);
-                        formData.append('x', signature.x);
-                        formData.append('y', signature.y);
-                        formData.append('width', signature.width);
-                        formData.append('height', signature.height);
-                        
-                        // AJAX çağrısı yap
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', 'SaveSignature.ashx', true);
-                        xhr.onload = () => {
-                            if (xhr.status === 200) {
-                                try {
-                                    const response = JSON.parse(xhr.responseText);
-                                    if (response.success) {
-                                        // İmza yolunu güncelle
-                                        signature.savedImagePath = response.imagePath;
-                                        resolve(signature);
-                                    } else {
-                                        reject(new Error(response.error || 'Kayıt başarısız'));
-                                    }
-                                } catch (e) {
-                                    reject(new Error('Sunucu yanıtı işlenemedi'));
-                                }
+                var formData = new FormData();
+                
+                // ASP.NET form verilerini ekle
+                formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
+                formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
+                formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
+                formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
+                
+                // İmza verilerini ekle
+                formData.append('hdnSignatures', JSON.stringify(selectedSignatures));
+                
+                // AJAX çağrısı yap
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', window.location.href, true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                showNotification('İmzalar başarıyla kaydedildi', 'success');
+                                setTimeout(function() {
+                                    window.close();
+                                }, 1500);
                             } else {
-                                reject(new Error('Sunucu hatası'));
+                                throw new Error(response.error || 'Kayıt başarısız');
                             }
-                        };
-                        xhr.onerror = () => reject(new Error('Bağlantı hatası'));
-                        xhr.send(formData);
-                    });
-                });
-
-                // Tüm imzaların kaydedilmesini bekle
-                Promise.all(promises)
-                    .then(savedSignatures => {
-                        // Kaydedilen imza yollarını hidden field'a kaydet
-                        hiddenSignatures.value = JSON.stringify(savedSignatures);
-                        showNotification('Tüm imzalar başarıyla kaydedildi', 'success');
-                        
-                        // Formu kapat
-                        window.close();
-                    })
-                    .catch(error => {
-                        showNotification('Hata: ' + error.message, 'error');
-                        btnSave.disabled = false;
-                    })
-                    .finally(() => {
-                        hideLoading();
-                    });
+                        } catch (e) {
+                            showNotification('Hata: ' + e.message, 'error');
+                            if (btnSave) btnSave.disabled = false;
+                        }
+                    } else {
+                        showNotification('Sunucu hatası', 'error');
+                        if (btnSave) btnSave.disabled = false;
+                    }
+                    hideLoading();
+                };
+                
+                xhr.onerror = function() {
+                    hideLoading();
+                    showNotification('Bağlantı hatası', 'error');
+                    if (btnSave) btnSave.disabled = false;
+                };
+                
+                xhr.send(formData);
+                return false;
             }
 
             function base64ToBlob(base64, mimeType) {
@@ -1006,51 +988,6 @@
                 return new Blob(byteArrays, { type: mimeType });
             }
 
-                xhr.onload = function() {
-                    console.log('AJAX Response:', xhr.responseText); // Debug için yanıtı logla
-                    
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.success) {
-                                showNotification('İmza kaydedildi', 'success');
-                                clearSelection();
-                                btnSave.disabled = false;
-                            } else {
-                                throw new Error('İşlem başarısız');
-                            }
-                        } catch (e) {
-                            console.error('Error:', e);
-                            showNotification('Hata oluştu', 'error');
-                            btnSave.disabled = false;
-                        }
-                    } else {
-                        showNotification('Sunucu hatası', 'error');
-                        btnSave.disabled = false;
-                    }
-                    hideLoading();
-                };
-
-                xhr.onerror = function() {
-                    hideLoading();
-                    showNotification('İmza kaydedilirken bir hata oluştu', 'error');
-                    btnSave.disabled = false;
-                };
-
-                // Form verilerini topla
-                var formData = new FormData();
-                
-                // ASP.NET form verilerini ekle
-                formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
-                formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
-                formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
-                formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
-                formData.append('hdnSelection', hiddenField.value);
-                
-                // AJAX isteğini gönder
-                var data = new URLSearchParams(formData).toString();
-                xhr.send(data);
-                
                 return false;
             }
 
