@@ -185,10 +185,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(220, 53, 69, 0.1);
             z-index: 9999;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(3px);
         }
         .loading-content {
             display: flex;
@@ -198,7 +199,8 @@
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.1);
         }
         .loading-spinner {
             width: 50px;

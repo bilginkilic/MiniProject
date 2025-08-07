@@ -121,6 +121,78 @@
             background-color: #c82333; /* Koyu kırmızı */
             transform: translateY(-1px);
         }
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.1);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: white;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 2px solid #dc3545;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #dc3545;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .modal-close:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .modal-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .modal-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
     </style>
 </head>
 <body>
@@ -129,6 +201,34 @@
         <asp:HiddenField ID="hdnSignaturePath" runat="server" />
         
         <script type="text/javascript">
+            function openSignatureModal(yetkiliKontNo) {
+                var modal = document.getElementById('signatureModal');
+                var iframe = document.getElementById('signatureFrame');
+                var url = 'PdfSignatureForm.aspx';
+                
+                if (yetkiliKontNo) {
+                    url += '?yetkiliKontNo=' + yetkiliKontNo;
+                }
+                
+                iframe.src = url;
+                modal.style.display = 'flex';
+                
+                // Iframe yüklendiğinde loading göstergesini gizle
+                iframe.onload = function() {
+                    var loadingOverlay = iframe.contentWindow.document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
+                    }
+                };
+            }
+            
+            function closeSignatureModal() {
+                var modal = document.getElementById('signatureModal');
+                var iframe = document.getElementById('signatureFrame');
+                modal.style.display = 'none';
+                iframe.src = 'about:blank';
+            }
+
             function handleSignatureReturn(signaturePath) {
                 // İmza yolunu hidden field'a kaydet
                 var hdnSignaturePath = document.getElementById('<%= hdnSignaturePath.ClientID %>');
@@ -142,6 +242,9 @@
                             prm._doPostBack('UpdatePanel1', '');
                         }
                     }
+                    
+                    // Modal'ı kapat
+                    closeSignatureModal();
                 }
             }
         </script>
@@ -206,6 +309,19 @@
             </div>
                 </ContentTemplate>
             </asp:UpdatePanel>
+        </div>
+
+        <!-- Modal -->
+        <div id="signatureModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>İmza Sirkülerinden İmza Seçimi</h2>
+                    <button type="button" class="modal-close" onclick="closeSignatureModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <iframe id="signatureFrame" class="modal-iframe" src="about:blank"></iframe>
+                </div>
+            </div>
         </div>
     </form>
 </body>

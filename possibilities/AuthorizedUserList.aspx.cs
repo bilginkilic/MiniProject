@@ -94,29 +94,8 @@ namespace AspxExamples
                 url += string.Format("?yetkiliKontNo={0}", yetkiliKontNo);
             }
 
-            // PdfSignatureForm'u modal pencerede aç ve sonucu handle et
-            string script = @"
-                var signatureWindow = window.open('" + url + @"', 'SignatureForm', 'width=1024,height=768,scrollbars=yes,resizable=yes');
-                
-                // Pencere kapandığında sonucu kontrol et
-                var checkWindowClosed = setInterval(function() {
-                    if (signatureWindow.closed) {
-                        clearInterval(checkWindowClosed);
-                        
-                        // Sunucudan güncel verileri almak için sayfayı yenile
-                        if (typeof(Sys) !== 'undefined' && Sys.WebForms) {
-                            var prm = Sys.WebForms.PageRequestManager.getInstance();
-                            if (prm) {
-                                prm._doPostBack('UpdatePanel1', '');
-                            } else {
-                                window.location.reload();
-                            }
-                        } else {
-                            window.location.reload();
-                        }
-                    }
-                }, 500);";
-            
+            // PdfSignatureForm'u modal olarak aç
+            string script = String.Format("openSignatureModal('{0}');", yetkiliKontNo);
             ScriptManager.RegisterStartupScript(this, GetType(), "OpenSignatureForm", script, true);
         }
 
