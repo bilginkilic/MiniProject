@@ -9,7 +9,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
         }
         .container {
             max-width: 1200px;
@@ -17,8 +17,8 @@
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
         }
         .header {
             display: flex;
@@ -26,13 +26,13 @@
             align-items: center;
             margin-bottom: 20px;
             padding: 15px;
-            border-bottom: 2px solid #e9ecef;
-            background-color: #fff5e6;
+            border-bottom: 2px solid #e0e0e0;
+            background-color: white;
             border-radius: 6px;
         }
         .header h2 {
             margin: 0;
-            color: #495057;
+            color: #333;
             font-weight: 500;
         }
         .button {
@@ -74,29 +74,114 @@
             border-collapse: collapse;
         }
         .grid th {
-            background-color: #fff5e6;
+            background-color: #f8f9fa;
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #e9ecef;
-            color: #495057;
-            font-weight: 500;
+            border-bottom: 2px solid #e0e0e0;
+            color: #333;
+            font-weight: 600;
             font-size: 13px;
         }
         .grid td {
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
             vertical-align: middle;
-            color: #495057;
+            color: #333;
             font-size: 14px;
         }
         .grid tr:hover {
-            background-color: #fff5e6;
-        }
-        .grid tr:nth-child(even) {
             background-color: #f8f9fa;
         }
+        .grid tr:nth-child(even) {
+            background-color: #ffffff;
+        }
         .grid tr:nth-child(even):hover {
-            background-color: #fff5e6;
+            background-color: #f8f9fa;
+        }
+        .grid-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        .grid-input:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 2px rgba(220,53,69,0.1);
+            outline: none;
+        }
+        .grid-input:disabled {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
+        .grid-select {
+            width: 100%;
+            padding: 6px 24px 6px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background: white;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+        .grid-select:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 2px rgba(220,53,69,0.1);
+            outline: none;
+        }
+        .grid-action-cell {
+            white-space: nowrap;
+            width: 1%;
+        }
+        .grid-button {
+            padding: 4px 8px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin-right: 4px;
+            transition: all 0.2s ease;
+        }
+        .grid-button.edit {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+        .grid-button.edit:hover {
+            background-color: #e9ecef;
+        }
+        .grid-button.delete {
+            background-color: #fff;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .grid-button.delete:hover {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .grid-button.save {
+            background-color: #fff;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .grid-button.save:hover {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .grid-button.cancel {
+            background-color: #fff;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+        }
+        .grid-button.cancel:hover {
+            background-color: #6c757d;
+            color: #fff;
         }
         .signature-preview {
             max-width: 100px;
@@ -416,190 +501,106 @@
                         <asp:Button ID="btnAddNew" runat="server" Text="Yeni Yetkili Ekle" CssClass="button" OnClick="BtnAddNew_Click" />
                     </div>
 
-                    <!-- Yetkili Kullanıcı Form Modal -->
-                    <div id="userFormModal" class="modal-overlay">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h2>Yetkili Kullanıcı Bilgileri</h2>
-                                <button type="button" class="modal-close" onclick="closeUserFormModal()">&times;</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="form-container">
-                                    <asp:HiddenField ID="hdnEditMode" runat="server" Value="false" />
-                                    <asp:HiddenField ID="hdnEditId" runat="server" />
-                                    
-                                    <div class="form-section">
-                                        <h3 class="form-section-title">Temel Bilgiler</h3>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="txtYetkiliKontNo">Yetkili Kontakt No:</label>
-                                                <asp:TextBox ID="txtYetkiliKontNo" runat="server" CssClass="form-control" required="required" />
-                                                <asp:RequiredFieldValidator ID="rfvYetkiliKontNo" runat="server" 
-                                                    ControlToValidate="txtYetkiliKontNo"
-                                                    ErrorMessage="Yetkili Kontakt No gereklidir"
-                                                    Display="Dynamic"
-                                                    CssClass="validation-error"
-                                                    ValidationGroup="UserForm" />
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="txtYetkiBitisTarihi">Yetki Bitiş Tarihi:</label>
-                                                <asp:TextBox ID="txtYetkiBitisTarihi" runat="server" CssClass="form-control" TextMode="Date" required="required" />
-                                                <asp:RequiredFieldValidator ID="rfvYetkiBitisTarihi" runat="server"
-                                                    ControlToValidate="txtYetkiBitisTarihi"
-                                                    ErrorMessage="Yetki Bitiş Tarihi gereklidir"
-                                                    Display="Dynamic"
-                                                    CssClass="validation-error"
-                                                    ValidationGroup="UserForm" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3 class="form-section-title">Yetki Detayları</h3>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="ddlYetkiSekli">Yetki Şekli:</label>
-                                                <asp:DropDownList ID="ddlYetkiSekli" runat="server" CssClass="form-control">
-                                                    <asp:ListItem Text="Müştereken" Value="Müştereken" />
-                                                    <asp:ListItem Text="Münferiden" Value="Münferiden" />
-                                                </asp:DropDownList>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="ddlYetkiGrubu">Yetki Grubu:</label>
-                                                <asp:DropDownList ID="ddlYetkiGrubu" runat="server" CssClass="form-control">
-                                                    <asp:ListItem Text="A Grubu" Value="A Grubu" />
-                                                    <asp:ListItem Text="B Grubu" Value="B Grubu" />
-                                                    <asp:ListItem Text="C Grubu" Value="C Grubu" />
-                                                </asp:DropDownList>
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group full-width">
-                                                <label for="txtSinirliYetkiDetaylari">Sınırlı Yetki Detayları:</label>
-                                                <asp:TextBox ID="txtSinirliYetkiDetaylari" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" />
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="ddlYetkiTurleri">Yetki Türleri:</label>
-                                                <asp:DropDownList ID="ddlYetkiTurleri" runat="server" CssClass="form-control">
-                                                    <asp:ListItem Text="Kredi İşlemleri, Hazine İşlemleri" Value="Kredi İşlemleri, Hazine İşlemleri" />
-                                                    <asp:ListItem Text="Kredi Sözleşmeleri / Transfer İşlemleri" Value="Kredi Sözleşmeleri / Transfer İşlemleri" />
-                                                </asp:DropDownList>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3 class="form-section-title">Yetki Limitleri ve Durum</h3>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="txtYetkiTutari">Yetki Tutarı:</label>
-                                                <asp:TextBox ID="txtYetkiTutari" runat="server" CssClass="form-control" TextMode="Number" required="required" />
-                                                <asp:RequiredFieldValidator ID="rfvYetkiTutari" runat="server"
-                                                    ControlToValidate="txtYetkiTutari"
-                                                    ErrorMessage="Yetki Tutarı gereklidir"
-                                                    Display="Dynamic"
-                                                    CssClass="validation-error"
-                                                    ValidationGroup="UserForm" />
-                                                <asp:RangeValidator ID="rvYetkiTutari" runat="server"
-                                                    ControlToValidate="txtYetkiTutari"
-                                                    Type="Double"
-                                                    MinimumValue="0"
-                                                    MaximumValue="999999999"
-                                                    ErrorMessage="Geçerli bir tutar giriniz"
-                                                    Display="Dynamic"
-                                                    CssClass="validation-error"
-                                                    ValidationGroup="UserForm" />
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="ddlYetkiDovizCinsi">Yetki Döviz Cinsi:</label>
-                                                <asp:DropDownList ID="ddlYetkiDovizCinsi" runat="server" CssClass="form-control">
-                                                    <asp:ListItem Text="USD" Value="USD" />
-                                                    <asp:ListItem Text="EUR" Value="EUR" />
-                                                    <asp:ListItem Text="TRY" Value="TRY" />
-                                                </asp:DropDownList>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="ddlYetkiDurumu">Yetki Durumu:</label>
-                                                <asp:DropDownList ID="ddlYetkiDurumu" runat="server" CssClass="form-control">
-                                                    <asp:ListItem Text="Aktif" Value="Aktif" />
-                                                    <asp:ListItem Text="Pasif" Value="Pasif" />
-                                                </asp:DropDownList>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <div class="form-row">
-                                            <div class="form-group full-width">
-                                                <div class="button-group">
-                                                    <asp:Button ID="btnSelectSignature" runat="server" Text="İmza Seç" CssClass="button" OnClick="BtnSelectSignature_Click" ValidationGroup="UserForm" />
-                                                    <asp:Button ID="btnSaveUser" runat="server" Text="Kaydet" CssClass="button" OnClick="BtnSaveUser_Click" ValidationGroup="UserForm" />
-                                                    <asp:Button ID="btnCancel" runat="server" Text="İptal" CssClass="button secondary" OnClientClick="closeUserFormModal(); return false;" />
-                                                </div>
-                                                <asp:ValidationSummary ID="ValidationSummary1" runat="server" 
-                                                    ValidationGroup="UserForm"
-                                                    DisplayMode="BulletList"
-                                                    ShowMessageBox="false"
-                                                    ShowSummary="true"
-                                                    CssClass="validation-summary" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="grid-container">
                         <asp:GridView ID="gvAuthorizedUsers" runat="server" CssClass="grid" AutoGenerateColumns="false"
                             OnRowCommand="GvAuthorizedUsers_RowCommand" DataKeyNames="YetkiliKontNo">
                             <Columns>
-                        <asp:BoundField DataField="YetkiliKontNo" HeaderText="Yetkili Kont. No" />
-                        <asp:BoundField DataField="YetkiliAdiSoyadi" HeaderText="Yetkili Adı Soyadı" />
-                        <asp:BoundField DataField="YetkiSekli" HeaderText="Yetki Şekli" />
-                        <asp:BoundField DataField="YetkiSuresi" HeaderText="Yetki Süresi" DataFormatString="{0:dd/MM/yyyy}" />
-                        <asp:BoundField DataField="YetkiBitisTarihi" HeaderText="Yetki Bitiş Tarihi" DataFormatString="{0:dd/MM/yyyy}" />
-                        <asp:BoundField DataField="YetkiGrubu" HeaderText="Yetki Grubu" />
-                        <asp:BoundField DataField="SinirliYetkiDetaylari" HeaderText="Sınırlı Yetki Detayları" />
-                        <asp:BoundField DataField="YetkiTurleri" HeaderText="Yetki Türleri" />
-                        <asp:TemplateField HeaderText="İmza Örnekleri">
-                            <ItemTemplate>
-                                <div style="display: flex; gap: 10px;">
-                                    <asp:Image runat="server" ID="imgSignature1" CssClass="signature-preview" 
-                                        ImageUrl='<%# Eval("ImzaOrnegi1") %>' 
-                                        Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi1") as string) %>' />
-                                    <asp:Image runat="server" ID="imgSignature2" CssClass="signature-preview" 
-                                        ImageUrl='<%# Eval("ImzaOrnegi2") %>' 
-                                        Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi2") as string) %>' />
-                                    <asp:Image runat="server" ID="imgSignature3" CssClass="signature-preview" 
-                                        ImageUrl='<%# Eval("ImzaOrnegi3") %>' 
-                                        Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi3") as string) %>' />
-                                </div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:BoundField DataField="YetkiTutari" HeaderText="Yetki Tutarı" DataFormatString="{0:N2}" />
-                        <asp:BoundField DataField="YetkiDovizCinsi" HeaderText="Yetki Döviz Cinsi" />
-                        <asp:TemplateField HeaderText="Yetki Durumu">
-                            <ItemTemplate>
-                                <asp:Label runat="server" Text='<%# Eval("YetkiDurumu") %>'
-                                    CssClass='<%# (Eval("YetkiDurumu").ToString() == "Aktif" ? "status-active" : "status-inactive") %>' />
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:TemplateField HeaderText="İşlemler">
-                            <ItemTemplate>
-                                <div class="action-buttons">
-                                    <asp:LinkButton ID="btnEdit" runat="server" CssClass="action-button edit-button"
-                                        CommandName="EditUser" CommandArgument='<%# Eval("YetkiliKontNo") %>'
-                                        Text="Düzenle" />
-                                    <asp:LinkButton ID="btnDelete" runat="server" CssClass="action-button delete-button"
-                                        CommandName="DeleteUser" CommandArgument='<%# Eval("YetkiliKontNo") %>'
-                                        Text="Sil" OnClientClick="return confirm('Bu yetkiliyi silmek istediğinizden emin misiniz?');" />
-                                </div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
+                                <asp:TemplateField HeaderText="Yetkili Kont. No">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtYetkiliKontNo" runat="server" CssClass="grid-input" 
+                                            Text='<%# Eval("YetkiliKontNo") %>' Enabled="false" />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Şekli">
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlYetkiSekli" runat="server" CssClass="grid-select">
+                                            <asp:ListItem Text="Müştereken" Value="Müştereken" />
+                                            <asp:ListItem Text="Münferiden" Value="Münferiden" />
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Bitiş Tarihi">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtYetkiBitisTarihi" runat="server" CssClass="grid-input" 
+                                            Text='<%# Bind("YetkiBitisTarihi", "{0:yyyy-MM-dd}") %>' TextMode="Date" />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Grubu">
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlYetkiGrubu" runat="server" CssClass="grid-select">
+                                            <asp:ListItem Text="A Grubu" Value="A Grubu" />
+                                            <asp:ListItem Text="B Grubu" Value="B Grubu" />
+                                            <asp:ListItem Text="C Grubu" Value="C Grubu" />
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Sınırlı Yetki Detayları">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtSinirliYetkiDetaylari" runat="server" CssClass="grid-input" 
+                                            Text='<%# Eval("SinirliYetkiDetaylari") %>' />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Türleri">
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlYetkiTurleri" runat="server" CssClass="grid-select">
+                                            <asp:ListItem Text="Kredi İşlemleri, Hazine İşlemleri" Value="Kredi İşlemleri, Hazine İşlemleri" />
+                                            <asp:ListItem Text="Kredi Sözleşmeleri / Transfer İşlemleri" Value="Kredi Sözleşmeleri / Transfer İşlemleri" />
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="İmza Örnekleri">
+                                    <ItemTemplate>
+                                        <div style="display: flex; gap: 10px;">
+                                            <asp:Image runat="server" ID="imgSignature1" CssClass="signature-preview" 
+                                                ImageUrl='<%# Eval("ImzaOrnegi1") %>' 
+                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi1") as string) %>' />
+                                            <asp:Image runat="server" ID="imgSignature2" CssClass="signature-preview" 
+                                                ImageUrl='<%# Eval("ImzaOrnegi2") %>' 
+                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi2") as string) %>' />
+                                            <asp:Image runat="server" ID="imgSignature3" CssClass="signature-preview" 
+                                                ImageUrl='<%# Eval("ImzaOrnegi3") %>' 
+                                                Visible='<%# !string.IsNullOrEmpty(Eval("ImzaOrnegi3") as string) %>' />
+                                        </div>
+                                        <asp:Button ID="btnSelectSignature" runat="server" Text="İmza Seç" 
+                                            CssClass="grid-button edit" CommandName="SelectSignature" 
+                                            CommandArgument='<%# Eval("YetkiliKontNo") %>' />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Tutarı">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtYetkiTutari" runat="server" CssClass="grid-input" 
+                                            Text='<%# Bind("YetkiTutari", "{0:N2}") %>' TextMode="Number" />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Döviz Cinsi">
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlYetkiDovizCinsi" runat="server" CssClass="grid-select">
+                                            <asp:ListItem Text="USD" Value="USD" />
+                                            <asp:ListItem Text="EUR" Value="EUR" />
+                                            <asp:ListItem Text="TRY" Value="TRY" />
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Yetki Durumu">
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlYetkiDurumu" runat="server" CssClass="grid-select">
+                                            <asp:ListItem Text="Aktif" Value="Aktif" />
+                                            <asp:ListItem Text="Pasif" Value="Pasif" />
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="İşlemler" ItemStyle-CssClass="grid-action-cell">
+                                    <ItemTemplate>
+                                        <asp:Button ID="btnSave" runat="server" Text="Kaydet" 
+                                            CssClass="grid-button save" CommandName="SaveUser" 
+                                            CommandArgument='<%# Eval("YetkiliKontNo") %>' />
+                                        <asp:Button ID="btnDelete" runat="server" Text="Sil" 
+                                            CssClass="grid-button delete" CommandName="DeleteUser" 
+                                            CommandArgument='<%# Eval("YetkiliKontNo") %>'
+                                            OnClientClick="return confirm('Bu yetkiliyi silmek istediğinizden emin misiniz?');" />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                            </Columns>
                 </asp:GridView>
             </div>
                 </ContentTemplate>
