@@ -155,16 +155,81 @@ namespace AspxExamples
 
         protected void GvAuthorizedUsers_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            string yetkiliKontNo = e.CommandArgument.ToString();
+            
             if (e.CommandName == "EditUser")
             {
-                string yetkiliKontNo = e.CommandArgument.ToString();
-                OpenSignatureForm(yetkiliKontNo);
+                // Düzenleme modunu aktifleştir
+                hdnEditMode.Value = "true";
+                hdnEditId.Value = yetkiliKontNo;
+                
+                // Kullanıcı bilgilerini getir
+                var user = GetUserByKontNo(yetkiliKontNo);
+                if (user != null)
+                {
+                    // Form alanlarını doldur
+                    txtYetkiliKontNo.Text = user.YetkiliKontNo;
+                    txtYetkiBitisTarihi.Text = user.YetkiBitisTarihi.ToString("yyyy-MM-dd");
+                    ddlYetkiSekli.SelectedValue = user.YetkiSekli;
+                    ddlYetkiGrubu.SelectedValue = user.YetkiGrubu;
+                    txtSinirliYetkiDetaylari.Text = user.SinirliYetkiDetaylari;
+                    ddlYetkiTurleri.SelectedValue = user.YetkiTurleri;
+                    txtYetkiTutari.Text = user.YetkiTutari.ToString();
+                    ddlYetkiDovizCinsi.SelectedValue = user.YetkiDovizCinsi;
+                    ddlYetkiDurumu.SelectedValue = user.YetkiDurumu;
+                    
+                    // Modal'ı aç
+                    ScriptManager.RegisterStartupScript(this, GetType(), "OpenUserForm", "openUserFormModal();", true);
+                }
             }
             else if (e.CommandName == "DeleteUser")
             {
-                string yetkiliKontNo = e.CommandArgument.ToString();
-                // TODO: Silme işlemi
+                try
+                {
+                    // TODO: Silme işlemi
+                    // DeleteUser(yetkiliKontNo);
+                    
+                    // Başarılı mesajı göster
+                    ScriptManager.RegisterStartupScript(this, GetType(), "DeleteSuccess",
+                        string.Format("showNotification('Yetkili kullanıcı başarıyla silindi.', 'success');"), true);
+                    
+                    // Listeyi yenile
+                    LoadAuthorizedUsers();
+                }
+                catch (Exception ex)
+                {
+                    // Hata mesajı göster
+                    ScriptManager.RegisterStartupScript(this, GetType(), "DeleteError",
+                        string.Format("showNotification('Silme işlemi sırasında hata oluştu: {0}', 'error');", ex.Message), true);
+                }
             }
+        }
+
+        private AuthorizedUser GetUserByKontNo(string kontNo)
+        {
+            // TODO: Veritabanından kullanıcı bilgilerini getir
+            // Bu örnek için statik veri dönüyoruz
+            if (kontNo == "5000711")
+            {
+                return new AuthorizedUser
+                {
+                    YetkiliKontNo = "5000711",
+                    YetkiliAdiSoyadi = "Toru Kawai",
+                    YetkiSekli = "Müştereken",
+                    YetkiSuresi = DateTime.Parse("14.07.2024"),
+                    YetkiBitisTarihi = DateTime.Parse("14.07.2024"),
+                    YetkiGrubu = "A Grubu",
+                    SinirliYetkiDetaylari = "C İLE BİRLİKTE 1.000.000 USD",
+                    YetkiTurleri = "Kredi Sözleşmeleri / Transfer İşlemleri",
+                    ImzaOrnegi1 = "http://example.com/signatures/signature1.png",
+                    ImzaOrnegi2 = "http://example.com/signatures/signature2.png",
+                    ImzaOrnegi3 = "http://example.com/signatures/signature3.png",
+                    YetkiTutari = 100000,
+                    YetkiDovizCinsi = "USD",
+                    YetkiDurumu = "Aktif"
+                };
+            }
+            return null;
         }
 
         private void OpenSignatureForm(string yetkiliKontNo = null)
