@@ -28,12 +28,14 @@
             padding: 20px;
             box-sizing: border-box;
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 20px auto;
             width: 100%;
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px); /* Ekranın yüksekliğinden margin'leri çıkar */
         }
         .header {
             display: flex;
@@ -75,8 +77,8 @@
             background: #fff;
             margin: 10px 0;
             overflow: hidden;
-            height: calc(100vh - 200px); /* Daha fazla yükseklik için 300px'den 200px'e düşürüldü */
-            min-height: 600px; /* Minimum yükseklik garantisi */
+            height: calc(100vh - 450px); /* Seçilen imzalar kısmı için yer bırak */
+            min-height: 400px; /* Minimum yükseklik */
         }
         #pageContents {
             flex: 1;
@@ -391,6 +393,10 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border: 1px solid #eee;
+            position: sticky;
+            bottom: 0;
+            background: white;
+            z-index: 10;
         }
 
         .selected-signatures h3 {
