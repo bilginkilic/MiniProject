@@ -991,15 +991,7 @@
 
             function startSelection(e) {
                 e.preventDefault();
-                
-                // İmza seçimi için ekleme veya güncelleme durumu kontrolü
-                const btnEkle = document.getElementById('btnEkle');
-                const isUpdate = btnEkle.classList.contains('update-mode');
-                
-                if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
-                    showNotification('Lütfen önce Ekle butonuna basın veya bir kayıt seçin', 'warning');
-                    return;
-                }
+                console.log('startSelection başladı');
                 
                 // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
                 if (currentSelection) {
@@ -1285,30 +1277,64 @@
             }
 
             function handleAddUpdate() {
-                const btnEkle = document.getElementById('btnEkle');
-                const isUpdate = btnEkle.classList.contains('update-mode');
+                try {
+                    console.log('handleAddUpdate başladı');
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (!btnEkle) {
+                        console.error('btnEkle elementi bulunamadı');
+                        return;
+                    }
+                    console.log('btnEkle bulundu:', btnEkle);
+                    const isUpdate = btnEkle.classList.contains('update-mode');
                 
-                // Eğer bu yeni bir ekleme başlangıcı ise
-                if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
-                    btnEkle.classList.add('adding-mode');
-                    clearForm();
-                    
-                    // Boş bir satır ekle
-                    const emptyData = {
-                        yetkiliKontakt: '',
-                        yetkiliAdi: '',
-                        yetkiSekli: 'Müştereken',
-                        yetkiTarihi: '',
-                        sinirliYetkiDetaylari: '',
-                        yetkiTurleri: '',
-                        imzalar: []
-                    };
-                    
-                    const newRow = addTableRow(emptyData);
-                    selectRow(newRow);
-                    showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun ve imzaları seçin', 'info');
-                    return;
-                }
+                    // Eğer bu yeni bir ekleme başlangıcı ise
+                    if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
+                        try {
+                            console.log('Yeni kayıt ekleme başlıyor');
+                            btnEkle.classList.add('adding-mode');
+                            clearForm();
+                            
+                            // İmza slotlarından imzaları al
+                            const imzalar = [];
+                            document.querySelectorAll('.signature-slot').forEach((slot, index) => {
+                                const slotImage = slot.querySelector('.slot-image');
+                                if (slot.classList.contains('filled') && slotImage) {
+                                    imzalar.push(slotImage.style.backgroundImage);
+                                }
+                            });
+                            
+                            // Boş bir satır ekle
+                            const emptyData = {
+                                yetkiliKontakt: '',
+                                yetkiliAdi: '',
+                                yetkiSekli: 'Müştereken',
+                                yetkiTarihi: '',
+                                sinirliYetkiDetaylari: '',
+                                yetkiTurleri: '',
+                                imzalar: imzalar
+                            };
+                            
+                            console.log('Eklenecek veri:', emptyData);
+                            const tbody = document.querySelector('.auth-details-table tbody');
+                            if (!tbody) {
+                                console.error('Tablo tbody bulunamadı');
+                                return;
+                            }
+                            
+                            const newRow = addTableRow(emptyData);
+                            if (!newRow) {
+                                console.error('Yeni satır eklenemedi');
+                                return;
+                            }
+                            
+                            selectRow(newRow);
+                            showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun', 'info');
+                        } catch (err) {
+                            console.error('Yeni kayıt ekleme hatası:', err);
+                            showNotification('Kayıt eklenirken bir hata oluştu', 'error');
+                        }
+                        return;
+                    }
                 
                 if(isUpdate && !selectedRow) {
                     showNotification('Güncellenecek satır seçilmedi', 'error');
@@ -1389,7 +1415,12 @@
             }
 
             function addTableRow(data) {
+                console.log('addTableRow başladı, data:', data);
                 const tbody = document.querySelector('.auth-details-table tbody');
+                if (!tbody) {
+                    console.error('tbody elementi bulunamadı');
+                    return null;
+                }
                 const newRow = tbody.insertRow(0); // En üste ekle
                 
                 // Temel hücreleri ekle
