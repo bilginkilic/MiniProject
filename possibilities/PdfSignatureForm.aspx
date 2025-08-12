@@ -662,7 +662,13 @@
                 <div class="form-grid">
                     <div class="form-row">
                         <label>YETKİLİ KONTAKT:</label>
-                        <input type="text" value="5000711" readonly />
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="txtYetkiliKontakt" value="5000711" style="flex: 1;" />
+                            <input type="text" id="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
+                            <button type="button" id="btnYetkiliAra" class="button secondary" style="margin: 0;">
+                                <i class="fas fa-search"></i> Ara
+                            </button>
+                        </div>
                     </div>
                     <div class="form-row">
                         <label>YETKİ GRUBU:</label>
@@ -688,12 +694,15 @@
                             <select>
                                 <option>2024</option>
                             </select>
-                            <span>Aksi Karara Kadar</span>
+                            <div style="display: flex; align-items: center; margin-left: 10px;">
+                                <input type="checkbox" id="chkAksiKarar" style="margin-right: 5px;" />
+                                <label for="chkAksiKarar" style="font-weight: normal;">Aksi Karara Kadar</label>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">
                         <label>SINIRLI YETKİ DETAYLARI:</label>
-                        <input type="text" />
+                        <textarea rows="3" style="resize: vertical; min-height: 60px;"></textarea>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DÖVİZ CİNSİ:</label>
@@ -719,6 +728,15 @@
                             <option>Aktif</option>
                         </select>
                     </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" id="btnEkle" class="button">
+                        <i class="fas fa-plus"></i> Ekle
+                    </button>
+                    <button type="button" id="btnSil" class="button secondary">
+                        <i class="fas fa-trash"></i> Sil
+                    </button>
                 </div>
 
                 <table class="auth-details-table">
@@ -1166,12 +1184,211 @@
                 document.removeEventListener('mouseup', endSelection);
             }
 
+            let selectedRow = null;
+            let isEditing = false;
+
             function initializeImageEvents() {
                 var img = document.querySelector('.tab-content.active img');
                 if (img) {
                     var imageWrapper = document.querySelector('.tab-content.active .image-wrapper');
                     imageWrapper.addEventListener('mousedown', startSelection);
                 }
+
+                // Grid satır çift tıklama olayı
+                document.querySelectorAll('.auth-details-table tbody tr').forEach(row => {
+                    row.addEventListener('dblclick', () => handleRowDoubleClick(row));
+                });
+
+                // Ekle/Güncelle butonu olayı
+                document.getElementById('btnEkle').addEventListener('click', handleAddUpdate);
+                
+                // Sil butonu olayı
+                document.getElementById('btnSil').addEventListener('click', handleDelete);
+
+                // Yetkili arama butonu olayı
+                document.getElementById('btnYetkiliAra').addEventListener('click', handleYetkiliArama);
+            }
+
+            function handleRowDoubleClick(row) {
+                selectedRow = row;
+                isEditing = true;
+                
+                // Form alanlarını doldur
+                document.getElementById('txtYetkiliKontakt').value = row.cells[0].textContent;
+                document.getElementById('txtYetkiliAdi').value = row.cells[1].textContent;
+                document.querySelector('select[name="yetkiSekli"]').value = row.cells[2].textContent;
+                
+                // Tarih alanlarını doldur
+                const tarih = row.cells[3].textContent.split('.');
+                document.querySelector('select[name="gun"]').value = tarih[0];
+                document.querySelector('select[name="ay"]').value = tarih[1];
+                document.querySelector('select[name="yil"]').value = tarih[2];
+                
+                // Diğer alanları doldur
+                document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = row.cells[6].textContent;
+                document.querySelector('select[name="yetkiTurleri"]').value = row.cells[7].textContent;
+                
+                // İmzaları yükle
+                for(let i = 1; i <= 3; i++) {
+                    const signaturePreview = row.cells[i+7].querySelector('.signature-preview');
+                    if(signaturePreview) {
+                        const backgroundImage = signaturePreview.style.backgroundImage;
+                        if(backgroundImage) {
+                            const signatureSlot = document.querySelector(`.signature-slot[data-slot="${i}"]`);
+                            signatureSlot.querySelector('.slot-image').style.backgroundImage = backgroundImage;
+                            signatureSlot.classList.add('filled');
+                        }
+                    }
+                }
+
+                // Ekle butonunu Güncelle olarak değiştir
+                const btnEkle = document.getElementById('btnEkle');
+                btnEkle.innerHTML = '<i class="fas fa-save"></i> Güncelle';
+                btnEkle.classList.add('update-mode');
+            }
+
+            function handleAddUpdate() {
+                const btnEkle = document.getElementById('btnEkle');
+                const isUpdate = btnEkle.classList.contains('update-mode');
+                
+                if(isUpdate && !selectedRow) {
+                    showNotification('Güncellenecek satır seçilmedi', 'error');
+                    return;
+                }
+
+                // Form verilerini al
+                const data = {
+                    yetkiliKontakt: document.getElementById('txtYetkiliKontakt').value,
+                    yetkiliAdi: document.getElementById('txtYetkiliAdi').value,
+                    yetkiSekli: document.querySelector('select[name="yetkiSekli"]').value,
+                    yetkiTarihi: `${document.querySelector('select[name="gun"]').value}.${document.querySelector('select[name="ay"]').value}.${document.querySelector('select[name="yil"]').value}`,
+                    sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value,
+                    yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]').value,
+                    imzalar: []
+                };
+
+                // İmzaları ekle
+                for(let i = 1; i <= 3; i++) {
+                    const signatureSlot = document.querySelector(`.signature-slot[data-slot="${i}"]`);
+                    if(signatureSlot.classList.contains('filled')) {
+                        data.imzalar.push(signatureSlot.querySelector('.slot-image').style.backgroundImage);
+                    }
+                }
+
+                if(isUpdate) {
+                    // Mevcut satırı güncelle
+                    updateTableRow(selectedRow, data);
+                    btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                    btnEkle.classList.remove('update-mode');
+                    selectedRow = null;
+                    showNotification('Kayıt güncellendi', 'success');
+                } else {
+                    // Yeni satır ekle
+                    addTableRow(data);
+                    showNotification('Yeni kayıt eklendi', 'success');
+                }
+
+                clearForm();
+            }
+
+            function handleDelete() {
+                if(!selectedRow) {
+                    showNotification('Silinecek kayıt seçilmedi', 'error');
+                    return;
+                }
+
+                if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
+                    selectedRow.remove();
+                    clearForm();
+                    showNotification('Kayıt silindi', 'success');
+                }
+            }
+
+            function handleYetkiliArama() {
+                const yetkiliNo = document.getElementById('txtYetkiliKontakt').value;
+                // Dummy arama - gerçek implementasyonda web servise istek atılacak
+                showNotification('Yetkili aranıyor: ' + yetkiliNo, 'info');
+                // TODO: Web servis çağrısı eklenecek
+            }
+
+            function updateTableRow(row, data) {
+                row.cells[0].textContent = data.yetkiliKontakt;
+                row.cells[1].textContent = data.yetkiliAdi;
+                row.cells[2].textContent = data.yetkiSekli;
+                row.cells[3].textContent = data.yetkiTarihi;
+                row.cells[6].textContent = data.sinirliYetkiDetaylari;
+                row.cells[7].textContent = data.yetkiTurleri;
+
+                // İmzaları güncelle
+                data.imzalar.forEach((imza, index) => {
+                    const signaturePreview = row.cells[index + 8].querySelector('.signature-preview');
+                    if(signaturePreview) {
+                        signaturePreview.style.backgroundImage = imza;
+                    }
+                });
+            }
+
+            function addTableRow(data) {
+                const tbody = document.querySelector('.auth-details-table tbody');
+                const newRow = tbody.insertRow();
+                
+                // Temel hücreleri ekle
+                const cells = [
+                    data.yetkiliKontakt,
+                    data.yetkiliAdi,
+                    data.yetkiSekli,
+                    data.yetkiTarihi,
+                    data.yetkiTarihi,
+                    'A Grubu',
+                    data.sinirliYetkiDetaylari,
+                    data.yetkiTurleri
+                ];
+
+                cells.forEach(cellData => {
+                    const cell = newRow.insertCell();
+                    cell.textContent = cellData;
+                });
+
+                // İmza hücrelerini ekle
+                for(let i = 0; i < 3; i++) {
+                    const cell = newRow.insertCell();
+                    const signaturePreview = document.createElement('div');
+                    signaturePreview.className = 'signature-preview';
+                    if(data.imzalar[i]) {
+                        signaturePreview.style.backgroundImage = data.imzalar[i];
+                    }
+                    cell.appendChild(signaturePreview);
+                }
+
+                // Son hücreleri ekle
+                ['100.000', 'USD', 'Aktif'].forEach(text => {
+                    const cell = newRow.insertCell();
+                    cell.textContent = text;
+                });
+
+                // Çift tıklama olayını ekle
+                newRow.addEventListener('dblclick', () => handleRowDoubleClick(newRow));
+            }
+
+            function clearForm() {
+                // Form alanlarını temizle
+                document.getElementById('txtYetkiliKontakt').value = '';
+                document.getElementById('txtYetkiliAdi').value = '';
+                document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = '';
+                
+                // İmzaları temizle
+                document.querySelectorAll('.signature-slot').forEach(slot => {
+                    slot.classList.remove('filled');
+                    slot.querySelector('.slot-image').style.backgroundImage = '';
+                });
+
+                // Ekle butonunu resetle
+                const btnEkle = document.getElementById('btnEkle');
+                btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                btnEkle.classList.remove('update-mode');
+                
+                selectedRow = null;
+                isEditing = false;
             }
 
             function restoreSelection() {

@@ -32,6 +32,36 @@ namespace AspxExamples
         public int Height { get; set; }
     }
 
+    public class YetkiliImza
+    {
+        public string Base64Image { get; set; }
+        public int SlotIndex { get; set; }
+    }
+
+    public class YetkiliKayit
+    {
+        public string YetkiliKontakt { get; set; }
+        public string YetkiliAdi { get; set; }
+        public string YetkiSekli { get; set; }
+        public string YetkiTarihi { get; set; }
+        public bool AksiKararaKadar { get; set; }
+        public string SinirliYetkiDetaylari { get; set; }
+        public string YetkiTurleri { get; set; }
+        public List<YetkiliImza> Imzalar { get; set; }
+        public string YetkiTutari { get; set; }
+        public string YetkiDovizCinsi { get; set; }
+        public string YetkiDurumu { get; set; }
+        public string IslemTipi { get; set; } // "Ekle", "Guncelle", "Sil"
+    }
+
+    public class YetkiliKayitResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public string Error { get; set; }
+        public YetkiliKayit Data { get; set; }
+    }
+
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
@@ -195,6 +225,73 @@ namespace AspxExamples
         }
 
 
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static YetkiliKayitResponse SaveYetkiliKayit(YetkiliKayit kayit)
+        {
+            try
+            {
+                // TODO: Burada web servis çağrısı yapılacak
+                // Şimdilik dummy response dönüyoruz
+                return new YetkiliKayitResponse
+                {
+                    Success = true,
+                    Message = "Kayıt başarıyla " + 
+                        (kayit.IslemTipi == "Sil" ? "silindi" : 
+                         kayit.IslemTipi == "Guncelle" ? "güncellendi" : "eklendi"),
+                    Data = kayit
+                };
+            }
+            catch (Exception ex)
+            {
+                return new YetkiliKayitResponse
+                {
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static YetkiliKayitResponse SearchYetkili(string yetkiliNo)
+        {
+            try
+            {
+                // TODO: Burada yetkili arama web servis çağrısı yapılacak
+                // Şimdilik dummy response dönüyoruz
+                var dummyYetkili = new YetkiliKayit
+                {
+                    YetkiliKontakt = yetkiliNo,
+                    YetkiliAdi = "Test Yetkili",
+                    YetkiSekli = "Müştereken",
+                    YetkiTarihi = "14.07.2024",
+                    AksiKararaKadar = true,
+                    SinirliYetkiDetaylari = "Test detayları",
+                    YetkiTurleri = "Kredi İşlemleri",
+                    YetkiTutari = "100000",
+                    YetkiDovizCinsi = "USD",
+                    YetkiDurumu = "Aktif",
+                    Imzalar = new List<YetkiliImza>()
+                };
+
+                return new YetkiliKayitResponse
+                {
+                    Success = true,
+                    Message = "Yetkili bulundu",
+                    Data = dummyYetkili
+                };
+            }
+            catch (Exception ex)
+            {
+                return new YetkiliKayitResponse
+                {
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
 
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {
