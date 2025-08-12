@@ -75,7 +75,8 @@
             background: #fff;
             margin: 10px 0;
             overflow: hidden;
-            height: calc(100vh - 300px); /* Sayfanın geri kalanı için yer bırak */
+            height: calc(100vh - 200px); /* Daha fazla yükseklik için 300px'den 200px'e düşürüldü */
+            min-height: 600px; /* Minimum yükseklik garantisi */
         }
         #pageContents {
             flex: 1;
@@ -124,24 +125,25 @@
         .image-wrapper {
             width: 100%;
             height: 100%;
-            overflow-y: scroll;
+            overflow-y: auto;
             overflow-x: hidden;
-            padding: 20px;
+            padding: 30px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             position: relative;
-            background: #f5f5f5;
+            background: #f8f9fa;
         }
         .image-wrapper img {
-            width: 80%; /* Sayfanın genişliğinin %80'ini kaplasın */
+            width: 90%; /* Sayfanın genişliğini artırdık */
             height: auto;
             display: block;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             background: white;
             margin: 0 auto;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
         }
         .button {
             padding: 10px 20px;
@@ -383,11 +385,12 @@
 
         /* Selected Signatures Styles */
         .selected-signatures {
-            margin: 20px 0;
-            padding: 20px;
+            margin: 10px 0;
+            padding: 15px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
         }
 
         .selected-signatures h3 {
