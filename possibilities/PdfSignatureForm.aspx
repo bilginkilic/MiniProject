@@ -10,32 +10,36 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
+            overflow: hidden;
         }
         form {
             width: 100%;
-            height: 100%;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 20px;
             box-sizing: border-box;
             max-width: 1200px;
-            margin: 20px auto;
+            margin: 0 auto;
             width: 100%;
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
-            overflow-x: hidden;
-            overflow-y: auto;
-            max-height: calc(100vh - 40px); /* Ekranın yüksekliğinden margin'leri çıkar */
+            height: 100%;
+            position: relative;
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            gap: 10px;
+            padding: 20px;
         }
         .header {
             display: flex;
@@ -68,17 +72,14 @@
         }
         .image-container {
             position: relative;
-            flex: 1;
-            min-height: 0;
             display: flex;
             flex-direction: column;
             border: 2px solid #eee;
             border-radius: 8px;
             background: #fff;
-            margin: 10px 0;
             overflow: hidden;
-            height: calc(100vh - 450px); /* Seçilen imzalar kısmı için yer bırak */
-            min-height: 400px; /* Minimum yükseklik */
+            height: 100%;
+            min-height: 0;
         }
         #pageContents {
             flex: 1;
@@ -86,6 +87,7 @@
             position: relative;
             overflow: hidden;
             background: #f5f5f5;
+            height: 100%;
         }
         .tabs {
             display: flex;
@@ -387,16 +389,12 @@
 
         /* Selected Signatures Styles */
         .selected-signatures {
-            margin: 10px 0;
             padding: 15px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border: 1px solid #eee;
-            position: sticky;
-            bottom: 0;
-            background: white;
-            z-index: 10;
+            margin-top: auto;
         }
 
         .selected-signatures h3 {
