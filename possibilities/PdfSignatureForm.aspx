@@ -25,11 +25,15 @@
         }
         .container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: 
+                "header header"
+                "main sidebar";
             box-sizing: border-box;
-            min-width: 1000px;
-            max-width: 1400px;
+            min-width: 1200px;
+            max-width: 1800px;
             margin: 0 auto;
             width: 100%;
             background-color: white;
@@ -37,16 +41,32 @@
             border-radius: 8px;
             height: 100%;
             position: relative;
-            gap: 10px;
+            gap: 20px;
             padding: 20px;
         }
         .header {
+            grid-area: header;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
-            margin-bottom: 20px;
+            margin-bottom: 0;
             border-bottom: 2px solid #eee;
+        }
+        .main-content {
+            grid-area: main;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border-right: 2px solid #eee;
+            padding-right: 20px;
+        }
+        .sidebar {
+            grid-area: sidebar;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-left: 10px;
         }
         .header h2 {
             margin: 0;
@@ -340,22 +360,22 @@
 
         /* PDF List Panel Styles */
         .pdf-list-panel {
-            margin-bottom: 20px;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 6px;
+            border: 1px solid #eee;
         }
 
         .pdf-list-panel h3 {
             margin: 0 0 15px 0;
             color: #333;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .pdf-list {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .pdf-item {
@@ -414,13 +434,13 @@
 
         .signature-slots {
             display: flex;
-            gap: 20px;
-            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .signature-slot {
-            width: 200px;
-            height: 100px;
+            width: 100%;
+            height: 80px;
             border: 2px dashed #ccc;
             border-radius: 6px;
             display: flex;
@@ -498,56 +518,60 @@
             <div class="header">
                 <h2>İmza Sirkülerinden İmza Seçimi</h2>
             </div>
-            
-            <div class="pdf-list-panel">
-                <h3>Mevcut PDF Listesi</h3>
-                <div class="pdf-list" id="pdfList">
-                    <!-- PDF listesi buraya dinamik olarak eklenecek -->
-                </div>
-                <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
-            </div>
 
-            <div class="upload-panel">
-                <div class="instructions">
-                    <strong>Nasıl Kullanılır:</strong>
-                    <ol>
-                        <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
-                        <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
-                        <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
-                    </ol>
-                </div>
-                <asp:FileUpload ID="fileUpload" runat="server" />
-                <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
-                <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
-            </div>
-
-            <div id="imageContainer" runat="server" class="image-container">
-                <div class="tabs" id="pageTabs">
-                    <!-- Tabs will be added here dynamically -->
-                </div>
-                <div id="pageContents">
-                    <!-- Tab contents will be added here dynamically -->
-                </div>
-            </div>
-
-            <!-- Selected Signatures Container -->
-            <div class="selected-signatures">
-                <h3>Seçilen İmzalar</h3>
-                <div class="signature-slots">
-                    <div class="signature-slot" data-slot="1">
-                        <div class="slot-placeholder">İmza 1</div>
-                        <div class="slot-image"></div>
-                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+            <div class="main-content">
+                <div id="imageContainer" runat="server" class="image-container">
+                    <div class="tabs" id="pageTabs">
+                        <!-- Tabs will be added here dynamically -->
                     </div>
-                    <div class="signature-slot" data-slot="2">
-                        <div class="slot-placeholder">İmza 2</div>
-                        <div class="slot-image"></div>
-                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                    <div id="pageContents">
+                        <!-- Tab contents will be added here dynamically -->
                     </div>
-                    <div class="signature-slot" data-slot="3">
-                        <div class="slot-placeholder">İmza 3</div>
-                        <div class="slot-image"></div>
-                        <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="pdf-list-panel">
+                    <h3>Mevcut PDF Listesi</h3>
+                    <div class="pdf-list" id="pdfList">
+                        <!-- PDF listesi buraya dinamik olarak eklenecek -->
+                    </div>
+                    <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
+                </div>
+
+                <div class="upload-panel">
+                    <div class="instructions">
+                        <strong>Nasıl Kullanılır:</strong>
+                        <ol>
+                            <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
+                            <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
+                            <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
+                        </ol>
+                    </div>
+                    <asp:FileUpload ID="fileUpload" runat="server" />
+                    <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
+                    <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
+                </div>
+
+                <!-- Selected Signatures Container -->
+                <div class="selected-signatures">
+                    <h3>Seçilen İmzalar</h3>
+                    <div class="signature-slots">
+                        <div class="signature-slot" data-slot="1">
+                            <div class="slot-placeholder">İmza 1</div>
+                            <div class="slot-image"></div>
+                            <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                        </div>
+                        <div class="signature-slot" data-slot="2">
+                            <div class="slot-placeholder">İmza 2</div>
+                            <div class="slot-image"></div>
+                            <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                        </div>
+                        <div class="signature-slot" data-slot="3">
+                            <div class="slot-placeholder">İmza 3</div>
+                            <div class="slot-image"></div>
+                            <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                        </div>
                     </div>
                 </div>
             </div>
