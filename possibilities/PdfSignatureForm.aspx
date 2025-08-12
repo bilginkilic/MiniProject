@@ -1292,7 +1292,21 @@
                 if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
                     btnEkle.classList.add('adding-mode');
                     clearForm();
-                    showNotification('Yeni kayıt eklemek için formu doldurun ve imzaları seçin', 'info');
+                    
+                    // Boş bir satır ekle
+                    const emptyData = {
+                        yetkiliKontakt: '',
+                        yetkiliAdi: '',
+                        yetkiSekli: 'Müştereken',
+                        yetkiTarihi: '',
+                        sinirliYetkiDetaylari: '',
+                        yetkiTurleri: '',
+                        imzalar: []
+                    };
+                    
+                    const newRow = addTableRow(emptyData);
+                    selectRow(newRow);
+                    showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun ve imzaları seçin', 'info');
                     return;
                 }
                 
@@ -1376,18 +1390,18 @@
 
             function addTableRow(data) {
                 const tbody = document.querySelector('.auth-details-table tbody');
-                const newRow = tbody.insertRow();
+                const newRow = tbody.insertRow(0); // En üste ekle
                 
                 // Temel hücreleri ekle
                 const cells = [
-                    data.yetkiliKontakt,
-                    data.yetkiliAdi,
-                    data.yetkiSekli,
-                    data.yetkiTarihi,
-                    data.yetkiTarihi,
+                    data.yetkiliKontakt || '',
+                    data.yetkiliAdi || '',
+                    data.yetkiSekli || 'Müştereken',
+                    data.yetkiTarihi || '',
+                    data.yetkiTarihi || '',
                     'A Grubu',
-                    data.sinirliYetkiDetaylari,
-                    data.yetkiTurleri
+                    data.sinirliYetkiDetaylari || '',
+                    data.yetkiTurleri || ''
                 ];
 
                 cells.forEach(cellData => {
@@ -1400,7 +1414,7 @@
                     const cell = newRow.insertCell();
                     const signaturePreview = document.createElement('div');
                     signaturePreview.className = 'signature-preview';
-                    if(data.imzalar[i]) {
+                    if(data.imzalar && data.imzalar[i]) {
                         signaturePreview.style.backgroundImage = data.imzalar[i];
                     }
                     cell.appendChild(signaturePreview);
@@ -1414,6 +1428,11 @@
 
                 // Çift tıklama olayını ekle
                 newRow.addEventListener('dblclick', () => handleRowDoubleClick(newRow));
+                
+                // Tek tıklama olayını ekle
+                newRow.addEventListener('click', () => selectRow(newRow));
+
+                return newRow; // Eklenen satırı döndür
             }
 
             function clearForm() {
