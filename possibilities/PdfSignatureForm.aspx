@@ -130,19 +130,20 @@
             width: 100%;
             height: 100%;
             overflow-y: auto;
-            overflow-x: auto;
-            padding: 20px;
+            overflow-x: hidden;
+            padding: 15px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             position: relative;
             background: #f8f9fa;
         }
         .image-wrapper img {
+            max-height: 98%;
             width: auto;
-            max-width: 95%;
-            height: auto;
+            min-width: 70%;
+            max-width: 98%;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             background: white;
