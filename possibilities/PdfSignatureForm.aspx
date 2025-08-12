@@ -562,6 +562,35 @@
         </div>
 
         <script type="text/javascript">
+            // Notification functions
+            function showNotification(message, type, persistent = false) {
+                console.log('Notification:', type, message);
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                
+                // Reset classes
+                notification.className = 'notification ' + type;
+                if (persistent) {
+                    notification.classList.add('persistent');
+                }
+                notificationMessage.textContent = message;
+                
+                notification.classList.add('show');
+                
+                // For non-persistent notifications, auto-hide after delay
+                if (!persistent) {
+                    setTimeout(() => {
+                        hideNotification();
+                    }, type === 'error' ? 8000 : 5000); // Show errors longer
+                }
+            }
+
+            function hideNotification() {
+                const notification = document.getElementById('notification');
+                notification.classList.remove('show');
+                notification.classList.remove('persistent');
+            }
+
             function getMousePosition(e, element) {
                 var wrapper = element.closest('.image-wrapper');
                 var image = wrapper.querySelector('img');
@@ -1019,9 +1048,6 @@
                 return new Blob(byteArrays, { type: mimeType });
             }
 
-                return false;
-            }
-
             // Save button click handler
             var saveButton = document.getElementById('<%= btnSaveSignature.ClientID %>');
             if (saveButton) {
@@ -1072,34 +1098,6 @@
                 prm.add_endRequest(function() {
                     clearTimeout(saveTimeout);
                 });
-            }
-
-            function showNotification(message, type, persistent = false) {
-                console.log('Notification:', type, message);
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notificationMessage');
-                
-                // Reset classes
-                notification.className = 'notification ' + type;
-                if (persistent) {
-                    notification.classList.add('persistent');
-                }
-                notificationMessage.textContent = message;
-                
-                notification.classList.add('show');
-                
-                // For non-persistent notifications, auto-hide after delay
-                if (!persistent) {
-                    setTimeout(() => {
-                        hideNotification();
-                    }, type === 'error' ? 8000 : 5000); // Show errors longer
-                }
-            }
-
-            function hideNotification() {
-                const notification = document.getElementById('notification');
-                notification.classList.remove('show');
-                notification.classList.remove('persistent');
             }
 
             // Modify file upload event
