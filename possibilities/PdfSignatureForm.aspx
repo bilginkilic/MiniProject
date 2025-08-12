@@ -36,8 +36,6 @@
             border-radius: 8px;
             height: 100%;
             position: relative;
-            display: grid;
-            grid-template-rows: auto auto 1fr auto;
             gap: 10px;
             padding: 20px;
         }
@@ -78,8 +76,9 @@
             border-radius: 8px;
             background: #fff;
             overflow: hidden;
-            height: 100%;
+            flex: 1;
             min-height: 0;
+            width: 100%;
         }
         #pageContents {
             flex: 1;
@@ -131,30 +130,29 @@
         .tab-content.active {
             display: flex;
             flex-direction: column;
+            flex: 1;
         }
         .image-wrapper {
             width: 100%;
             height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 10px;
+            padding: 5px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             position: relative;
             background: #f8f9fa;
             flex: 1;
         }
         .image-wrapper img {
-            width: 100%;
+            width: 95%;
             height: auto;
-            max-height: 100%;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             background: white;
-            margin: 0 auto;
-            margin-bottom: 20px;
+            margin: 10px auto;
             border-radius: 4px;
         }
         .button {
