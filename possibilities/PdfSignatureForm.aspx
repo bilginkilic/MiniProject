@@ -88,6 +88,9 @@
             overflow: hidden;
             background: #f5f5f5;
             height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .tabs {
             display: flex;
@@ -122,33 +125,36 @@
             bottom: 0;
             display: none;
             overflow: hidden;
+            width: 100%;
+            height: 100%;
         }
         .tab-content.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
         }
         .image-wrapper {
             width: 100%;
             height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 15px;
+            padding: 10px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             background: #f8f9fa;
+            flex: 1;
         }
         .image-wrapper img {
-            max-height: 98%;
-            width: auto;
-            min-width: 70%;
-            max-width: 98%;
+            width: 100%;
+            height: auto;
+            max-height: 100%;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             background: white;
             margin: 0 auto;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border-radius: 4px;
         }
         .button {
