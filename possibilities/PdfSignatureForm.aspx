@@ -1287,19 +1287,8 @@
                     const isUpdate = btnEkle.classList.contains('update-mode');
                 
                     // Eğer bu yeni bir ekleme başlangıcı ise
-                    if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
+                    if (!isUpdate) {
                         console.log('Yeni kayıt ekleme başlıyor');
-                        btnEkle.classList.add('adding-mode');
-                        clearForm();
-                        
-                        // İmza slotlarından imzaları al
-                        const imzalar = [];
-                        document.querySelectorAll('.signature-slot').forEach((slot, index) => {
-                            const slotImage = slot.querySelector('.slot-image');
-                            if (slot.classList.contains('filled') && slotImage) {
-                                imzalar.push(slotImage.style.backgroundImage);
-                            }
-                        });
                         
                         // Boş bir satır ekle
                         const emptyData = {
@@ -1309,7 +1298,7 @@
                             yetkiTarihi: '',
                             sinirliYetkiDetaylari: '',
                             yetkiTurleri: '',
-                            imzalar: imzalar
+                            imzalar: []
                         };
                         
                         console.log('Eklenecek veri:', emptyData);
@@ -1324,23 +1313,61 @@
                         }
                         
                         selectRow(newRow);
+                        btnEkle.innerHTML = '<i class="fas fa-save"></i> Güncelle';
+                        btnEkle.classList.add('update-mode');
                         showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun', 'info');
                         return;
                     }
                 
-                if(isUpdate && !selectedRow) {
-                    throw new Error('Güncellenecek satır seçilmedi');
-                }
+                    // Güncelleme işlemi
+                    if(isUpdate) {
+                        if(!selectedRow) {
+                            throw new Error('Güncellenecek satır seçilmedi');
+                        }
+
+                        // Form verilerini kontrol et
+                        const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
+                        const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
+
+                        if(!yetkiliKontakt || !yetkiliAdi) {
+                            showNotification('Lütfen zorunlu alanları doldurun (Yetkili Kontakt ve Adı)', 'warning');
+                            return;
+                        }
+
+                        // Form verilerini al
+                        const formData = {
+                            yetkiliKontakt: yetkiliKontakt,
+                            yetkiliAdi: yetkiliAdi,
+                            yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                            yetkiTarihi: document.querySelector('select[name="gun"]')?.value + '.' + 
+                                        document.querySelector('select[name="ay"]')?.value + '.' + 
+                                        document.querySelector('select[name="yil"]')?.value,
+                            sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
+                            yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                            imzalar: []
+                        };
+
+                        // İmzaları ekle
+                        document.querySelectorAll('.signature-slot').forEach(slot => {
+                            if(slot.classList.contains('filled')) {
+                                const slotImage = slot.querySelector('.slot-image');
+                                if(slotImage && slotImage.style.backgroundImage) {
+                                    formData.imzalar.push(slotImage.style.backgroundImage);
+                                }
+                            }
+                        });
+
+                        // Satırı güncelle
+                        updateTableRow(selectedRow, formData);
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                        btnEkle.classList.remove('update-mode');
+                        selectedRow = null;
+                        clearForm();
+                        showNotification('Kayıt başarıyla güncellendi', 'success');
+                    }
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);
                     showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
-                } finally {
-                    if (!isUpdate) {
-                        const btnEkle = document.getElementById('btnEkle');
-                        if (btnEkle) {
-                            btnEkle.classList.remove('adding-mode');
-                        }
-                    }
                 }
 
             function handleFormSubmit() {
