@@ -374,6 +374,17 @@
         .auth-details-table tr:hover {
             background: #f8f9fa;
         }
+        .signature-preview {
+            width: 120px;
+            height: 60px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: white;
+            margin: 0 auto;
+        }
         .footer {
             padding: 15px 0;
             display: flex;
@@ -731,9 +742,9 @@
                             <td>A Grubu</td>
                             <td>C İLE BİRLİKTE 1.000.000 USD işlemlere kadar.</td>
                             <td>Kredi Sözleşmeleri / Transfer İşlemleri</td>
-                            <td>[İmza 1]</td>
-                            <td>[İmza 2]</td>
-                            <td>[İmza 3]</td>
+                            <td><div class="signature-preview" id="authSignature1"></div></td>
+                            <td><div class="signature-preview" id="authSignature2"></div></td>
+                            <td><div class="signature-preview" id="authSignature3"></div></td>
                             <td>100.000</td>
                             <td>USD</td>
                             <td>Aktif</td>
@@ -1087,12 +1098,24 @@
                         slotImage.style.backgroundImage = `url(${signature.image})`;
                         deleteBtn.style.display = 'flex';
                         
+                        // İmzayı yetki detayları tablosuna da ekle
+                        const authSignature = document.getElementById(`authSignature${index + 1}`);
+                        if (authSignature) {
+                            authSignature.style.backgroundImage = `url(${signature.image})`;
+                        }
+                        
                         // Update delete button click handler
                         deleteBtn.onclick = () => deleteSignature(index);
                     } else {
                         slot.classList.remove('filled');
                         slotImage.style.backgroundImage = '';
                         deleteBtn.style.display = 'none';
+                        
+                        // Yetki detayları tablosundan da kaldır
+                        const authSignature = document.getElementById(`authSignature${index + 1}`);
+                        if (authSignature) {
+                            authSignature.style.backgroundImage = '';
+                        }
                     }
                 });
                 
