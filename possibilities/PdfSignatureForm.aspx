@@ -130,8 +130,8 @@
             width: 100%;
             height: 100%;
             overflow-y: auto;
-            overflow-x: hidden;
-            padding: 30px;
+            overflow-x: auto;
+            padding: 20px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
@@ -140,7 +140,8 @@
             background: #f8f9fa;
         }
         .image-wrapper img {
-            width: 90%; /* Sayfanın genişliğini artırdık */
+            width: auto;
+            max-width: 95%;
             height: auto;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
