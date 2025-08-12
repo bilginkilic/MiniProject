@@ -380,6 +380,19 @@
         }
         .auth-details-table tr:hover {
             background: #f8f9fa;
+            cursor: pointer;
+        }
+        .auth-details-table tr.selected {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        .auth-details-table tr.clicked {
+            animation: rowClick 0.3s;
+        }
+        @keyframes rowClick {
+            0% { background-color: #e3f2fd; }
+            50% { background-color: #bbdefb; }
+            100% { background-color: #e3f2fd; }
         }
         .signature-preview {
             width: 120px;
@@ -979,6 +992,15 @@
             function startSelection(e) {
                 e.preventDefault();
                 
+                // İmza seçimi için ekleme veya güncelleme durumu kontrolü
+                const btnEkle = document.getElementById('btnEkle');
+                const isUpdate = btnEkle.classList.contains('update-mode');
+                
+                if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
+                    showNotification('Lütfen önce Ekle butonuna basın veya bir kayıt seçin', 'warning');
+                    return;
+                }
+                
                 // Eğer mevcut seçim varsa ve yeni tıklama seçim dışındaysa, seçimi temizle
                 if (currentSelection) {
                     clearSelection();
@@ -1209,8 +1231,23 @@
                 document.getElementById('btnYetkiliAra').addEventListener('click', handleYetkiliArama);
             }
 
-            function handleRowDoubleClick(row) {
+            function selectRow(row) {
+                // Önceki seçili satırın seçimini kaldır
+                document.querySelectorAll('.auth-details-table tbody tr').forEach(r => {
+                    r.classList.remove('selected');
+                });
+                
+                // Yeni satırı seç
+                row.classList.add('selected');
                 selectedRow = row;
+            }
+
+            function handleRowDoubleClick(row) {
+                // Çift tıklama animasyonu
+                row.classList.add('clicked');
+                setTimeout(() => row.classList.remove('clicked'), 300);
+
+                selectRow(row);
                 isEditing = true;
                 
                 // Form alanlarını doldur
@@ -1251,6 +1288,14 @@
                 const btnEkle = document.getElementById('btnEkle');
                 const isUpdate = btnEkle.classList.contains('update-mode');
                 
+                // Eğer bu yeni bir ekleme başlangıcı ise
+                if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
+                    btnEkle.classList.add('adding-mode');
+                    clearForm();
+                    showNotification('Yeni kayıt eklemek için formu doldurun ve imzaları seçin', 'info');
+                    return;
+                }
+                
                 if(isUpdate && !selectedRow) {
                     showNotification('Güncellenecek satır seçilmedi', 'error');
                     return;
@@ -1289,6 +1334,7 @@
                 }
 
                 clearForm();
+                btnEkle.classList.remove('adding-mode');
             }
 
             function handleDelete() {
