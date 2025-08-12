@@ -312,6 +312,68 @@
         .notification .close-btn:hover {
             opacity: 1;
         }
+        .auth-details {
+            grid-column: 1 / -1;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .auth-details .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .auth-details .form-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            align-items: center;
+            gap: 10px;
+        }
+        .auth-details label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .auth-details input,
+        .auth-details select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+        }
+        .auth-details .date-input {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .auth-details .date-input select {
+            width: auto;
+        }
+        .auth-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        .auth-details-table th,
+        .auth-details-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            text-align: left;
+        }
+        .auth-details-table th {
+            background: #f8f9fa;
+            font-weight: 500;
+            color: #333;
+        }
+        .auth-details-table tr:hover {
+            background: #f8f9fa;
+        }
         .footer {
             padding: 15px 0;
             display: flex;
@@ -574,6 +636,110 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Yetki Detayları -->
+            <div class="auth-details">
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>YETKİLİ KONTAKT:</label>
+                        <input type="text" value="5000711" readonly />
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ GRUBU:</label>
+                        <select>
+                            <option>A Grubu</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ TUTARI:</label>
+                        <input type="text" value="1000000" />
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ BİTİŞ TARİHİ:</label>
+                        <div class="date-input">
+                            <select>
+                                <option>14</option>
+                            </select>
+                            <span>/</span>
+                            <select>
+                                <option>07</option>
+                            </select>
+                            <span>/</span>
+                            <select>
+                                <option>2024</option>
+                            </select>
+                            <span>Aksi Karara Kadar</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label>SINIRLI YETKİ DETAYLARI:</label>
+                        <input type="text" />
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ DÖVİZ CİNSİ:</label>
+                        <select>
+                            <option>USD</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ ŞEKLİ:</label>
+                        <select>
+                            <option>Müştereken</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ TÜRLERİ:</label>
+                        <select>
+                            <option>Kredi İşlemleri, Hazine İşlemleri</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>YETKİ DURUMU:</label>
+                        <select>
+                            <option>Aktif</option>
+                        </select>
+                    </div>
+                </div>
+
+                <table class="auth-details-table">
+                    <thead>
+                        <tr>
+                            <th>Yetkili Kont. No</th>
+                            <th>Yetkili Adı Soyadı</th>
+                            <th>Yetki Şekli</th>
+                            <th>Yetki Süresi</th>
+                            <th>Yetki Bitiş Tarihi</th>
+                            <th>İmza Yetki Grubu</th>
+                            <th>Sınırlı Yetki Detayları</th>
+                            <th>Yetki Türleri</th>
+                            <th>İmza Örneği 1</th>
+                            <th>İmza Örneği 2</th>
+                            <th>İmza Örneği 3</th>
+                            <th>Yetki Tutarı</th>
+                            <th>Yetki Döv.</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>5000711</td>
+                            <td>Toru Kawai</td>
+                            <td>Müştereken</td>
+                            <td>14.07.2026</td>
+                            <td>14.07.2026</td>
+                            <td>A Grubu</td>
+                            <td>C İLE BİRLİKTE 1.000.000 USD işlemlere kadar.</td>
+                            <td>Kredi Sözleşmeleri / Transfer İşlemleri</td>
+                            <td>[İmza 1]</td>
+                            <td>[İmza 2]</td>
+                            <td>[İmza 3]</td>
+                            <td>100.000</td>
+                            <td>USD</td>
+                            <td>Aktif</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div class="footer">
