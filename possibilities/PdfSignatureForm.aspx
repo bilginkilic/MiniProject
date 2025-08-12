@@ -12,14 +12,14 @@
             height: 100%;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-            overflow: hidden;
+            overflow: auto;
         }
         form {
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             padding: 20px;
             box-sizing: border-box;
         }
@@ -27,7 +27,7 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 350px;
-            grid-template-rows: auto 1fr auto auto;
+            grid-template-rows: auto auto 1fr auto;
             grid-template-areas: 
                 "header header"
                 "main sidebar"
@@ -41,10 +41,12 @@
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
-            height: 100%;
+            min-height: 100%;
+            height: auto;
             position: relative;
             gap: 20px;
             padding: 20px;
+            overflow: visible;
         }
         .header {
             grid-area: header;
@@ -321,6 +323,9 @@
             border: 1px solid #eee;
             border-radius: 8px;
             margin-top: 0;
+            display: block;
+            width: 100%;
+            height: auto;
         }
         .auth-details .form-grid {
             display: grid;
