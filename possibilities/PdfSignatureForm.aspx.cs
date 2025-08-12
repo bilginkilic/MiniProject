@@ -201,7 +201,7 @@ namespace AspxExamples
             try
             {
                 string signaturesJson = Request.Form["hdnSignatures"];
-                System.Diagnostics.Debug.WriteLine($"İmza verileri alındı: {signaturesJson}");
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza verileri alındı: {0}", signaturesJson));
 
                 if (string.IsNullOrEmpty(signaturesJson))
                 {
@@ -222,12 +222,12 @@ namespace AspxExamples
 
                 foreach (var signature in signatures)
                 {
-                    string imagePath = Path.Combine(_cdn, $"page_{signature.Page}.png");
-                    System.Diagnostics.Debug.WriteLine($"Kaynak resim yolu: {imagePath}");
+                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", signature.Page));
+                    System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim yolu: {0}", imagePath));
 
                     if (!File.Exists(imagePath))
                     {
-                        ShowError($"Sayfa {signature.Page} için görüntü bulunamadı.");
+                        ShowError(String.Format("Sayfa {0} için görüntü bulunamadı.", signature.Page));
                         continue;
                     }
 
@@ -237,11 +237,11 @@ namespace AspxExamples
                             signature.X + signature.Width > sourceImage.Width || 
                             signature.Y + signature.Height > sourceImage.Height)
                         {
-                            ShowError($"Sayfa {signature.Page} için seçilen alan resim sınırları dışında.");
+                            ShowError(String.Format("Sayfa {0} için seçilen alan resim sınırları dışında.", signature.Page));
                             continue;
                         }
 
-                        string outputFileName = $"signature_{DateTime.Now.Ticks}_{signatures.IndexOf(signature)}.png";
+                        string outputFileName = String.Format("signature_{0}_{1}.png", DateTime.Now.Ticks, signatures.IndexOf(signature));
                         string outputPath = Path.Combine(_cdn, outputFileName);
 
                         try
@@ -263,7 +263,7 @@ namespace AspxExamples
                                     graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
                                 }
 
-                                string tempPath = Path.Combine(_cdn, $"temp_{outputFileName}");
+                                string tempPath = Path.Combine(_cdn, String.Format("temp_{0}", outputFileName));
                                 bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
 
                                 if (File.Exists(outputPath))
@@ -285,8 +285,8 @@ namespace AspxExamples
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"İmza kaydetme hatası: {ex.Message}");
-                            ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}", ex.Message));
+                            ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
                             continue;
                         }
                     }
@@ -336,13 +336,13 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"İmza kaydetme hatası: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     var response = new {
                         success = false,
-                        error = $"İmza kaydedilirken bir hata oluştu: {ex.Message}"
+                        error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
                     };
                     
                     var serializer = new JavaScriptSerializer();
@@ -355,7 +355,7 @@ namespace AspxExamples
                 }
                 else
                 {
-                    ShowError($"İmza kaydedilirken bir hata oluştu: {ex.Message}");
+                    ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
                 }
             }
         }
