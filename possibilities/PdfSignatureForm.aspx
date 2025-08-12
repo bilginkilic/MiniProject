@@ -28,7 +28,8 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            max-width: 1200px;
+            min-width: 1000px;
+            max-width: 1400px;
             margin: 0 auto;
             width: 100%;
             background-color: white;
@@ -145,9 +146,11 @@
             position: relative;
             background: #f8f9fa;
             flex: 1;
+            min-width: 900px;
         }
         .image-wrapper img {
-            width: 95%;
+            width: 98%;
+            min-width: 850px;
             height: auto;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
