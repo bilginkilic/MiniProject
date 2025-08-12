@@ -1281,137 +1281,212 @@
                     console.log('handleAddUpdate başladı');
                     const btnEkle = document.getElementById('btnEkle');
                     if (!btnEkle) {
-                        console.error('btnEkle elementi bulunamadı');
-                        return;
+                        throw new Error('btnEkle elementi bulunamadı');
                     }
                     console.log('btnEkle bulundu:', btnEkle);
                     const isUpdate = btnEkle.classList.contains('update-mode');
                 
                     // Eğer bu yeni bir ekleme başlangıcı ise
                     if (!isUpdate && !btnEkle.classList.contains('adding-mode')) {
-                        try {
-                            console.log('Yeni kayıt ekleme başlıyor');
-                            btnEkle.classList.add('adding-mode');
-                            clearForm();
-                            
-                            // İmza slotlarından imzaları al
-                            const imzalar = [];
-                            document.querySelectorAll('.signature-slot').forEach((slot, index) => {
-                                const slotImage = slot.querySelector('.slot-image');
-                                if (slot.classList.contains('filled') && slotImage) {
-                                    imzalar.push(slotImage.style.backgroundImage);
-                                }
-                            });
-                            
-                            // Boş bir satır ekle
-                            const emptyData = {
-                                yetkiliKontakt: '',
-                                yetkiliAdi: '',
-                                yetkiSekli: 'Müştereken',
-                                yetkiTarihi: '',
-                                sinirliYetkiDetaylari: '',
-                                yetkiTurleri: '',
-                                imzalar: imzalar
-                            };
-                            
-                            console.log('Eklenecek veri:', emptyData);
-                            const tbody = document.querySelector('.auth-details-table tbody');
-                            if (!tbody) {
-                                console.error('Tablo tbody bulunamadı');
-                                return;
+                        console.log('Yeni kayıt ekleme başlıyor');
+                        btnEkle.classList.add('adding-mode');
+                        clearForm();
+                        
+                        // İmza slotlarından imzaları al
+                        const imzalar = [];
+                        document.querySelectorAll('.signature-slot').forEach((slot, index) => {
+                            const slotImage = slot.querySelector('.slot-image');
+                            if (slot.classList.contains('filled') && slotImage) {
+                                imzalar.push(slotImage.style.backgroundImage);
                             }
-                            
-                            const newRow = addTableRow(emptyData);
-                            if (!newRow) {
-                                console.error('Yeni satır eklenemedi');
-                                return;
-                            }
-                            
-                            selectRow(newRow);
-                            showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun', 'info');
-                        } catch (err) {
-                            console.error('Yeni kayıt ekleme hatası:', err);
-                            showNotification('Kayıt eklenirken bir hata oluştu', 'error');
+                        });
+                        
+                        // Boş bir satır ekle
+                        const emptyData = {
+                            yetkiliKontakt: '',
+                            yetkiliAdi: '',
+                            yetkiSekli: 'Müştereken',
+                            yetkiTarihi: '',
+                            sinirliYetkiDetaylari: '',
+                            yetkiTurleri: '',
+                            imzalar: imzalar
+                        };
+                        
+                        console.log('Eklenecek veri:', emptyData);
+                        const tbody = document.querySelector('.auth-details-table tbody');
+                        if (!tbody) {
+                            throw new Error('Tablo tbody bulunamadı');
                         }
+                        
+                        const newRow = addTableRow(emptyData);
+                        if (!newRow) {
+                            throw new Error('Yeni satır eklenemedi');
+                        }
+                        
+                        selectRow(newRow);
+                        showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun', 'info');
                         return;
                     }
                 
                 if(isUpdate && !selectedRow) {
-                    showNotification('Güncellenecek satır seçilmedi', 'error');
-                    return;
+                    throw new Error('Güncellenecek satır seçilmedi');
                 }
-
-                // Form verilerini al
-                const data = {
-                    yetkiliKontakt: document.getElementById('txtYetkiliKontakt').value,
-                    yetkiliAdi: document.getElementById('txtYetkiliAdi').value,
-                    yetkiSekli: document.querySelector('select[name="yetkiSekli"]').value,
-                    yetkiTarihi: `${document.querySelector('select[name="gun"]').value}.${document.querySelector('select[name="ay"]').value}.${document.querySelector('select[name="yil"]').value}`,
-                    sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value,
-                    yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]').value,
-                    imzalar: []
-                };
-
-                // İmzaları ekle
-                for(let i = 1; i <= 3; i++) {
-                    const signatureSlot = document.querySelector(`.signature-slot[data-slot="${i}"]`);
-                    if(signatureSlot.classList.contains('filled')) {
-                        data.imzalar.push(signatureSlot.querySelector('.slot-image').style.backgroundImage);
+                } catch (err) {
+                    console.error('handleAddUpdate hatası:', err);
+                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
+                } finally {
+                    if (!isUpdate) {
+                        const btnEkle = document.getElementById('btnEkle');
+                        if (btnEkle) {
+                            btnEkle.classList.remove('adding-mode');
+                        }
                     }
                 }
 
-                if(isUpdate) {
-                    // Mevcut satırı güncelle
-                    updateTableRow(selectedRow, data);
-                    btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                    btnEkle.classList.remove('update-mode');
-                    selectedRow = null;
-                    showNotification('Kayıt güncellendi', 'success');
-                } else {
-                    // Yeni satır ekle
-                    addTableRow(data);
-                    showNotification('Yeni kayıt eklendi', 'success');
-                }
+            function handleFormSubmit() {
+                try {
+                    // Form verilerini al
+                    const data = {
+                        yetkiliKontakt: document.getElementById('txtYetkiliKontakt').value,
+                        yetkiliAdi: document.getElementById('txtYetkiliAdi').value,
+                        yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                        yetkiTarihi: `${document.querySelector('select[name="gun"]')?.value || ''}.${document.querySelector('select[name="ay"]')?.value || ''}.${document.querySelector('select[name="yil"]')?.value || ''}`,
+                        sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
+                        yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                        imzalar: []
+                    };
 
-                clearForm();
-                btnEkle.classList.remove('adding-mode');
+                    // İmzaları ekle
+                    document.querySelectorAll('.signature-slot').forEach((slot, index) => {
+                        if (slot.classList.contains('filled')) {
+                            const slotImage = slot.querySelector('.slot-image');
+                            if (slotImage && slotImage.style.backgroundImage) {
+                                data.imzalar.push(slotImage.style.backgroundImage);
+                            }
+                        }
+                    });
+
+                    return data;
+                } catch (err) {
+                    console.error('Form veri toplama hatası:', err);
+                    showNotification('Form verileri alınırken bir hata oluştu', 'error');
+                    throw err;
+                }
+                };
+
+                try {
+                    const formData = handleFormSubmit();
+                    
+                    if(isUpdate) {
+                        // Mevcut satırı güncelle
+                        updateTableRow(selectedRow, formData);
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                        btnEkle.classList.remove('update-mode');
+                        selectedRow = null;
+                        showNotification('Kayıt güncellendi', 'success');
+                    } else {
+                        // Yeni satır ekle
+                        addTableRow(formData);
+                        showNotification('Yeni kayıt eklendi', 'success');
+                    }
+
+                    clearForm();
+                } catch (err) {
+                    console.error('Kayıt işlemi hatası:', err);
+                    showNotification(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
+                } finally {
+                    btnEkle.classList.remove('adding-mode');
+                }
             }
 
             function handleDelete() {
-                if(!selectedRow) {
-                    showNotification('Silinecek kayıt seçilmedi', 'error');
-                    return;
-                }
+                try {
+                    if(!selectedRow) {
+                        throw new Error('Silinecek kayıt seçilmedi');
+                    }
 
-                if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
-                    selectedRow.remove();
-                    clearForm();
-                    showNotification('Kayıt silindi', 'success');
+                    if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
+                        selectedRow.remove();
+                        clearForm();
+                        showNotification('Kayıt silindi', 'success');
+                    }
+                } catch (err) {
+                    console.error('Silme işlemi hatası:', err);
+                    showNotification(err.message || 'Silme işlemi sırasında bir hata oluştu', 'error');
+                } finally {
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (btnEkle) {
+                        btnEkle.classList.remove('update-mode');
+                        btnEkle.classList.remove('adding-mode');
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                    }
                 }
             }
 
             function handleYetkiliArama() {
-                const yetkiliNo = document.getElementById('txtYetkiliKontakt').value;
-                // Dummy arama - gerçek implementasyonda web servise istek atılacak
-                showNotification('Yetkili aranıyor: ' + yetkiliNo, 'info');
-                // TODO: Web servis çağrısı eklenecek
+                try {
+                    const yetkiliNoInput = document.getElementById('txtYetkiliKontakt');
+                    if (!yetkiliNoInput) {
+                        throw new Error('Yetkili no alanı bulunamadı');
+                    }
+                    
+                    const yetkiliNo = yetkiliNoInput.value.trim();
+                    if (!yetkiliNo) {
+                        throw new Error('Lütfen bir yetkili no girin');
+                    }
+
+                    // Dummy arama - gerçek implementasyonda web servise istek atılacak
+                    showNotification('Yetkili aranıyor: ' + yetkiliNo, 'info');
+                    // TODO: Web servis çağrısı eklenecek
+                } catch (err) {
+                    console.error('Yetkili arama hatası:', err);
+                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                }
             }
 
             function updateTableRow(row, data) {
-                row.cells[0].textContent = data.yetkiliKontakt;
-                row.cells[1].textContent = data.yetkiliAdi;
-                row.cells[2].textContent = data.yetkiSekli;
-                row.cells[3].textContent = data.yetkiTarihi;
-                row.cells[6].textContent = data.sinirliYetkiDetaylari;
-                row.cells[7].textContent = data.yetkiTurleri;
-
-                // İmzaları güncelle
-                data.imzalar.forEach((imza, index) => {
-                    const signaturePreview = row.cells[index + 8].querySelector('.signature-preview');
-                    if(signaturePreview) {
-                        signaturePreview.style.backgroundImage = imza;
+                try {
+                    if (!row || !row.cells) {
+                        throw new Error('Geçersiz tablo satırı');
                     }
-                });
+
+                    if (!data) {
+                        throw new Error('Güncellenecek veri bulunamadı');
+                    }
+
+                    // Temel alanları güncelle
+                    const updates = [
+                        { index: 0, value: data.yetkiliKontakt },
+                        { index: 1, value: data.yetkiliAdi },
+                        { index: 2, value: data.yetkiSekli },
+                        { index: 3, value: data.yetkiTarihi },
+                        { index: 6, value: data.sinirliYetkiDetaylari },
+                        { index: 7, value: data.yetkiTurleri }
+                    ];
+
+                    updates.forEach(update => {
+                        if (row.cells[update.index]) {
+                            row.cells[update.index].textContent = update.value || '';
+                        }
+                    });
+
+                    // İmzaları güncelle
+                    if (data.imzalar && Array.isArray(data.imzalar)) {
+                        data.imzalar.forEach((imza, index) => {
+                            const cell = row.cells[index + 8];
+                            if (cell) {
+                                const signaturePreview = cell.querySelector('.signature-preview');
+                                if (signaturePreview) {
+                                    signaturePreview.style.backgroundImage = imza || '';
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error('Satır güncelleme hatası:', err);
+                    showNotification(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
+                    throw err;
+                }
             }
 
             function addTableRow(data) {
