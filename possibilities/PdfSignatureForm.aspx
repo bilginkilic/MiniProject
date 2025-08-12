@@ -236,18 +236,46 @@
             gap: 10px;
             transform: translateX(120%);
             transition: transform 0.3s ease;
+            max-width: 400px;
+            min-width: 300px;
         }
         .notification.show {
             transform: translateX(0);
         }
         .notification.success {
             border-left: 4px solid #28a745;
+            background-color: #f0fff4;
         }
         .notification.error {
             border-left: 4px solid #dc3545;
+            background-color: #fff5f5;
+        }
+        .notification.warning {
+            border-left: 4px solid #ffc107;
+            background-color: #fffbeb;
         }
         .notification.info {
             border-left: 4px solid #17a2b8;
+            background-color: #f0f9ff;
+        }
+        .notification.persistent {
+            animation: none;
+            transform: translateX(0);
+        }
+        .notification .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 18px;
+            color: #666;
+            background: none;
+            border: none;
+            opacity: 0.7;
+        }
+        .notification .close-btn:hover {
+            opacity: 1;
         }
         .footer {
             padding: 15px 0;
@@ -529,6 +557,7 @@
         
         <!-- Notification Container -->
         <div id="notification" class="notification">
+            <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
             <span id="notificationMessage"></span>
         </div>
 
@@ -1045,19 +1074,32 @@
                 });
             }
 
-            function showNotification(message, type) {
+            function showNotification(message, type, persistent = false) {
                 console.log('Notification:', type, message);
                 const notification = document.getElementById('notification');
                 const notificationMessage = document.getElementById('notificationMessage');
                 
+                // Reset classes
                 notification.className = 'notification ' + type;
+                if (persistent) {
+                    notification.classList.add('persistent');
+                }
                 notificationMessage.textContent = message;
                 
                 notification.classList.add('show');
                 
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 5000);
+                // For non-persistent notifications, auto-hide after delay
+                if (!persistent) {
+                    setTimeout(() => {
+                        hideNotification();
+                    }, type === 'error' ? 8000 : 5000); // Show errors longer
+                }
+            }
+
+            function hideNotification() {
+                const notification = document.getElementById('notification');
+                notification.classList.remove('show');
+                notification.classList.remove('persistent');
             }
 
             // Modify file upload event

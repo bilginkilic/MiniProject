@@ -73,7 +73,7 @@ namespace AspxExamples
                     string fileName = Path.GetFileName(fileUpload.FileName);
                     if (Path.GetExtension(fileName).ToLower() != ".pdf")
                     {
-                        ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.");
+                        ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.", true);
                         return;
                     }
 
@@ -205,7 +205,7 @@ namespace AspxExamples
 
                 if (string.IsNullOrEmpty(signaturesJson))
                 {
-                    ShowError("Lütfen en az bir imza seçiniz.");
+                    ShowWarning("Lütfen en az bir imza seçiniz.", true);
                     return;
                 }
 
@@ -214,7 +214,7 @@ namespace AspxExamples
 
                 if (signatures == null || signatures.Count == 0)
                 {
-                    ShowError("Geçersiz imza verisi.");
+                    ShowError("Geçersiz imza verisi.", true);
                     return;
                 }
 
@@ -360,19 +360,34 @@ namespace AspxExamples
             }
         }
 
-        private void ShowError(string message)
+        private void ShowError(string message, bool persistent = false)
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                String.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)),
+                String.Format("showNotification('{0}', 'error', {1});", 
+                    HttpUtility.JavaScriptStringEncode(message),
+                    persistent.ToString().ToLower()),
                 true);
         }
 
-        private void ShowMessage(string message, string type = "info")
+        private void ShowWarning(string message, bool persistent = false)
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                String.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type),
+                String.Format("showNotification('{0}', 'warning', {1});", 
+                    HttpUtility.JavaScriptStringEncode(message),
+                    persistent.ToString().ToLower()),
+                true);
+        }
+
+        private void ShowMessage(string message, string type = "info", bool persistent = false)
+        {
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "showNotification",
+                String.Format("showNotification('{0}', '{1}', {2});", 
+                    HttpUtility.JavaScriptStringEncode(message),
+                    type,
+                    persistent.ToString().ToLower()),
                 true);
         }
     }
