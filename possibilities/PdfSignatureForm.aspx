@@ -27,10 +27,12 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 350px;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto 1fr auto auto;
             grid-template-areas: 
                 "header header"
-                "main sidebar";
+                "main sidebar"
+                "auth-details auth-details"
+                "footer footer";
             box-sizing: border-box;
             min-width: 1200px;
             max-width: 1800px;
@@ -313,12 +315,12 @@
             opacity: 1;
         }
         .auth-details {
-            grid-column: 1 / -1;
+            grid-area: auth-details;
             padding: 20px;
             background: #f8f9fa;
             border: 1px solid #eee;
             border-radius: 8px;
-            margin-top: 20px;
+            margin-top: 0;
         }
         .auth-details .form-grid {
             display: grid;
@@ -386,12 +388,13 @@
             margin: 0 auto;
         }
         .footer {
+            grid-area: footer;
             padding: 15px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-top: 2px solid #eee;
-            margin-top: 20px;
+            margin-top: 0;
             background: white;
             position: relative;
             z-index: 1;
