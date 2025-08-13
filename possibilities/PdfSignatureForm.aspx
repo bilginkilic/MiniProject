@@ -942,74 +942,37 @@
         </div>
 
         <script type="text/javascript">
-            // Simple notification functions
-            let notificationTimeout;
-            function showNotification(message, type, persistent) {
-                if (!message) return;
+            var notificationTimer = null;
+            
+            window.showNotification = function(message, type) {
+                var notification = document.getElementById('notification');
+                var notificationMessage = document.getElementById('notificationMessage');
                 
-                clearTimeout(notificationTimeout);
-                
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notificationMessage');
-                
-                if (!notification || !notificationMessage) {
-                    console.error('Notification elements not found');
-                    return;
+                if (notification && notificationMessage) {
+                    clearTimeout(notificationTimer);
+                    
+                    notification.className = 'notification';
+                    if (type) notification.classList.add(type);
+                    notificationMessage.textContent = message || '';
+                    notification.classList.add('show');
+                    
+                    notificationTimer = setTimeout(function() {
+                        notification.classList.remove('show');
+                    }, type === 'error' ? 8000 : 5000);
                 }
-                
-                notification.className = 'notification ' + (type || 'info');
-                notificationMessage.textContent = message;
-                notification.classList.add('show');
-                
-                if (!persistent) {
-                    notificationTimeout = setTimeout(hideNotification, 
-                        type === 'error' ? 8000 : 5000
-                    );
-                }
-            }
-
-            function hideNotification() {
-                const notification = document.getElementById('notification');
+            };
+            
+            window.hideNotification = function() {
+                var notification = document.getElementById('notification');
                 if (notification) {
                     notification.classList.remove('show');
                 }
-                clearTimeout(notificationTimeout);
-            }
+                clearTimeout(notificationTimer);
+            };
 
             'use strict';
-            const NotificationSystem = {
-                show: function(message, type, persistent) {
-                    try {
-                        console.log('Notification:', type, message);
-                        const notification = document.getElementById('notification');
-                        const notificationMessage = document.getElementById('notificationMessage');
-                        
-                        if (!notification || !notificationMessage) {
-                            console.error('Notification elements not found');
-                            return;
-                        }
-                        
-                        notification.className = 'notification';
-                        notification.classList.add(type || 'info');
-                        if (persistent) {
-                            notification.classList.add('persistent');
-                        }
-                        notificationMessage.textContent = message;
-                        
-                        notification.classList.add('show');
-                        
-                        if (!persistent) {
-                            setTimeout(() => this.hide(), type === 'error' ? 8000 : 5000);
-                        }
-                    } catch (err) {
-                        console.error('Notification error:', err);
-                    }
-                },
-                hide: function() {
-                    const notification = document.getElementById('notification');
-                    if (notification) {
-                        notification.classList.remove('show', 'persistent');
-                    }
+            
+            // Initialize application
                 }
             };
 
