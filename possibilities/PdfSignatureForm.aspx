@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:33jhçng --%>
+<%-- Created: 2024.01.17 14:33jhçngy --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -784,8 +784,13 @@
                         </select>
                     </div>
                     <div class="form-row">
-                        <label>YETKİ TUTARI:</label>
-                        <input type="text" value="1000000" />
+                        <label for="txtYetkiTutari">YETKİ TUTARI:</label>
+                        <input type="number" id="txtYetkiTutari" name="txtYetkiTutari" value="1000000" 
+                               step="0.01" min="0" 
+                               onkeypress="return isNumberKey(event)"
+                               onpaste="return validatePaste(event)"
+                               oninput="validateDecimalPlaces(this, 2)"
+                               placeholder="Yetki tutarını giriniz" />
                     </div>
                     <div class="form-row">
                         <label>YETKİ BİTİŞ TARİHİ:</label>
@@ -1046,8 +1051,9 @@
                     if (!data.yetkiliAdi?.trim()) {
                         errors.push('Yetkili adı zorunludur');
                     }
-                    if (!data.yetkiTutari?.trim()) {
-                        errors.push('Yetki tutarı zorunludur');
+                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
+                    if (!yetkiTutari || isNaN(parseFloat(yetkiTutari))) {
+                        errors.push('Geçerli bir yetki tutarı giriniz');
                     }
                     return errors;
                 }
@@ -2256,6 +2262,45 @@
                     restoreSelection();
                 }
             });
+
+            // Numeric validation functions
+            function isNumberKey(evt) {
+                var charCode = (evt.which) ? evt.which : evt.keyCode;
+                if (charCode === 46) { // Allow decimal point (.)
+                    var inputValue = evt.target.value;
+                    if (inputValue.indexOf('.') > -1) {
+                        return false;
+                    }
+                }
+                // Allow only numbers and decimal point
+                if (charCode !== 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    return false;
+                }
+                return true;
+            }
+
+            function validatePaste(evt) {
+                var clipboardData = evt.clipboardData || window.clipboardData;
+                var pastedData = clipboardData.getData('Text');
+                if (!/^\d*\.?\d*$/.test(pastedData)) {
+                    return false;
+                }
+                return true;
+            }
+
+            function validateDecimalPlaces(input, decimals) {
+                var value = input.value;
+                if (value.includes('.')) {
+                    var parts = value.split('.');
+                    if (parts[1].length > decimals) {
+                        input.value = parseFloat(value).toFixed(decimals);
+                    }
+                }
+                // Remove leading zeros
+                if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
+                    input.value = parseFloat(value);
+                }
+            }
         </script>
         <!-- Notification Container -->
         <div id="notification" class="notification">
