@@ -944,7 +944,11 @@
         <script type="text/javascript">
             'use strict';
             
-            // Core modules
+            // Ensure global app namespace
+            window.App = window.App || {};
+            
+            // Core modules - wrapped in IIFE to avoid global scope pollution
+            (function(App) {
             const NotificationSystem = {
                 show: function(message, type, persistent) {
                     try {
@@ -1072,15 +1076,49 @@
                 }
             };
 
-            // Initialize modules
-            document.addEventListener('DOMContentLoaded', function() {
-                SecurityManager.init();
-                Utils.lazyLoadImages();
-            });
+            // Expose modules to App namespace
+            App.NotificationSystem = NotificationSystem;
+            App.ErrorHandler = ErrorHandler;
+            App.SecurityManager = SecurityManager;
+            App.Validator = Validator;
+            App.Utils = Utils;
+
+            })(window.App);
 
             /* Created: 2024.01.17 14:30 */
 
-            // Global functions
+            // Initialize application
+            document.addEventListener('DOMContentLoaded', function() {
+                try {
+                    // Initialize core modules
+                    App.SecurityManager.init();
+                    App.Utils.lazyLoadImages();
+
+                    // Initialize notification system
+                    const notification = document.getElementById('notification');
+                    const notificationMessage = document.getElementById('notificationMessage');
+                    
+                    if (!notification || !notificationMessage) {
+                        console.error('Notification elements not found during initialization');
+                        return;
+                    }
+
+                    // Global function for backward compatibility
+                    window.showNotification = function(message, type, persistent) {
+                        App.NotificationSystem.show(message, type, persistent);
+                    };
+
+                    window.hideNotification = function() {
+                        App.NotificationSystem.hide();
+                    };
+
+                    console.log('Application initialized successfully');
+                } catch (error) {
+                    console.error('Application initialization failed:', error);
+                }
+            });
+
+            // Application functions
             function showNotification(message, type, persistent) {
                 try {
                     console.log('Notification:', type, message);
@@ -1347,7 +1385,7 @@
                 }
 
                 if (selectedSignatures.length >= MAX_SIGNATURES) {
-                    showNotification('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
+                    App.NotificationSystem.show('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
                     clearSelection();
                     return;
                 }
@@ -1581,17 +1619,17 @@
 
                     // Zorunlu alan kontrolü
                     if (!yetkiliKontakt || !yetkiliAdi) {
-                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
+                        App.NotificationSystem.show('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
                         return;
                     }
 
                     if (!yetkiTutari) {
-                        showNotification('Lütfen yetki tutarını girin', 'warning');
+                        App.NotificationSystem.show('Lütfen yetki tutarını girin', 'warning');
                         return;
                     }
 
                     if (imzalar.length === 0) {
-                        showNotification('Lütfen en az bir imza seçin', 'warning');
+                        App.NotificationSystem.show('Lütfen en az bir imza seçin', 'warning');
                         return;
                     }
 
@@ -1630,11 +1668,11 @@
                         btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
                         btnEkle.classList.remove('update-mode');
                         selectedRow = null;
-                        showNotification('Kayıt başarıyla güncellendi', 'success');
+                        App.NotificationSystem.show('Kayıt başarıyla güncellendi', 'success');
                     } else {
                         // Yeni satır ekle
                         addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
+                        App.NotificationSystem.show('Yeni kayıt eklendi', 'success');
                     }
 
                     // Formu temizle
@@ -1642,7 +1680,7 @@
                     }
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);
-                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'İşlem sırasında bir hata oluştu', 'error');
                 }
 
             function handleFormSubmit() {
@@ -1671,7 +1709,7 @@
                     return data;
                 } catch (err) {
                     console.error('Form veri toplama hatası:', err);
-                    showNotification('Form verileri alınırken bir hata oluştu', 'error');
+                    App.NotificationSystem.show('Form verileri alınırken bir hata oluştu', 'error');
                     throw err;
                 }
                 };
@@ -1685,17 +1723,17 @@
                         btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
                         btnEkle.classList.remove('update-mode');
                         selectedRow = null;
-                        showNotification('Kayıt güncellendi', 'success');
+                        App.NotificationSystem.show('Kayıt güncellendi', 'success');
                     } else {
                         // Yeni satır ekle
                         addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
+                        App.NotificationSystem.show('Yeni kayıt eklendi', 'success');
                     }
 
                     clearForm();
                 } catch (err) {
                     console.error('Kayıt işlemi hatası:', err);
-                    showNotification(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
                 } finally {
                     btnEkle.classList.remove('adding-mode');
                 }
@@ -1710,11 +1748,11 @@
                     if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
                         selectedRow.remove();
                         clearForm();
-                        showNotification('Kayıt silindi', 'success');
+                        App.NotificationSystem.show('Kayıt silindi', 'success');
                     }
                 } catch (err) {
                     console.error('Silme işlemi hatası:', err);
-                    showNotification(err.message || 'Silme işlemi sırasında bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Silme işlemi sırasında bir hata oluştu', 'error');
                 } finally {
                     const btnEkle = document.getElementById('btnEkle');
                     if (btnEkle) {
@@ -1732,7 +1770,7 @@
                     document.getElementById('customerSearchInput').focus();
                 } catch (err) {
                     console.error('Yetkili arama hatası:', err);
-                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Arama sırasında bir hata oluştu', 'error');
                 }
             }
 
@@ -1749,7 +1787,7 @@
 
                     const searchTerm = searchInput.value.trim();
                     if (!searchTerm) {
-                        showNotification('Lütfen bir arama terimi girin', 'warning');
+                        App.NotificationSystem.show('Lütfen bir arama terimi girin', 'warning');
                         return;
                     }
 
@@ -1770,7 +1808,7 @@
 
                 } catch (err) {
                     console.error('Müşteri arama hatası:', err);
-                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Arama sırasında bir hata oluştu', 'error');
                     hideLoading();
                 }
             }
@@ -1796,7 +1834,7 @@
 
                 } catch (err) {
                     console.error('Müşteri tablosu güncelleme hatası:', err);
-                    showNotification(err.message || 'Tablo güncellenirken bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Tablo güncellenirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1808,11 +1846,11 @@
 
                     // Modalı kapat
                     closeCustomerModal();
-                    showNotification('Müşteri seçildi', 'success');
+                    App.NotificationSystem.show('Müşteri seçildi', 'success');
 
                 } catch (err) {
                     console.error('Müşteri seçme hatası:', err);
-                    showNotification(err.message || 'Müşteri seçilirken bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Müşteri seçilirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1856,7 +1894,7 @@
                     }
                 } catch (err) {
                     console.error('Satır güncelleme hatası:', err);
-                    showNotification(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
+                    App.NotificationSystem.show(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
                     throw err;
                 }
             }
@@ -1952,7 +1990,7 @@
                     isEditing = false;
                 } catch (err) {
                     console.error('Form temizleme hatası:', err);
-                    showNotification('Form temizlenirken bir hata oluştu', 'error');
+                    App.NotificationSystem.show('Form temizlenirken bir hata oluştu', 'error');
                 }
             }
 
@@ -2109,7 +2147,7 @@
                     if (args.get_error() != undefined) {
                         var errorMessage = args.get_error().message;
                         console.error('Server error:', errorMessage);
-                        showNotification('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
+                        App.NotificationSystem.show('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
                         args.set_errorHandled(true);
                         btnSave.disabled = false;
                     } else {
@@ -2127,7 +2165,7 @@
                 prm.add_beginRequest(function() {
                     saveTimeout = setTimeout(function() {
                         hideLoading();
-                        showNotification('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
+                        App.NotificationSystem.show('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
                         btnSave.disabled = false;
                     }, 30000); // 30 saniye timeout
                 });
