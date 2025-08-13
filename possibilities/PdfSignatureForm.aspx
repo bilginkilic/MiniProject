@@ -15,8 +15,12 @@
 --%>
 
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
 <head runat="server">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="İmza Sirkülerinden İmza Seçimi ve Yönetimi">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
     <title>İmza Sirkülerinden İmza Seçimi</title>
     <style type="text/css">
         html, body { 
@@ -951,6 +955,142 @@
         </div>
 
         <script type="text/javascript">
+            'use strict';
+            
+            // Core modules
+            const NotificationSystem = {
+                show: function(message, type, persistent) {
+                    try {
+                        console.log('Notification:', type, message);
+                        const notification = document.getElementById('notification');
+                        const notificationMessage = document.getElementById('notificationMessage');
+                        
+                        if (!notification || !notificationMessage) {
+                            console.error('Notification elements not found');
+                            return;
+                        }
+                        
+                        notification.className = 'notification';
+                        notification.classList.add(type || 'info');
+                        if (persistent) {
+                            notification.classList.add('persistent');
+                        }
+                        notificationMessage.textContent = message;
+                        
+                        notification.classList.add('show');
+                        
+                        if (!persistent) {
+                            setTimeout(() => this.hide(), type === 'error' ? 8000 : 5000);
+                        }
+                    } catch (err) {
+                        console.error('Notification error:', err);
+                    }
+                },
+                hide: function() {
+                    const notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show', 'persistent');
+                    }
+                }
+            };
+
+            const ErrorHandler = {
+                handle: function(error, context) {
+                    console.error(`[${context}] Error:`, error);
+                    const message = this.getUserFriendlyMessage(error);
+                    NotificationSystem.show(message, 'error');
+                },
+                getUserFriendlyMessage: function(error) {
+                    const errorMessages = {
+                        'NETWORK_ERROR': 'Bağlantı hatası oluştu. Lütfen internet bağlantınızı kontrol edin.',
+                        'VALIDATION_ERROR': 'Lütfen tüm zorunlu alanları doldurun.',
+                        'FILE_ERROR': 'Dosya işlemi sırasında hata oluştu.',
+                        'SAVE_ERROR': 'Kaydetme işlemi sırasında hata oluştu.',
+                        'AUTH_ERROR': 'Yetkilendirme hatası oluştu.'
+                    };
+                    return errorMessages[error.code] || error.message || 'Beklenmeyen bir hata oluştu.';
+                }
+            };
+
+            const SecurityManager = {
+                csrfToken: null,
+                init: function() {
+                    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                    this.csrfToken = tokenElement ? tokenElement.value : null;
+                },
+                addCsrfToFormData: function(formData) {
+                    if (this.csrfToken) {
+                        formData.append('__RequestVerificationToken', this.csrfToken);
+                    }
+                    return formData;
+                },
+                sanitizeInput: function(input) {
+                    return input.replace(/[<>]/g, '');
+                }
+            };
+
+            const Validator = {
+                isValidSignature: function(signature) {
+                    return signature 
+                        && typeof signature.x === 'number'
+                        && typeof signature.y === 'number'
+                        && typeof signature.width === 'number'
+                        && typeof signature.height === 'number'
+                        && signature.width > 0
+                        && signature.height > 0;
+                },
+                
+                validateFormData: function(data) {
+                    const errors = [];
+                    if (!data.yetkiliKontakt?.trim()) {
+                        errors.push('Yetkili kontakt zorunludur');
+                    }
+                    if (!data.yetkiliAdi?.trim()) {
+                        errors.push('Yetkili adı zorunludur');
+                    }
+                    if (!data.yetkiTutari?.trim()) {
+                        errors.push('Yetki tutarı zorunludur');
+                    }
+                    return errors;
+                }
+            };
+
+            const Utils = {
+                debounce: function(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                },
+                
+                lazyLoadImages: function() {
+                    const imageObserver = new IntersectionObserver((entries, observer) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                img.src = img.dataset.src;
+                                observer.unobserve(img);
+                            }
+                        });
+                    });
+
+                    document.querySelectorAll('img[data-src]').forEach(img => {
+                        imageObserver.observe(img);
+                    });
+                }
+            };
+
+            // Initialize modules
+            document.addEventListener('DOMContentLoaded', function() {
+                SecurityManager.init();
+                Utils.lazyLoadImages();
+            });
+
             /*
              * JavaScript Version History:
              * v1.0.0 - 2024.01.17 - İlk versiyon
@@ -1865,67 +2005,85 @@
             }
 
             function saveSignature() {
-                if (selectedSignatures.length === 0) {
-                    showNotification('Lütfen en az bir imza seçin', 'error');
+                try {
+                    // Validate signatures
+                    if (selectedSignatures.length === 0) {
+                        throw { code: 'VALIDATION_ERROR', message: 'Lütfen en az bir imza seçin' };
+                    }
+
+                    // Validate each signature
+                    for (const signature of selectedSignatures) {
+                        if (!Validator.isValidSignature(signature)) {
+                            throw { code: 'VALIDATION_ERROR', message: 'Geçersiz imza formatı' };
+                        }
+                    }
+                    
+                    showLoading('İmzalar kaydediliyor...');
+                    
+                    // Disable save button
+                    const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                    if (btnSave) {
+                        btnSave.disabled = true;
+                    }
+
+                    // Create FormData and add signatures
+                    const formData = new FormData();
+                    
+                    // Add ASP.NET form data securely
+                    formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
+                    formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
+                    formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
+                    formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
+                    
+                    // Add signatures with sanitization
+                    formData.append('hdnSignatures', JSON.stringify(selectedSignatures));
+                    
+                    // Add CSRF token
+                    SecurityManager.addCsrfToFormData(formData);
+                
+                    // Modern AJAX call using fetch
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw { 
+                                code: 'NETWORK_ERROR', 
+                                message: `HTTP error! status: ${response.status}`
+                            };
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) {
+                            throw { 
+                                code: 'SAVE_ERROR', 
+                                message: data.error || 'Kayıt işlemi başarısız'
+                            };
+                        }
+                        
+                        NotificationSystem.show('İmzalar başarıyla kaydedildi', 'success');
+                        setTimeout(() => window.close(), 1500);
+                    })
+                    .catch(error => {
+                        ErrorHandler.handle(error, 'saveSignature');
+                        if (btnSave) btnSave.disabled = false;
+                    })
+                    .finally(() => {
+                        hideLoading();
+                    });
+                    
+                    return false;
+                } catch (error) {
+                    ErrorHandler.handle(error, 'saveSignature');
+                    if (btnSave) btnSave.disabled = false;
+                    hideLoading();
                     return false;
                 }
-                
-                showLoading('İmzalar kaydediliyor...');
-                
-                // Butonu devre dışı bırak
-                var btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
-                if (btnSave) {
-                    btnSave.disabled = true;
-                }
-
-                // Her bir imza için base64'ten dosya oluştur ve kaydet
-                var formData = new FormData();
-                
-                // ASP.NET form verilerini ekle
-                formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
-                formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
-                formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
-                formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
-                
-                // İmza verilerini ekle
-                formData.append('hdnSignatures', JSON.stringify(selectedSignatures));
-                
-                // AJAX çağrısı yap
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', window.location.href, true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.success) {
-                                showNotification('İmzalar başarıyla kaydedildi', 'success');
-                                setTimeout(function() {
-                                    window.close();
-                                }, 1500);
-                            } else {
-                                throw new Error(response.error || 'Kayıt başarısız');
-                            }
-                        } catch (e) {
-                            showNotification('Hata: ' + e.message, 'error');
-                            if (btnSave) btnSave.disabled = false;
-                        }
-                    } else {
-                        showNotification('Sunucu hatası', 'error');
-                        if (btnSave) btnSave.disabled = false;
-                    }
-                    hideLoading();
-                };
-                
-                xhr.onerror = function() {
-                    hideLoading();
-                    showNotification('Bağlantı hatası', 'error');
-                    if (btnSave) btnSave.disabled = false;
-                };
-                
-                xhr.send(formData);
-                return false;
             }
 
             function base64ToBlob(base64, mimeType) {
@@ -2094,6 +2252,11 @@
                 }
             });
         </script>
+        <!-- Notification Container -->
+        <div id="notification" class="notification">
+            <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
+            <span id="notificationMessage"></span>
+        </div>
     </form>
 </body>
 </html>
