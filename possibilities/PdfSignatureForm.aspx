@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: yut --%>
+<%-- Created: yutkus --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1468,25 +1468,11 @@
                         slot.classList.add('filled');
                         slotImage.style.backgroundImage = `url(${signature.image})`;
                         deleteBtn.style.display = 'flex';
-                        
-                        // İmzayı yetki detayları tablosuna da ekle
-                        const authSignature = document.getElementById(`authSignature${index + 1}`);
-                        if (authSignature) {
-                            authSignature.style.backgroundImage = `url(${signature.image})`;
-                        }
-                        
-                        // Update delete button click handler
                         deleteBtn.onclick = () => deleteSignature(index);
                     } else {
                         slot.classList.remove('filled');
                         slotImage.style.backgroundImage = '';
                         deleteBtn.style.display = 'none';
-                        
-                        // Yetki detayları tablosundan da kaldır
-                        const authSignature = document.getElementById(`authSignature${index + 1}`);
-                        if (authSignature) {
-                            authSignature.style.backgroundImage = '';
-                        }
                     }
                 });
                 
@@ -1603,18 +1589,7 @@
                 document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = row.cells[6].textContent;
                 document.querySelector('select[name="yetkiTurleri"]').value = row.cells[7].textContent;
                 
-                // İmzaları yükle
-                for(let i = 1; i <= 3; i++) {
-                    const signaturePreview = row.cells[i+7].querySelector('.signature-preview');
-                    if(signaturePreview) {
-                        const backgroundImage = signaturePreview.style.backgroundImage;
-                        if(backgroundImage) {
-                            const signatureSlot = document.querySelector(`.signature-slot[data-slot="${i}"]`);
-                            signatureSlot.querySelector('.slot-image').style.backgroundImage = backgroundImage;
-                            signatureSlot.classList.add('filled');
-                        }
-                    }
-                }
+                // İmzaları yüklemeye gerek yok, sadece form verilerini doldur
 
                                     // Ekle butonunu Güncelle olarak değiştir
                     const btnEkle = document.getElementById('btnEkle');
