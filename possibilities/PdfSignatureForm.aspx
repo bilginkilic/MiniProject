@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: ajx --%>
+<%-- Created: fffdf --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -388,8 +388,8 @@
             cursor: pointer;
         }
         .auth-details-table tr.selected {
-            background: #e3f2fd;
-            border-left: 3px solid #2196f3;
+            background: #fff0f0;
+            border-left: 3px solid #dc3545;
         }
         .auth-details-table tr.clicked {
             animation: rowClick 0.3s;
@@ -795,16 +795,24 @@
                     <div class="form-row">
                         <label>YETKİ BİTİŞ TARİHİ:</label>
                         <div class="date-input">
-                            <select>
+                            <select id="selGun" name="selGun">
                                 <option>14</option>
+                                <option>15</option>
                             </select>
                             <span>/</span>
-                            <select>
+                            <select id="selAy" name="selAy">
                                 <option>07</option>
+                                <option>08</option>
                             </select>
                             <span>/</span>
-                            <select>
+                            <select id="selYil" name="selYil">
                                 <option>2024</option>
+                                <option>2025</option>
+                                <option>2026</option>
+                                <option>2027</option>
+                                <option>2028</option>
+                                <option>2029</option>
+                                <option>2030</option>
                             </select>
                             <div style="display: flex; align-items: center; margin-left: 10px;">
                                 <input type="checkbox" id="chkAksiKarar" style="margin-right: 5px;" />
@@ -814,30 +822,34 @@
                     </div>
                     <div class="form-row">
                         <label>SINIRLI YETKİ DETAYLARI:</label>
-                        <textarea rows="3" style="resize: vertical; min-height: 60px;"></textarea>
+                        <textarea id="txtSinirliYetkiDetaylari" name="txtSinirliYetkiDetaylari" rows="3" style="resize: vertical; min-height: 60px;"></textarea>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DÖVİZ CİNSİ:</label>
                         <select>
                             <option>USD</option>
+                            <option>EUR</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ ŞEKLİ:</label>
                         <select>
-                            <option>Müştereken</option>
+                            <option>Müştereken</option> 
+                            <option>Müştereken1</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ TÜRLERİ:</label>
                         <select>
                             <option>Kredi İşlemleri, Hazine İşlemleri</option>
+                            <option>Kredi İşlemleri2, Hazine İşlemleri1</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DURUMU:</label>
                         <select>
-                            <option>Aktif</option>
+                            <option>Aktif</option>  
+                            <option>Pasif</option>
                         </select>
                     </div>
                 </div>
@@ -1694,8 +1706,8 @@
                         yetkiliKontakt: document.getElementById('txtYetkiliKontakt').value,
                         yetkiliAdi: document.getElementById('txtYetkiliAdi').value,
                         yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
-                        yetkiTarihi: `${document.querySelector('select[name="gun"]')?.value || ''}.${document.querySelector('select[name="ay"]')?.value || ''}.${document.querySelector('select[name="yil"]')?.value || ''}`,
-                        sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
+                        yetkiTarihi: `${document.getElementById('selGun')?.value || ''}.${document.getElementById('selAy')?.value || ''}.${document.getElementById('selYil')?.value || ''}`,
+                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
                         yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
                         imzalar: []
                     };
@@ -1962,16 +1974,29 @@
             function clearForm() {
                 try {
                     // Form alanlarını temizle
-                    document.getElementById('txtYetkiliKontakt').value = '';
-                    document.getElementById('txtYetkiliAdi').value = '';
-                    document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = '';
-                    document.querySelector('input[name="yetkiTutari"]').value = '';
+                    const elements = {
+                        txtYetkiliKontakt: document.getElementById('txtYetkiliKontakt'),
+                        txtYetkiliAdi: document.getElementById('txtYetkiliAdi'),
+                        txtSinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari'),
+                        txtYetkiTutari: document.getElementById('txtYetkiTutari')
+                    };
+
+                    // Güvenli bir şekilde değerleri temizle
+                    Object.keys(elements).forEach(key => {
+                        if (elements[key]) {
+                            elements[key].value = '';
+                        }
+                    });
                     
                     // Tarihleri bugüne ayarla
                     const today = new Date();
-                    document.querySelector('select[name="gun"]').value = today.getDate();
-                    document.querySelector('select[name="ay"]').value = today.getMonth() + 1;
-                    document.querySelector('select[name="yil"]').value = today.getFullYear();
+                    const selGun = document.getElementById('selGun');
+                    const selAy = document.getElementById('selAy');
+                    const selYil = document.getElementById('selYil');
+                    
+                    if (selGun) selGun.value = today.getDate().toString().padStart(2, '0');
+                    if (selAy) selAy.value = (today.getMonth() + 1).toString().padStart(2, '0');
+                    if (selYil) selYil.value = today.getFullYear().toString();
                     
                     // Aksi karara kadar checkbox'ını temizle
                     document.getElementById('chkAksiKarar').checked = false;
