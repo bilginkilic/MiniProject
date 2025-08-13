@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: adsfs --%>
+<%-- Created: dddd --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1956,10 +1956,8 @@
                     console.error('tbody elementi bulunamadı');
                     return null;
                 }
-                const newRow = tbody.insertRow(0); // En üste ekle
-                
-                // Temel hücreleri ekle
-                                    const cells = [
+                const newRow = tbody.insertRow(0);
+                const cells = [
                     data.yetkiliKontakt || '',
                     data.yetkiliAdi || '',
                     document.getElementById('selYetkiSekli').value || 'Müştereken',
@@ -2039,6 +2037,10 @@
                     document.querySelectorAll('.signature-slot').forEach(slot => {
                         slot.classList.remove('filled');
                         slot.querySelector('.slot-image').style.backgroundImage = '';
+                        const deleteBtn = slot.querySelector('.delete-signature');
+                        if (deleteBtn) {
+                            deleteBtn.style.display = 'none';
+                        }
                     });
 
                     // Yetki detayları tablosundaki imzaları temizle
@@ -2055,6 +2057,17 @@
                     }
                     selectedRow = null;
                     isEditing = false;
+                    
+                    // Seçili imzaları temizle
+                    selectedSignatures = [];
+                    hiddenSignatures.value = '';
+                    
+                    // Ekle/Güncelle butonunu sıfırla
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (btnEkle) {
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                        btnEkle.classList.remove('update-mode');
+                    }
                 } catch (err) {
                     console.error('Form temizleme hatası:', err);
                     showNotification('Form temizlenirken bir hata oluştu', 'error');
