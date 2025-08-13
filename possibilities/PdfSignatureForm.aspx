@@ -1596,7 +1596,8 @@
                     // Form verilerini kontrol et
                     const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
                     const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
-                    const yetkiTutari = document.querySelector('input[name="yetkiTutari"]')?.value?.trim();
+                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
+                    const yetkiTutariNum = parseFloat(yetkiTutari);
                     const imzalar = [];
                     
                     document.querySelectorAll('.signature-slot').forEach(slot => {
@@ -1614,9 +1615,18 @@
                         return;
                     }
 
-                    if (!yetkiTutari) {
-                        showNotification('Lütfen yetki tutarını girin', 'warning');
+                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
+                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
                         return;
+                    }
+                    
+                    // Ondalık basamak kontrolü
+                    if (yetkiTutari.includes('.')) {
+                        const decimalPlaces = yetkiTutari.split('.')[1].length;
+                        if (decimalPlaces > 2) {
+                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
+                            return;
+                        }
                     }
 
                     if (imzalar.length === 0) {
@@ -1643,7 +1653,7 @@
                         yetkiBitisTarihi: yetkiBitisTarihi,
                         sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
                         yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
-                        yetkiTutari: yetkiTutari,
+                        yetkiTutari: yetkiTutariNum.toFixed(2),
                         yetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
                         yetkiDurumu: 'Aktif',
                         imzalar: imzalar
