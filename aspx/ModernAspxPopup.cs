@@ -112,6 +112,8 @@ namespace AspxExamples
             statusStrip.Items.Add(statusLabel);
         }
 
+        private Timer checkSessionTimer;
+
         private void LoadAspxContent(string aspxFileName)
         {
             try
@@ -119,24 +121,11 @@ namespace AspxExamples
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
                 htmlBox.Url = aspxUrl;
                 
-                // Mesaj dinleyicisini ekle
-                htmlBox.DocumentCompleted += (s, e) =>
-                {
-                    htmlBox.Document.Window.AttachEventHandler("message", (sender, args) =>
-                    {
-                        if (args.ToString().Contains("success"))
-                        {
-                            // Session'dan veriyi al
-                            var authData = HttpContext.Current.Session["SignatureAuthData"] as SignatureAuthData;
-                            if (authData != null)
-                            {
-                                this.ResultData = authData;
-                                this.DialogResult = DialogResult.OK;
-                                this.Close();
-                            }
-                        }
-                    });
-                };
+                // Timer oluştur ve başlat
+                checkSessionTimer = new Timer();
+                checkSessionTimer.Interval = 500; // Her yarım saniyede bir kontrol et
+                checkSessionTimer.Tick += CheckSessionData;
+                checkSessionTimer.Start();
                 
                 UpdateStatus("Sayfa yüklendi");
             }
@@ -150,6 +139,37 @@ namespace AspxExamples
                 );
                 UpdateStatus("Hata: Sayfa yüklenemedi");
             }
+        }
+
+        private void CheckSessionData(object sender, EventArgs e)
+        {
+            try
+            {
+                var authData = HttpContext.Current.Session["SignatureAuthData"] as SignatureAuthData;
+                if (authData != null)
+                {
+                    // Session'da veri bulundu
+                    checkSessionTimer.Stop();
+                    this.ResultData = authData;
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Session kontrol hatası: " + ex.Message);
+            }
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (checkSessionTimer != null)
+            {
+                checkSessionTimer.Stop();
+                checkSessionTimer.Dispose();
+            }
+            base.OnClosing(e);
+        }
         }
 
         private void ToggleFullScreen(object sender, EventArgs e)
