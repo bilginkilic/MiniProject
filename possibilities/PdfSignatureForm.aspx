@@ -1662,7 +1662,7 @@
 
                     // Formu temizle
                     clearForm();
-                    }
+                    
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);
                     showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
