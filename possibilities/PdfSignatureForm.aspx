@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: mexx --%>
+<%-- Created: yut --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1952,8 +1952,7 @@
             function addTableRow(data) {
                 const tbody = document.querySelector('.auth-details-table tbody');
                 if (!tbody) return null;
-                const newRow = document.createElement('tr');
-                tbody.insertBefore(newRow, tbody.firstChild);
+                const row = tbody.insertRow(0);
                 const allCells = [
                     data.yetkiliKontakt || '',
                     data.yetkiliAdi || '',
@@ -1967,21 +1966,19 @@
 
                 // Temel hücreleri ekle
                 allCells.forEach(cellData => {
-                    const cell = document.createElement('td');
+                    const cell = row.insertCell();
                     cell.textContent = cellData;
-                    newRow.appendChild(cell);
                 });
 
                 // İmza hücreleri
                 for(let i = 0; i < 3; i++) {
-                    const cell = document.createElement('td');
+                    const cell = row.insertCell();
                     const signaturePreview = document.createElement('div');
                     signaturePreview.className = 'signature-preview';
                     if(data.imzalar && data.imzalar[i]) {
                         signaturePreview.style.backgroundImage = data.imzalar[i];
                     }
                     cell.appendChild(signaturePreview);
-                    newRow.appendChild(cell);
                 }
 
                 // Son hücreleri ekle
@@ -1990,16 +1987,15 @@
                     document.getElementById('selYetkiDovizCinsi').value || 'USD',
                     document.getElementById('selYetkiDurumu').value || 'Aktif'
                 ].forEach(text => {
-                    const cell = document.createElement('td');
+                    const cell = row.insertCell();
                     cell.textContent = text;
-                    newRow.appendChild(cell);
                 });
 
                 // Event listener'ları ekle
-                newRow.addEventListener('dblclick', () => handleRowDoubleClick(newRow));
-                newRow.addEventListener('click', () => selectRow(newRow));
+                row.addEventListener('dblclick', () => handleRowDoubleClick(row));
+                row.addEventListener('click', () => selectRow(row));
 
-                return newRow;
+                return row;
             }
 
             function clearForm() {
