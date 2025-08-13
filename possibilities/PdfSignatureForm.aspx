@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:33jh --%>
+<%-- Created: 2024.01.17 14:33jhç --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -942,35 +942,48 @@
         </div>
 
         <script type="text/javascript">
+            // Global variables
             var notificationTimer = null;
+            var showNotification, hideNotification;
             
-            function showNotification(message, type) {
-                var notification = document.getElementById('notification');
-                var notificationMessage = document.getElementById('notificationMessage');
+            // Define notification functions immediately
+            (function() {
+                showNotification = function(message, type) {
+                    try {
+                        var notification = document.getElementById('notification');
+                        var notificationMessage = document.getElementById('notificationMessage');
+                        
+                        if (!notification || !notificationMessage) {
+                            console.error('Notification elements not found');
+                            return;
+                        }
+                        
+                        clearTimeout(notificationTimer);
+                        notification.className = 'notification';
+                        if (type) notification.classList.add(type);
+                        notificationMessage.textContent = message || '';
+                        notification.classList.add('show');
+                        
+                        notificationTimer = setTimeout(function() {
+                            hideNotification();
+                        }, type === 'error' ? 8000 : 5000);
+                    } catch (err) {
+                        console.error('Show notification error:', err);
+                    }
+                };
                 
-                if (!notification || !notificationMessage) {
-                    console.error('Notification elements not found');
-                    return;
-                }
-                
-                clearTimeout(notificationTimer);
-                notification.className = 'notification';
-                if (type) notification.classList.add(type);
-                notificationMessage.textContent = message || '';
-                notification.classList.add('show');
-                
-                notificationTimer = setTimeout(function() {
-                    hideNotification();
-                }, type === 'error' ? 8000 : 5000);
-            }
-            
-            function hideNotification() {
-                var notification = document.getElementById('notification');
-                if (notification) {
-                    notification.classList.remove('show');
-                }
-                clearTimeout(notificationTimer);
-            }
+                hideNotification = function() {
+                    try {
+                        var notification = document.getElementById('notification');
+                        if (notification) {
+                            notification.classList.remove('show');
+                        }
+                        clearTimeout(notificationTimer);
+                    } catch (err) {
+                        console.error('Hide notification error:', err);
+                    }
+                };
+            })();
             
             // Initialize application
             document.addEventListener('DOMContentLoaded', function() {
