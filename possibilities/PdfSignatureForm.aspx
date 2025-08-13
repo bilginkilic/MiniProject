@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: fffdf --%>
+<%-- Created: gccgjjvhvh --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -779,8 +779,14 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ GRUBU:</label>
-                        <select>
+                        <select id="selYetkiGrubu" name="selYetkiGrubu">
                             <option>A Grubu</option>
+                            <option>B Grubu</option>
+                            <option>C Grubu</option>
+                            <option>D Grubu</option>
+                            <option>E Grubu</option>
+                            <option>F Grubu</option>
+                            <option>G Grubu</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -826,28 +832,28 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ DÖVİZ CİNSİ:</label>
-                        <select>
+                        <select id="selYetkiDovizCinsi" name="selYetkiDovizCinsi">
                             <option>USD</option>
                             <option>EUR</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ ŞEKLİ:</label>
-                        <select>
+                        <select id="selYetkiSekli" name="selYetkiSekli">
                             <option>Müştereken</option> 
                             <option>Müştereken1</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ TÜRLERİ:</label>
-                        <select>
+                        <select id="selYetkiTurleri" name="selYetkiTurleri">
                             <option>Kredi İşlemleri, Hazine İşlemleri</option>
                             <option>Kredi İşlemleri2, Hazine İşlemleri1</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DURUMU:</label>
-                        <select>
+                        <select id="selYetkiDurumu" name="selYetkiDurumu">
                             <option>Aktif</option>  
                             <option>Pasif</option>
                         </select>
@@ -1562,9 +1568,16 @@
                 isEditing = true;
                 
                 // Form alanlarını doldur
-                document.getElementById('txtYetkiliKontakt').value = row.cells[0].textContent;
-                document.getElementById('txtYetkiliAdi').value = row.cells[1].textContent;
-                document.querySelector('select[name="yetkiSekli"]').value = row.cells[2].textContent;
+                                    // Form alanlarını doldur
+                    document.getElementById('txtYetkiliKontakt').value = row.cells[0].textContent;
+                    document.getElementById('txtYetkiliAdi').value = row.cells[1].textContent;
+                    document.getElementById('selYetkiSekli').value = row.cells[2].textContent;
+                    document.getElementById('selYetkiGrubu').value = row.cells[5].textContent;
+                    document.getElementById('txtSinirliYetkiDetaylari').value = row.cells[6].textContent;
+                    document.getElementById('selYetkiTurleri').value = row.cells[7].textContent;
+                    document.getElementById('txtYetkiTutari').value = row.cells[11].textContent;
+                    document.getElementById('selYetkiDovizCinsi').value = row.cells[12].textContent;
+                    document.getElementById('selYetkiDurumu').value = row.cells[13].textContent;
                 
                 // Tarih alanlarını doldur
                 const tarih = row.cells[3].textContent.split('.');
@@ -1589,10 +1602,13 @@
                     }
                 }
 
-                // Ekle butonunu Güncelle olarak değiştir
-                const btnEkle = document.getElementById('btnEkle');
-                btnEkle.innerHTML = '<i class="fas fa-save"></i> Güncelle';
-                btnEkle.classList.add('update-mode');
+                                    // Ekle butonunu Güncelle olarak değiştir
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (btnEkle) {
+                        btnEkle.innerHTML = '<i class="fas fa-save"></i> Güncelle';
+                        btnEkle.classList.add('update-mode');
+                        btnEkle.setAttribute('data-original-text', '<i class="fas fa-plus"></i> Ekle');
+                    }
             }
 
             function handleAddUpdate() {
@@ -1929,15 +1945,15 @@
                 const newRow = tbody.insertRow(0); // En üste ekle
                 
                 // Temel hücreleri ekle
-                const cells = [
+                                    const cells = [
                     data.yetkiliKontakt || '',
                     data.yetkiliAdi || '',
-                    data.yetkiSekli || 'Müştereken',
+                    document.getElementById('selYetkiSekli').value || 'Müştereken',
                     data.yetkiTarihi || '',
                     data.yetkiTarihi || '',
-                    'A Grubu',
-                    data.sinirliYetkiDetaylari || '',
-                    data.yetkiTurleri || ''
+                    document.getElementById('selYetkiGrubu').value || 'A Grubu',
+                    document.getElementById('txtSinirliYetkiDetaylari').value || '',
+                    document.getElementById('selYetkiTurleri').value || ''
                 ];
 
                 cells.forEach(cellData => {
@@ -1957,7 +1973,11 @@
                 }
 
                 // Son hücreleri ekle
-                ['100.000', 'USD', 'Aktif'].forEach(text => {
+                [
+                    document.getElementById('txtYetkiTutari').value || '100.000',
+                    document.getElementById('selYetkiDovizCinsi').value || 'USD',
+                    document.getElementById('selYetkiDurumu').value || 'Aktif'
+                ].forEach(text => {
                     const cell = newRow.insertCell();
                     cell.textContent = text;
                 });
