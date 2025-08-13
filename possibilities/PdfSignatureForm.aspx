@@ -942,48 +942,44 @@
         </div>
 
         <script type="text/javascript">
-            // Global variables
-            var notificationTimer = null;
-            var showNotification, hideNotification;
+            // Global notification functions
+            window.notificationTimer = null;
+
+            window.showNotification = function(message, type) {
+                try {
+                    var notification = document.getElementById('notification');
+                    var notificationMessage = document.getElementById('notificationMessage');
+                    
+                    if (!notification || !notificationMessage) {
+                        console.error('Notification elements not found');
+                        return;
+                    }
+                    
+                    clearTimeout(window.notificationTimer);
+                    notification.className = 'notification';
+                    if (type) notification.classList.add(type);
+                    notificationMessage.textContent = message || '';
+                    notification.classList.add('show');
+                    
+                    window.notificationTimer = setTimeout(function() {
+                        window.hideNotification();
+                    }, type === 'error' ? 8000 : 5000);
+                } catch (err) {
+                    console.error('Show notification error:', err);
+                }
+            };
             
-            // Define notification functions immediately
-            (function() {
-                showNotification = function(message, type) {
-                    try {
-                        var notification = document.getElementById('notification');
-                        var notificationMessage = document.getElementById('notificationMessage');
-                        
-                        if (!notification || !notificationMessage) {
-                            console.error('Notification elements not found');
-                            return;
-                        }
-                        
-                        clearTimeout(notificationTimer);
-                        notification.className = 'notification';
-                        if (type) notification.classList.add(type);
-                        notificationMessage.textContent = message || '';
-                        notification.classList.add('show');
-                        
-                        notificationTimer = setTimeout(function() {
-                            hideNotification();
-                        }, type === 'error' ? 8000 : 5000);
-                    } catch (err) {
-                        console.error('Show notification error:', err);
+            window.hideNotification = function() {
+                try {
+                    var notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show');
                     }
-                };
-                
-                hideNotification = function() {
-                    try {
-                        var notification = document.getElementById('notification');
-                        if (notification) {
-                            notification.classList.remove('show');
-                        }
-                        clearTimeout(notificationTimer);
-                    } catch (err) {
-                        console.error('Hide notification error:', err);
-                    }
-                };
-            })();
+                    clearTimeout(window.notificationTimer);
+                } catch (err) {
+                    console.error('Hide notification error:', err);
+                }
+            };
             
             // Initialize application
             document.addEventListener('DOMContentLoaded', function() {
@@ -1844,15 +1840,17 @@
             }
 
             function updateTableRow(row, data) {
+                if (!row || !row.cells) {
+                    window.showNotification('Geçersiz tablo satırı', 'error');
+                    return;
+                }
+
+                if (!data) {
+                    window.showNotification('Güncellenecek veri bulunamadı', 'error');
+                    return;
+                }
+
                 try {
-                    if (!row || !row.cells) {
-                        throw new Error('Geçersiz tablo satırı');
-                    }
-
-                    if (!data) {
-                        throw new Error('Güncellenecek veri bulunamadı');
-                    }
-
                     // Temel alanları güncelle
                     const updates = [
                         { index: 0, value: data.yetkiliKontakt },
