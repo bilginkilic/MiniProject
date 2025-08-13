@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:33j0 --%>
+<%-- Created: 2024.01.17 14:33jh --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -944,43 +944,50 @@
         <script type="text/javascript">
             var notificationTimer = null;
             
-            window.showNotification = function(message, type) {
+            function showNotification(message, type) {
                 var notification = document.getElementById('notification');
                 var notificationMessage = document.getElementById('notificationMessage');
                 
-                if (notification && notificationMessage) {
-                    clearTimeout(notificationTimer);
-                    
-                    notification.className = 'notification';
-                    if (type) notification.classList.add(type);
-                    notificationMessage.textContent = message || '';
-                    notification.classList.add('show');
-                    
-                    notificationTimer = setTimeout(function() {
-                        notification.classList.remove('show');
-                    }, type === 'error' ? 8000 : 5000);
+                if (!notification || !notificationMessage) {
+                    console.error('Notification elements not found');
+                    return;
                 }
-            };
+                
+                clearTimeout(notificationTimer);
+                notification.className = 'notification';
+                if (type) notification.classList.add(type);
+                notificationMessage.textContent = message || '';
+                notification.classList.add('show');
+                
+                notificationTimer = setTimeout(function() {
+                    hideNotification();
+                }, type === 'error' ? 8000 : 5000);
+            }
             
-            window.hideNotification = function() {
+            function hideNotification() {
                 var notification = document.getElementById('notification');
                 if (notification) {
                     notification.classList.remove('show');
                 }
                 clearTimeout(notificationTimer);
-            };
-
-            'use strict';
+            }
             
             // Initialize application
+            document.addEventListener('DOMContentLoaded', function() {
+                // Basic initialization checks
+                var notification = document.getElementById('notification');
+                var notificationMessage = document.getElementById('notificationMessage');
+                
+                if (!notification || !notificationMessage) {
+                    console.error('Notification elements not found during initialization');
                 }
-            };
+            });
 
             const ErrorHandler = {
                 handle: function(error, context) {
                     console.error(`[${context}] Error:`, error);
                     const message = this.getUserFriendlyMessage(error);
-                    NotificationSystem.show(message, 'error');
+                    showNotification(message, 'error');
                 },
                 getUserFriendlyMessage: function(error) {
                     const errorMessages = {
