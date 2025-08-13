@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:330 --%>
+<%-- Created: 2024.01.17 14:33j0 --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -942,48 +942,38 @@
         </div>
 
         <script type="text/javascript">
-            // Global notification functions - defined first to ensure availability
+            // Simple notification functions
+            let notificationTimeout;
             function showNotification(message, type, persistent) {
-                try {
-                    console.log('Notification:', type, message);
-                    const notification = document.getElementById('notification');
-                    const notificationMessage = document.getElementById('notificationMessage');
-                    
-                    if (!notification || !notificationMessage) {
-                        console.error('Notification elements not found');
-                        return;
-                    }
-                    
-                    // Reset classes
-                    notification.className = 'notification';
-                    notification.classList.add(type || 'info');
-                    if (persistent) {
-                        notification.classList.add('persistent');
-                    }
-                    notificationMessage.textContent = message;
-                    
-                    notification.classList.add('show');
-                    
-                    // For non-persistent notifications, auto-hide after delay
-                    if (!persistent) {
-                        setTimeout(function() {
-                            hideNotification();
-                        }, type === 'error' ? 8000 : 5000); // Show errors longer
-                    }
-                } catch (err) {
-                    console.error('Notification error:', err);
+                if (!message) return;
+                
+                clearTimeout(notificationTimeout);
+                
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                
+                if (!notification || !notificationMessage) {
+                    console.error('Notification elements not found');
+                    return;
+                }
+                
+                notification.className = 'notification ' + (type || 'info');
+                notificationMessage.textContent = message;
+                notification.classList.add('show');
+                
+                if (!persistent) {
+                    notificationTimeout = setTimeout(hideNotification, 
+                        type === 'error' ? 8000 : 5000
+                    );
                 }
             }
 
             function hideNotification() {
-                try {
-                    const notification = document.getElementById('notification');
-                    if (notification) {
-                        notification.classList.remove('show', 'persistent');
-                    }
-                } catch (err) {
-                    console.error('Hide notification error:', err);
+                const notification = document.getElementById('notification');
+                if (notification) {
+                    notification.classList.remove('show');
                 }
+                clearTimeout(notificationTimeout);
             }
 
             'use strict';
@@ -1401,7 +1391,7 @@
                 }
 
                 if (selectedSignatures.length >= MAX_SIGNATURES) {
-                    App.NotificationSystem.show('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
+                    showNotification('En fazla ' + MAX_SIGNATURES + ' imza seçebilirsiniz. Lütfen önce bir imzayı silin.', 'error');
                     clearSelection();
                     return;
                 }
@@ -1635,17 +1625,17 @@
 
                     // Zorunlu alan kontrolü
                     if (!yetkiliKontakt || !yetkiliAdi) {
-                        App.NotificationSystem.show('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
+                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
                         return;
                     }
 
                     if (!yetkiTutari) {
-                        App.NotificationSystem.show('Lütfen yetki tutarını girin', 'warning');
+                        showNotification('Lütfen yetki tutarını girin', 'warning');
                         return;
                     }
 
                     if (imzalar.length === 0) {
-                        App.NotificationSystem.show('Lütfen en az bir imza seçin', 'warning');
+                        showNotification('Lütfen en az bir imza seçin', 'warning');
                         return;
                     }
 
@@ -1684,11 +1674,11 @@
                         btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
                         btnEkle.classList.remove('update-mode');
                         selectedRow = null;
-                        App.NotificationSystem.show('Kayıt başarıyla güncellendi', 'success');
+                        showNotification('Kayıt başarıyla güncellendi', 'success');
                     } else {
                         // Yeni satır ekle
                         addTableRow(formData);
-                        App.NotificationSystem.show('Yeni kayıt eklendi', 'success');
+                        showNotification('Yeni kayıt eklendi', 'success');
                     }
 
                     // Formu temizle
@@ -1696,7 +1686,7 @@
                     }
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);
-                    App.NotificationSystem.show(err.message || 'İşlem sırasında bir hata oluştu', 'error');
+                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
                 }
 
             function handleFormSubmit() {
@@ -1725,7 +1715,7 @@
                     return data;
                 } catch (err) {
                     console.error('Form veri toplama hatası:', err);
-                    App.NotificationSystem.show('Form verileri alınırken bir hata oluştu', 'error');
+                    showNotification('Form verileri alınırken bir hata oluştu', 'error');
                     throw err;
                 }
                 };
@@ -1739,17 +1729,17 @@
                         btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
                         btnEkle.classList.remove('update-mode');
                         selectedRow = null;
-                        App.NotificationSystem.show('Kayıt güncellendi', 'success');
+                        showNotification('Kayıt güncellendi', 'success');
                     } else {
                         // Yeni satır ekle
                         addTableRow(formData);
-                        App.NotificationSystem.show('Yeni kayıt eklendi', 'success');
+                        showNotification('Yeni kayıt eklendi', 'success');
                     }
 
                     clearForm();
                 } catch (err) {
                     console.error('Kayıt işlemi hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
+                    showNotification(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
                 } finally {
                     btnEkle.classList.remove('adding-mode');
                 }
@@ -1764,11 +1754,11 @@
                     if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
                         selectedRow.remove();
                         clearForm();
-                        App.NotificationSystem.show('Kayıt silindi', 'success');
+                        showNotification('Kayıt silindi', 'success');
                     }
                 } catch (err) {
                     console.error('Silme işlemi hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Silme işlemi sırasında bir hata oluştu', 'error');
+                    showNotification(err.message || 'Silme işlemi sırasında bir hata oluştu', 'error');
                 } finally {
                     const btnEkle = document.getElementById('btnEkle');
                     if (btnEkle) {
@@ -1786,7 +1776,7 @@
                     document.getElementById('customerSearchInput').focus();
                 } catch (err) {
                     console.error('Yetkili arama hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
                 }
             }
 
@@ -1803,7 +1793,7 @@
 
                     const searchTerm = searchInput.value.trim();
                     if (!searchTerm) {
-                        App.NotificationSystem.show('Lütfen bir arama terimi girin', 'warning');
+                        showNotification('Lütfen bir arama terimi girin', 'warning');
                         return;
                     }
 
@@ -1824,7 +1814,7 @@
 
                 } catch (err) {
                     console.error('Müşteri arama hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
                     hideLoading();
                 }
             }
@@ -1850,7 +1840,7 @@
 
                 } catch (err) {
                     console.error('Müşteri tablosu güncelleme hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Tablo güncellenirken bir hata oluştu', 'error');
+                    showNotification(err.message || 'Tablo güncellenirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1862,11 +1852,11 @@
 
                     // Modalı kapat
                     closeCustomerModal();
-                    App.NotificationSystem.show('Müşteri seçildi', 'success');
+                    showNotification('Müşteri seçildi', 'success');
 
                 } catch (err) {
                     console.error('Müşteri seçme hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Müşteri seçilirken bir hata oluştu', 'error');
+                    showNotification(err.message || 'Müşteri seçilirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1910,7 +1900,7 @@
                     }
                 } catch (err) {
                     console.error('Satır güncelleme hatası:', err);
-                    App.NotificationSystem.show(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
+                    showNotification(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
                     throw err;
                 }
             }
@@ -2006,7 +1996,7 @@
                     isEditing = false;
                 } catch (err) {
                     console.error('Form temizleme hatası:', err);
-                    App.NotificationSystem.show('Form temizlenirken bir hata oluştu', 'error');
+                    showNotification('Form temizlenirken bir hata oluştu', 'error');
                 }
             }
 
@@ -2163,7 +2153,7 @@
                     if (args.get_error() != undefined) {
                         var errorMessage = args.get_error().message;
                         console.error('Server error:', errorMessage);
-                        App.NotificationSystem.show('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
+                        showNotification('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
                         args.set_errorHandled(true);
                         btnSave.disabled = false;
                     } else {
@@ -2181,7 +2171,7 @@
                 prm.add_beginRequest(function() {
                     saveTimeout = setTimeout(function() {
                         hideLoading();
-                        App.NotificationSystem.show('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
+                        showNotification('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
                         btnSave.disabled = false;
                     }, 30000); // 30 saniye timeout
                 });
