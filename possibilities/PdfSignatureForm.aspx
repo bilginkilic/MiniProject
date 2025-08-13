@@ -452,6 +452,95 @@
             border-radius: 4px;
         }
 
+        /* Customer Search Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+        }
+        .modal-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-search input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .modal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: block;
+        }
+        .modal-table th,
+        .modal-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .modal-table th {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .modal-table tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-table tbody tr:hover {
+            background: #f0f0f0;
+        }
+        .modal-table tbody tr.selected {
+            background: #e3f2fd;
+        }
+
         /* PDF List Panel Styles */
         .pdf-list-panel {
             padding: 15px;
@@ -815,6 +904,36 @@
         <div id="notification" class="notification">
             <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
             <span id="notificationMessage"></span>
+        </div>
+
+        <!-- Customer Search Modal -->
+        <div id="customerSearchModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Müşteri Arama</h3>
+                    <button type="button" class="modal-close" onclick="closeCustomerModal()">&times;</button>
+                </div>
+                <div class="modal-search">
+                    <input type="text" id="customerSearchInput" placeholder="Müşteri no ile arama yapın..." />
+                    <button type="button" class="button" onclick="searchCustomers()">
+                        <i class="fas fa-search"></i> Ara
+                    </button>
+                </div>
+                <div class="modal-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Müşteri No</th>
+                                <th>Müşteri Adı</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerTableBody">
+                            <!-- Müşteri listesi buraya dinamik olarak eklenecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <script type="text/javascript">
@@ -1286,84 +1405,81 @@
                     console.log('btnEkle bulundu:', btnEkle);
                     const isUpdate = btnEkle.classList.contains('update-mode');
                 
-                    // Eğer bu yeni bir ekleme başlangıcı ise
-                    if (!isUpdate) {
-                        console.log('Yeni kayıt ekleme başlıyor');
-                        
-                        // Boş bir satır ekle
-                        const emptyData = {
-                            yetkiliKontakt: '',
-                            yetkiliAdi: '',
-                            yetkiSekli: 'Müştereken',
-                            yetkiTarihi: '',
-                            sinirliYetkiDetaylari: '',
-                            yetkiTurleri: '',
-                            imzalar: []
-                        };
-                        
-                        console.log('Eklenecek veri:', emptyData);
-                        const tbody = document.querySelector('.auth-details-table tbody');
-                        if (!tbody) {
-                            throw new Error('Tablo tbody bulunamadı');
+                    // Form verilerini kontrol et
+                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
+                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
+                    const yetkiTutari = document.querySelector('input[name="yetkiTutari"]')?.value?.trim();
+                    const imzalar = [];
+                    
+                    document.querySelectorAll('.signature-slot').forEach(slot => {
+                        if (slot.classList.contains('filled')) {
+                            const slotImage = slot.querySelector('.slot-image');
+                            if (slotImage && slotImage.style.backgroundImage) {
+                                imzalar.push(slotImage.style.backgroundImage);
+                            }
                         }
-                        
-                        const newRow = addTableRow(emptyData);
-                        if (!newRow) {
-                            throw new Error('Yeni satır eklenemedi');
-                        }
-                        
-                        selectRow(newRow);
-                        btnEkle.innerHTML = '<i class="fas fa-save"></i> Güncelle';
-                        btnEkle.classList.add('update-mode');
-                        showNotification('Yeni kayıt ekleniyor. Lütfen bilgileri doldurun', 'info');
+                    });
+
+                    // Zorunlu alan kontrolü
+                    if (!yetkiliKontakt || !yetkiliAdi) {
+                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
                         return;
                     }
+
+                    if (!yetkiTutari) {
+                        showNotification('Lütfen yetki tutarını girin', 'warning');
+                        return;
+                    }
+
+                    if (imzalar.length === 0) {
+                        showNotification('Lütfen en az bir imza seçin', 'warning');
+                        return;
+                    }
+
+                    // Tarih kontrolü
+                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
+                    const today = new Date();
+                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
+                    const yetkiBitisTarihi = isAksiKarar ? 
+                        '31.12.2050' : 
+                        document.querySelector('select[name="gun"]').value + '.' + 
+                        document.querySelector('select[name="ay"]').value + '.' + 
+                        document.querySelector('select[name="yil"]').value;
                 
-                    // Güncelleme işlemi
+                    // Yeni kayıt veya güncelleme için veri hazırla
+                    const formData = {
+                        yetkiliKontakt: yetkiliKontakt,
+                        yetkiliAdi: yetkiliAdi,
+                        yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                        yetkiTarihi: yetkiTarihi,
+                        yetkiBitisTarihi: yetkiBitisTarihi,
+                        sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
+                        yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                        yetkiTutari: yetkiTutari,
+                        yetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
+                        yetkiDurumu: 'Aktif',
+                        imzalar: imzalar
+                    };
+
                     if(isUpdate) {
                         if(!selectedRow) {
                             throw new Error('Güncellenecek satır seçilmedi');
                         }
-
-                        // Form verilerini kontrol et
-                        const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
-                        const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
-
-                        if(!yetkiliKontakt || !yetkiliAdi) {
-                            showNotification('Lütfen zorunlu alanları doldurun (Yetkili Kontakt ve Adı)', 'warning');
-                            return;
-                        }
-
-                        // Form verilerini al
-                        const formData = {
-                            yetkiliKontakt: yetkiliKontakt,
-                            yetkiliAdi: yetkiliAdi,
-                            yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
-                            yetkiTarihi: document.querySelector('select[name="gun"]')?.value + '.' + 
-                                        document.querySelector('select[name="ay"]')?.value + '.' + 
-                                        document.querySelector('select[name="yil"]')?.value,
-                            sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
-                            yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
-                            imzalar: []
-                        };
-
-                        // İmzaları ekle
-                        document.querySelectorAll('.signature-slot').forEach(slot => {
-                            if(slot.classList.contains('filled')) {
-                                const slotImage = slot.querySelector('.slot-image');
-                                if(slotImage && slotImage.style.backgroundImage) {
-                                    formData.imzalar.push(slotImage.style.backgroundImage);
-                                }
-                            }
-                        });
 
                         // Satırı güncelle
                         updateTableRow(selectedRow, formData);
                         btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
                         btnEkle.classList.remove('update-mode');
                         selectedRow = null;
-                        clearForm();
                         showNotification('Kayıt başarıyla güncellendi', 'success');
+                    } else {
+                        // Yeni satır ekle
+                        addTableRow(formData);
+                        showNotification('Yeni kayıt eklendi', 'success');
+                    }
+
+                    // Formu temizle
+                    clearForm();
                     }
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);
@@ -1452,22 +1568,92 @@
 
             function handleYetkiliArama() {
                 try {
-                    const yetkiliNoInput = document.getElementById('txtYetkiliKontakt');
-                    if (!yetkiliNoInput) {
-                        throw new Error('Yetkili no alanı bulunamadı');
-                    }
-                    
-                    const yetkiliNo = yetkiliNoInput.value.trim();
-                    if (!yetkiliNo) {
-                        throw new Error('Lütfen bir yetkili no girin');
-                    }
-
-                    // Dummy arama - gerçek implementasyonda web servise istek atılacak
-                    showNotification('Yetkili aranıyor: ' + yetkiliNo, 'info');
-                    // TODO: Web servis çağrısı eklenecek
+                    // Müşteri arama modalını aç
+                    document.getElementById('customerSearchModal').classList.add('show');
+                    document.getElementById('customerSearchInput').focus();
                 } catch (err) {
                     console.error('Yetkili arama hatası:', err);
                     showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                }
+            }
+
+            function closeCustomerModal() {
+                document.getElementById('customerSearchModal').classList.remove('show');
+            }
+
+            function searchCustomers() {
+                try {
+                    const searchInput = document.getElementById('customerSearchInput');
+                    if (!searchInput) {
+                        throw new Error('Arama alanı bulunamadı');
+                    }
+
+                    const searchTerm = searchInput.value.trim();
+                    if (!searchTerm) {
+                        showNotification('Lütfen bir arama terimi girin', 'warning');
+                        return;
+                    }
+
+                    showLoading('Müşteriler aranıyor...');
+
+                    // TODO: Web servis çağrısı burada yapılacak
+                    // Şimdilik dummy data
+                    setTimeout(() => {
+                        const dummyData = [
+                            { no: '1001', name: 'Test Müşteri 1', status: 'Aktif' },
+                            { no: '1002', name: 'Test Müşteri 2', status: 'Aktif' },
+                            { no: '1003', name: 'Test Müşteri 3', status: 'Pasif' }
+                        ];
+
+                        updateCustomerTable(dummyData);
+                        hideLoading();
+                    }, 500);
+
+                } catch (err) {
+                    console.error('Müşteri arama hatası:', err);
+                    showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    hideLoading();
+                }
+            }
+
+            function updateCustomerTable(customers) {
+                try {
+                    const tbody = document.getElementById('customerTableBody');
+                    if (!tbody) {
+                        throw new Error('Müşteri tablosu bulunamadı');
+                    }
+
+                    tbody.innerHTML = '';
+                    customers.forEach(customer => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${customer.no}</td>
+                            <td>${customer.name}</td>
+                            <td>${customer.status}</td>
+                        `;
+                        row.onclick = () => selectCustomer(customer);
+                        tbody.appendChild(row);
+                    });
+
+                } catch (err) {
+                    console.error('Müşteri tablosu güncelleme hatası:', err);
+                    showNotification(err.message || 'Tablo güncellenirken bir hata oluştu', 'error');
+                }
+            }
+
+            function selectCustomer(customer) {
+                try {
+                    // Yetkili alanlarını doldur
+                    document.getElementById('txtYetkiliKontakt').value = customer.no;
+                    document.getElementById('txtYetkiliAdi').value = customer.name;
+
+                    // Modalı kapat
+                    closeCustomerModal();
+                    showNotification('Müşteri seçildi', 'success');
+
+                } catch (err) {
+                    console.error('Müşteri seçme hatası:', err);
+                    showNotification(err.message || 'Müşteri seçilirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1569,24 +1755,46 @@
             }
 
             function clearForm() {
-                // Form alanlarını temizle
-                document.getElementById('txtYetkiliKontakt').value = '';
-                document.getElementById('txtYetkiliAdi').value = '';
-                document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = '';
-                
-                // İmzaları temizle
-                document.querySelectorAll('.signature-slot').forEach(slot => {
-                    slot.classList.remove('filled');
-                    slot.querySelector('.slot-image').style.backgroundImage = '';
-                });
+                try {
+                    // Form alanlarını temizle
+                    document.getElementById('txtYetkiliKontakt').value = '';
+                    document.getElementById('txtYetkiliAdi').value = '';
+                    document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = '';
+                    document.querySelector('input[name="yetkiTutari"]').value = '';
+                    
+                    // Tarihleri bugüne ayarla
+                    const today = new Date();
+                    document.querySelector('select[name="gun"]').value = today.getDate();
+                    document.querySelector('select[name="ay"]').value = today.getMonth() + 1;
+                    document.querySelector('select[name="yil"]').value = today.getFullYear();
+                    
+                    // Aksi karara kadar checkbox'ını temizle
+                    document.getElementById('chkAksiKarar').checked = false;
+                    
+                    // İmzaları temizle
+                    document.querySelectorAll('.signature-slot').forEach(slot => {
+                        slot.classList.remove('filled');
+                        slot.querySelector('.slot-image').style.backgroundImage = '';
+                    });
 
-                // Ekle butonunu resetle
-                const btnEkle = document.getElementById('btnEkle');
-                btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                btnEkle.classList.remove('update-mode');
-                
-                selectedRow = null;
-                isEditing = false;
+                    // Yetki detayları tablosundaki imzaları temizle
+                    for(let i = 1; i <= 3; i++) {
+                        const authSignature = document.getElementById(`authSignature${i}`);
+                        if(authSignature) {
+                            authSignature.style.backgroundImage = '';
+                        }
+                    }
+
+                    // Seçili satırı temizle
+                    if(selectedRow) {
+                        selectedRow.classList.remove('selected');
+                    }
+                    selectedRow = null;
+                    isEditing = false;
+                } catch (err) {
+                    console.error('Form temizleme hatası:', err);
+                    showNotification('Form temizlenirken bir hata oluştu', 'error');
+                }
             }
 
             function restoreSelection() {
