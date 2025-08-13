@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: yutkus --%>
+<%-- Created: yutkus metax --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1704,62 +1704,7 @@
                     showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
                 }
 
-            function handleFormSubmit() {
-                try {
-                    // Form verilerini al
-                    const data = {
-                        yetkiliKontakt: document.getElementById('txtYetkiliKontakt').value,
-                        yetkiliAdi: document.getElementById('txtYetkiliAdi').value,
-                        yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
-                        yetkiTarihi: `${document.getElementById('selGun')?.value || ''}.${document.getElementById('selAy')?.value || ''}.${document.getElementById('selYil')?.value || ''}`,
-                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
-                        yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
-                        imzalar: []
-                    };
-
-                    // İmzaları ekle
-                    document.querySelectorAll('.signature-slot').forEach((slot, index) => {
-                        if (slot.classList.contains('filled')) {
-                            const slotImage = slot.querySelector('.slot-image');
-                            if (slotImage && slotImage.style.backgroundImage) {
-                                data.imzalar.push(slotImage.style.backgroundImage);
-                            }
-                        }
-                    });
-
-                    return data;
-                } catch (err) {
-                    console.error('Form veri toplama hatası:', err);
-                    showNotification('Form verileri alınırken bir hata oluştu', 'error');
-                    throw err;
-                }
-                };
-
-                try {
-                    const formData = handleFormSubmit();
-                    const btnEkle = document.getElementById('btnEkle');
-                    const isUpdate = btnEkle ? btnEkle.classList.contains('update-mode') : false;
-                    
-                    if(isUpdate) {
-                        // Mevcut satırı güncelle
-                        updateTableRow(selectedRow, formData);
-                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                        btnEkle.classList.remove('update-mode');
-                        selectedRow = null;
-                        showNotification('Kayıt güncellendi', 'success');
-                    } else {
-                        // Yeni satır ekle
-                        addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
-                    }
-
-                    clearForm();
-                } catch (err) {
-                    console.error('Kayıt işlemi hatası:', err);
-                    showNotification(err.message || 'Kayıt işlemi sırasında bir hata oluştu', 'error');
-                } finally {
-                    btnEkle.classList.remove('adding-mode');
-                }
+            // Silinen handleFormSubmit fonksiyonu ve tekrar eden kod
             }
 
             function handleDelete() {
