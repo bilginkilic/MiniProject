@@ -902,7 +902,7 @@
         
         <!-- Notification Container -->
         <div id="notification" class="notification">
-            <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
+            <button type="button" class="close-btn" onclick="window.hideNotification()">&times;</button>
             <span id="notificationMessage"></span>
         </div>
 
@@ -937,8 +937,11 @@
         </div>
 
         <script type="text/javascript">
-            // Global notification function
-            window.showNotification = function(message, type = 'info', persistent = false) {
+            var showNotification, hideNotification;
+
+            // Initialize notification functions immediately
+            (function() {
+                showNotification = function(message, type = 'info', persistent = false) {
                 try {
                     console.log('Notification:', type, message);
                     const notification = document.getElementById('notification');
@@ -970,17 +973,18 @@
                 }
             }
 
-            window.hideNotification = function() {
-                try {
-                    const notification = document.getElementById('notification');
-                    if (notification) {
-                        notification.classList.remove('show');
-                        notification.classList.remove('persistent');
+                hideNotification = function() {
+                    try {
+                        const notification = document.getElementById('notification');
+                        if (notification) {
+                            notification.classList.remove('show');
+                            notification.classList.remove('persistent');
+                        }
+                    } catch (err) {
+                        console.error('Hide notification error:', err);
                     }
-                } catch (err) {
-                    console.error('Hide notification error:', err);
-                }
-            }
+                };
+            })();
 
             function getMousePosition(e, element) {
                 var wrapper = element.closest('.image-wrapper');
