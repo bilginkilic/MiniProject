@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: dddd --%>
+<%-- Created: mexx --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1950,14 +1950,11 @@
             }
 
             function addTableRow(data) {
-                console.log('addTableRow başladı, data:', data);
                 const tbody = document.querySelector('.auth-details-table tbody');
-                if (!tbody) {
-                    console.error('tbody elementi bulunamadı');
-                    return null;
-                }
-                const newRow = tbody.insertRow(0);
-                const cells = [
+                if (!tbody) return null;
+                const newRow = document.createElement('tr');
+                tbody.insertBefore(newRow, tbody.firstChild);
+                const allCells = [
                     data.yetkiliKontakt || '',
                     data.yetkiliAdi || '',
                     document.getElementById('selYetkiSekli').value || 'Müştereken',
@@ -1968,20 +1965,23 @@
                     document.getElementById('selYetkiTurleri').value || ''
                 ];
 
-                cells.forEach(cellData => {
-                    const cell = newRow.insertCell();
+                // Temel hücreleri ekle
+                allCells.forEach(cellData => {
+                    const cell = document.createElement('td');
                     cell.textContent = cellData;
+                    newRow.appendChild(cell);
                 });
 
-                // İmza hücrelerini ekle
+                // İmza hücreleri
                 for(let i = 0; i < 3; i++) {
-                    const cell = newRow.insertCell();
+                    const cell = document.createElement('td');
                     const signaturePreview = document.createElement('div');
                     signaturePreview.className = 'signature-preview';
                     if(data.imzalar && data.imzalar[i]) {
                         signaturePreview.style.backgroundImage = data.imzalar[i];
                     }
                     cell.appendChild(signaturePreview);
+                    newRow.appendChild(cell);
                 }
 
                 // Son hücreleri ekle
@@ -1990,17 +1990,16 @@
                     document.getElementById('selYetkiDovizCinsi').value || 'USD',
                     document.getElementById('selYetkiDurumu').value || 'Aktif'
                 ].forEach(text => {
-                    const cell = newRow.insertCell();
+                    const cell = document.createElement('td');
                     cell.textContent = text;
+                    newRow.appendChild(cell);
                 });
 
-                // Çift tıklama olayını ekle
+                // Event listener'ları ekle
                 newRow.addEventListener('dblclick', () => handleRowDoubleClick(newRow));
-                
-                // Tek tıklama olayını ekle
                 newRow.addEventListener('click', () => selectRow(newRow));
 
-                return newRow; // Eklenen satırı döndür
+                return newRow;
             }
 
             function clearForm() {
