@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: yutkus metax --%>
+<%-- Created: yutkus metaxOld --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -919,7 +919,7 @@
                 <asp:HiddenField ID="hdnSelection" runat="server" />
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
                 <asp:HiddenField ID="hdnSignatures" runat="server" />
-                <asp:Button ID="btnSaveSignature" runat="server" Text="Seçilen İmzayı Kaydet" 
+                <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
                     CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>

@@ -297,6 +297,23 @@ namespace AspxExamples
         {
             try
             {
+                // Form verilerini topla
+                var authData = new SignatureAuthData
+                {
+                    YetkiliKontakt = Request.Form["txtYetkiliKontakt"],
+                    YetkiliAdi = Request.Form["txtYetkiliAdi"],
+                    YetkiSekli = Request.Form["selYetkiSekli"],
+                    YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
+                    YetkiBitisTarihi = Request.Form["yetkiBitisTarihi"],
+                    YetkiGrubu = Request.Form["selYetkiGrubu"],
+                    SinirliYetkiDetaylari = Request.Form["txtSinirliYetkiDetaylari"],
+                    YetkiTurleri = Request.Form["selYetkiTurleri"],
+                    YetkiTutari = decimal.Parse(Request.Form["txtYetkiTutari"]),
+                    YetkiDovizCinsi = Request.Form["selYetkiDovizCinsi"],
+                    YetkiDurumu = Request.Form["selYetkiDurumu"],
+                    KaynakPdfAdi = Request.Form["hdnCurrentPdfList"]
+                };
+
                 string signaturesJson = Request.Form["hdnSignatures"];
                 System.Diagnostics.Debug.WriteLine(String.Format("İmza verileri alındı: {0}", signaturesJson));
 
@@ -390,45 +407,31 @@ namespace AspxExamples
                 }
 
                 // İmzaları kaydet ve yanıt gönder
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                // İmzaları SignatureAuthData'ya ekle
+                foreach (var savedSig in savedSignatures)
                 {
-                    var response = new {
-                        success = savedSignatures.Count > 0,
-                        signatures = savedSignatures,
-                        message = savedSignatures.Count > 0 ? "İmzalar başarıyla kaydedildi" : "İmza kaydedilemedi"
-                    };
-                    
-                    var jsonResponse = serializer.Serialize(response);
-                    Response.Clear();
-                    Response.ContentType = "application/json";
-                    Response.Write(jsonResponse);
-                    Response.Flush();
-                    Response.Close();
-                    HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    authData.Imzalar.Add(new SignatureImage
+                    {
+                        ImageData = savedSig.Path,
+                        SiraNo = authData.Imzalar.Count + 1,
+                        SourcePdfPath = authData.KaynakPdfAdi
+                    });
                 }
-                else
-                {
-                    if (savedSignatures.Count > 0)
-                    {
-                        // Normal postback için yeni davranış
-                        string virtualPath = savedSignatures[0].Path; // İlk imzayı kullan
-                        ScriptManager.RegisterStartupScript(this, GetType(),
-                            "saveSuccess",
-                            String.Format(@"
-                                if (window.opener && !window.opener.closed) {{
-                                    if (typeof window.opener.handleSignatureReturn === 'function') {{
-                                        window.opener.handleSignatureReturn('{0}');
-                                    }}
-                                }}
-                                showNotification('İmzalar başarıyla kaydedildi', 'success');
-                                setTimeout(function() {{ window.close(); }}, 1500);
-                            ", virtualPath),
-                            true);
+
+                // Session'a kaydet
+                Session["SignatureAuthData"] = authData;
+
+                // Başarılı mesajı göster ve pencereyi kapat
+                ScriptManager.RegisterStartupScript(this, GetType(),
+                    "saveSuccess",
+                    @"
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({ success: true }, '*');
                     }
-                    else
-                    {
-                        ShowError("İmzalar kaydedilemedi. Lütfen tekrar deneyiniz.");
-                    }
+                    showNotification('Veriler başarıyla kaydedildi', 'success');
+                    setTimeout(function() { window.close(); }, 1500);
+                    ",
+                    true);
                 }
             }
             catch (Exception ex)

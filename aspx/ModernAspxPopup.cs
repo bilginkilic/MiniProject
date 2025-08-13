@@ -7,6 +7,7 @@ namespace AspxExamples
 {
     public class ModernAspxPopup : Form
     {
+        public SignatureAuthData ResultData { get; private set; }
         private HtmlBox htmlBox;
         private ToolStrip toolStrip;
         private StatusStrip statusStrip;
@@ -117,6 +118,26 @@ namespace AspxExamples
             {
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
                 htmlBox.Url = aspxUrl;
+                
+                // Mesaj dinleyicisini ekle
+                htmlBox.DocumentCompleted += (s, e) =>
+                {
+                    htmlBox.Document.Window.AttachEventHandler("message", (sender, args) =>
+                    {
+                        if (args.ToString().Contains("success"))
+                        {
+                            // Session'dan veriyi al
+                            var authData = HttpContext.Current.Session["SignatureAuthData"] as SignatureAuthData;
+                            if (authData != null)
+                            {
+                                this.ResultData = authData;
+                                this.DialogResult = DialogResult.OK;
+                                this.Close();
+                            }
+                        }
+                    });
+                };
+                
                 UpdateStatus("Sayfa yüklendi");
             }
             catch (Exception ex)
@@ -194,27 +215,29 @@ namespace AspxExamples
     // Örnek kullanım sınıfı
     public class ModernPopupExample
     {
-        public static void ShowAuthorizedUserList(string circularRefNumber)
+        public static SignatureAuthData ShowAuthorizedUserList(string circularRefNumber)
         {
             try
             {
-                string url = string.Format("AuthorizedUserList.aspx?ref={0}", circularRefNumber);
+                string url = string.Format("PdfSignatureForm.aspx?ref={0}", circularRefNumber);
                 using (var popup = new ModernAspxPopup(url))
                 {
-                    popup.Text = "Yetkili Kullanıcı Listesi";
+                    popup.Text = "İmza Sirkülerinden İmza Seçimi";
                     popup.Size = new Size(1280, 900);
                     popup.MinimumSize = new Size(1024, 768);
                     popup.ShowDialog();
+                    return popup.ResultData;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    string.Format("Yetkili listesi açılırken hata oluştu: {0}", ex.Message),
+                    string.Format("İmza seçimi açılırken hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+                return null;
             }
         }
     }
