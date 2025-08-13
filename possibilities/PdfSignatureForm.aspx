@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:30 --%>
+<%-- Created: 2024.01.17 14:330 --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -942,13 +942,51 @@
         </div>
 
         <script type="text/javascript">
+            // Global notification functions - defined first to ensure availability
+            function showNotification(message, type, persistent) {
+                try {
+                    console.log('Notification:', type, message);
+                    const notification = document.getElementById('notification');
+                    const notificationMessage = document.getElementById('notificationMessage');
+                    
+                    if (!notification || !notificationMessage) {
+                        console.error('Notification elements not found');
+                        return;
+                    }
+                    
+                    // Reset classes
+                    notification.className = 'notification';
+                    notification.classList.add(type || 'info');
+                    if (persistent) {
+                        notification.classList.add('persistent');
+                    }
+                    notificationMessage.textContent = message;
+                    
+                    notification.classList.add('show');
+                    
+                    // For non-persistent notifications, auto-hide after delay
+                    if (!persistent) {
+                        setTimeout(function() {
+                            hideNotification();
+                        }, type === 'error' ? 8000 : 5000); // Show errors longer
+                    }
+                } catch (err) {
+                    console.error('Notification error:', err);
+                }
+            }
+
+            function hideNotification() {
+                try {
+                    const notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show', 'persistent');
+                    }
+                } catch (err) {
+                    console.error('Hide notification error:', err);
+                }
+            }
+
             'use strict';
-            
-            // Ensure global app namespace
-            window.App = window.App || {};
-            
-            // Core modules - wrapped in IIFE to avoid global scope pollution
-            (function(App) {
             const NotificationSystem = {
                 show: function(message, type, persistent) {
                     try {
@@ -1076,25 +1114,12 @@
                 }
             };
 
-            // Expose modules to App namespace
-            App.NotificationSystem = NotificationSystem;
-            App.ErrorHandler = ErrorHandler;
-            App.SecurityManager = SecurityManager;
-            App.Validator = Validator;
-            App.Utils = Utils;
-
-            })(window.App);
-
             /* Created: 2024.01.17 14:30 */
 
             // Initialize application
             document.addEventListener('DOMContentLoaded', function() {
                 try {
-                    // Initialize core modules
-                    App.SecurityManager.init();
-                    App.Utils.lazyLoadImages();
-
-                    // Initialize notification system
+                    // Basic initialization checks
                     const notification = document.getElementById('notification');
                     const notificationMessage = document.getElementById('notificationMessage');
                     
@@ -1102,15 +1127,6 @@
                         console.error('Notification elements not found during initialization');
                         return;
                     }
-
-                    // Global function for backward compatibility
-                    window.showNotification = function(message, type, persistent) {
-                        App.NotificationSystem.show(message, type, persistent);
-                    };
-
-                    window.hideNotification = function() {
-                        App.NotificationSystem.hide();
-                    };
 
                     console.log('Application initialized successfully');
                 } catch (error) {
