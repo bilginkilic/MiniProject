@@ -937,33 +937,49 @@
         </div>
 
         <script type="text/javascript">
-            // Notification functions
-            function showNotification(message, type, persistent = false) {
-                console.log('Notification:', type, message);
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notificationMessage');
-                
-                // Reset classes
-                notification.className = 'notification ' + type;
-                if (persistent) {
-                    notification.classList.add('persistent');
-                }
-                notificationMessage.textContent = message;
-                
-                notification.classList.add('show');
-                
-                // For non-persistent notifications, auto-hide after delay
-                if (!persistent) {
-                    setTimeout(() => {
-                        hideNotification();
-                    }, type === 'error' ? 8000 : 5000); // Show errors longer
+            // Global notification function
+            window.showNotification = function(message, type = 'info', persistent = false) {
+                try {
+                    console.log('Notification:', type, message);
+                    const notification = document.getElementById('notification');
+                    const notificationMessage = document.getElementById('notificationMessage');
+                    
+                    if (!notification || !notificationMessage) {
+                        console.error('Notification elements not found');
+                        return;
+                    }
+                    
+                    // Reset classes
+                    notification.className = 'notification';
+                    notification.classList.add(type);
+                    if (persistent) {
+                        notification.classList.add('persistent');
+                    }
+                    notificationMessage.textContent = message;
+                    
+                    notification.classList.add('show');
+                    
+                    // For non-persistent notifications, auto-hide after delay
+                    if (!persistent) {
+                        setTimeout(() => {
+                            hideNotification();
+                        }, type === 'error' ? 8000 : 5000); // Show errors longer
+                    }
+                } catch (err) {
+                    console.error('Notification error:', err);
                 }
             }
 
-            function hideNotification() {
-                const notification = document.getElementById('notification');
-                notification.classList.remove('show');
-                notification.classList.remove('persistent');
+            window.hideNotification = function() {
+                try {
+                    const notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show');
+                        notification.classList.remove('persistent');
+                    }
+                } catch (err) {
+                    console.error('Hide notification error:', err);
+                }
             }
 
             function getMousePosition(e, element) {
