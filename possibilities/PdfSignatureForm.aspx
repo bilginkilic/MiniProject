@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:33jhçngy --%>
+<%-- Created: 2024.01.17 14:33jhçngyyj --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1591,7 +1591,10 @@
                         throw new Error('btnEkle elementi bulunamadı');
                     }
                     console.log('btnEkle bulundu:', btnEkle);
-                    const isUpdate = btnEkle.classList.contains('update-mode');
+                    let isUpdate = false;
+                    if (btnEkle) {
+                        isUpdate = btnEkle.classList.contains('update-mode');
+                    }
                 
                     // Form verilerini kontrol et
                     const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
