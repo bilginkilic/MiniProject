@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: 2024.01.17 14:33jhçngyyj --%>
+<%-- Created: ajx --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -1720,6 +1720,8 @@
 
                 try {
                     const formData = handleFormSubmit();
+                    const btnEkle = document.getElementById('btnEkle');
+                    const isUpdate = btnEkle ? btnEkle.classList.contains('update-mode') : false;
                     
                     if(isUpdate) {
                         // Mevcut satırı güncelle
