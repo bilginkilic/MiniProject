@@ -1,4 +1,18 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
+<%--
+    Version History:
+    v1.0.0 - 2024.01.17 - İlk versiyon
+    v1.0.1 - 2024.01.17 - Müşteri arama modal box eklendi
+    v1.0.2 - 2024.01.17 - Notification sistemi düzeltildi
+    v1.0.3 - 2024.01.17 - Ekle/Güncelle mantığı düzeltildi
+    v1.0.4 - 2024.01.17 - Aksi karara kadar ve tarih mantığı eklendi
+    v1.0.5 - 2024.01.17 - Form validasyonları ve resetleme eklendi
+    
+    Değişiklik Yapılacaklar:
+    - Web servis entegrasyonu eklenecek
+    - Müşteri arama için gerçek veri bağlantısı yapılacak
+    - Yetki türleri için dropdown verileri servisten alınacak
+--%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -937,6 +951,15 @@
         </div>
 
         <script type="text/javascript">
+            /*
+             * JavaScript Version History:
+             * v1.0.0 - 2024.01.17 - İlk versiyon
+             * v1.0.1 - 2024.01.17 - Müşteri arama fonksiyonları eklendi
+             * v1.0.2 - 2024.01.17 - Notification sistemi düzeltildi
+             * v1.0.3 - 2024.01.17 - Ekle/Güncelle mantığı düzeltildi
+             * v1.0.4 - 2024.01.17 - Form validasyonları ve resetleme eklendi
+             */
+
             // Global functions
             function showNotification(message, type, persistent) {
                 try {
