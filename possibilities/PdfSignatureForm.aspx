@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: gccgjjvhvh --%>
+<%-- Created: adsfs --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -320,6 +320,22 @@
         }
         .notification .close-btn:hover {
             opacity: 1;
+        }
+        /* Date Input Styles */
+        .date-input {
+            display: flex;
+            align-items: center;
+        }
+        .date-input input[type="date"] {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 200px;
+        }
+        .date-input input[type="date"]:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
         }
         .auth-details {
             grid-area: auth-details;
@@ -801,27 +817,17 @@
                     <div class="form-row">
                         <label>YETKİ BİTİŞ TARİHİ:</label>
                         <div class="date-input">
-                            <select id="selGun" name="selGun">
-                                <option>14</option>
-                                <option>15</option>
-                            </select>
-                            <span>/</span>
-                            <select id="selAy" name="selAy">
-                                <option>07</option>
-                                <option>08</option>
-                            </select>
-                            <span>/</span>
-                            <select id="selYil" name="selYil">
-                                <option>2024</option>
-                                <option>2025</option>
-                                <option>2026</option>
-                                <option>2027</option>
-                                <option>2028</option>
-                                <option>2029</option>
-                                <option>2030</option>
-                            </select>
+                            <input type="date" 
+                                   id="yetkiBitisTarihi" 
+                                   name="yetkiBitisTarihi" 
+                                   class="form-control"
+                                   min="2024-01-01" 
+                                   max="2030-12-31" />
                             <div style="display: flex; align-items: center; margin-left: 10px;">
-                                <input type="checkbox" id="chkAksiKarar" style="margin-right: 5px;" />
+                                <input type="checkbox" 
+                                       id="chkAksiKarar" 
+                                       style="margin-right: 5px;" 
+                                       onchange="handleAksiKararChange(this)" />
                                 <label for="chkAksiKarar" style="font-weight: normal;">Aksi Karara Kadar</label>
                             </div>
                         </div>
@@ -1579,11 +1585,19 @@
                     document.getElementById('selYetkiDovizCinsi').value = row.cells[12].textContent;
                     document.getElementById('selYetkiDurumu').value = row.cells[13].textContent;
                 
-                // Tarih alanlarını doldur
-                const tarih = row.cells[3].textContent.split('.');
-                document.querySelector('select[name="gun"]').value = tarih[0];
-                document.querySelector('select[name="ay"]').value = tarih[1];
-                document.querySelector('select[name="yil"]').value = tarih[2];
+                // Tarih değerini ayarla
+                const tarihText = row.cells[3].textContent;
+                const dateInput = document.getElementById('yetkiBitisTarihi');
+                
+                if (tarihText === 'Aksi Karara Kadar') {
+                    document.getElementById('chkAksiKarar').checked = true;
+                    handleAksiKararChange(document.getElementById('chkAksiKarar'));
+                } else {
+                    // "dd.mm.yyyy" formatından "yyyy-mm-dd" formatına çevir
+                    const [day, month, year] = tarihText.split('.');
+                    dateInput.value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    document.getElementById('chkAksiKarar').checked = false;
+                }
                 
                 // Diğer alanları doldur
                 document.querySelector('textarea[name="sinirliYetkiDetaylari"]').value = row.cells[6].textContent;
@@ -2295,6 +2309,7 @@
                 window.addEventListener('load', function() {
                     initializeImageEvents();
                     initializePdfList();
+                    initializeDatePicker();
                     
                     // Initialize signature slots
                     const slots = document.querySelectorAll('.signature-slot');
@@ -2360,6 +2375,45 @@
                 if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
                     input.value = parseFloat(value);
                 }
+            }
+
+            // Tarih seçici için JavaScript fonksiyonları
+            function initializeDatePicker() {
+                const dateInput = document.getElementById('yetkiBitisTarihi');
+                const today = new Date();
+                
+                // Varsayılan değeri bugün olarak ayarla
+                dateInput.valueAsDate = today;
+                
+                // Minimum tarihi bugün olarak ayarla
+                dateInput.min = today.toISOString().split('T')[0];
+            }
+
+            function handleAksiKararChange(checkbox) {
+                const dateInput = document.getElementById('yetkiBitisTarihi');
+                
+                if (checkbox.checked) {
+                    // Aksi karara kadar seçiliyse
+                    dateInput.disabled = true;
+                    dateInput.value = '2030-12-31'; // Maksimum tarih
+                } else {
+                    // Aksi karar seçili değilse
+                    dateInput.disabled = false;
+                    // Bugünün tarihini set et
+                    const today = new Date();
+                    dateInput.valueAsDate = today;
+                }
+            }
+
+            function getYetkiBitisTarihi() {
+                const aksiKarar = document.getElementById('chkAksiKarar').checked;
+                if (aksiKarar) {
+                    return 'Aksi Karara Kadar';
+                }
+                
+                const dateInput = document.getElementById('yetkiBitisTarihi');
+                const date = new Date(dateInput.value);
+                return date.toLocaleDateString('tr-TR'); // "dd.mm.yyyy" formatında
             }
         </script>
         <!-- Notification Container -->
