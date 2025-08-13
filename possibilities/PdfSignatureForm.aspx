@@ -902,7 +902,7 @@
         
         <!-- Notification Container -->
         <div id="notification" class="notification">
-            <button type="button" class="close-btn" onclick="window.hideNotification()">&times;</button>
+            <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
             <span id="notificationMessage"></span>
         </div>
 
@@ -937,11 +937,8 @@
         </div>
 
         <script type="text/javascript">
-            var showNotification, hideNotification;
-
-            // Initialize notification functions immediately
-            (function() {
-                showNotification = function(message, type = 'info', persistent = false) {
+            // Global functions
+            function showNotification(message, type, persistent) {
                 try {
                     console.log('Notification:', type, message);
                     const notification = document.getElementById('notification');
@@ -954,7 +951,7 @@
                     
                     // Reset classes
                     notification.className = 'notification';
-                    notification.classList.add(type);
+                    notification.classList.add(type || 'info');
                     if (persistent) {
                         notification.classList.add('persistent');
                     }
@@ -964,7 +961,7 @@
                     
                     // For non-persistent notifications, auto-hide after delay
                     if (!persistent) {
-                        setTimeout(() => {
+                        setTimeout(function() {
                             hideNotification();
                         }, type === 'error' ? 8000 : 5000); // Show errors longer
                     }
@@ -973,18 +970,17 @@
                 }
             }
 
-                hideNotification = function() {
-                    try {
-                        const notification = document.getElementById('notification');
-                        if (notification) {
-                            notification.classList.remove('show');
-                            notification.classList.remove('persistent');
-                        }
-                    } catch (err) {
-                        console.error('Hide notification error:', err);
+            function hideNotification() {
+                try {
+                    const notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show');
+                        notification.classList.remove('persistent');
                     }
-                };
-            })();
+                } catch (err) {
+                    console.error('Hide notification error:', err);
+                }
+            }
 
             function getMousePosition(e, element) {
                 var wrapper = element.closest('.image-wrapper');
