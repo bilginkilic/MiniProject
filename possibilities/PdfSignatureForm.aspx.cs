@@ -314,19 +314,57 @@ namespace AspxExamples
                 // Form verilerini topla
                 var authData = new SignatureAuthData
                 {
-                    YetkiliKontakt = txtYetkiliKontakt.Text,
-                    YetkiliAdi = txtYetkiliAdi.Text,
-                    YetkiSekli = selYetkiSekli.SelectedValue,
-                    YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
-                    YetkiBitisTarihi = chkAksiKarar.Checked ? "Aksi Karara Kadar" : yetkiBitisTarihi.Text,
-                    YetkiGrubu = selYetkiGrubu.SelectedValue,
-                    SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
-                    YetkiTurleri = selYetkiTurleri.SelectedValue,
-                    YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
-                    YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
-                    YetkiDurumu = selYetkiDurumu.SelectedValue,
-                    KaynakPdfAdi = hdnCurrentPdfList.Value
+                    KaynakPdfAdi = hdnCurrentPdfList.Value,
+                    Yetkililer = new List<YetkiliData>()
                 };
+
+                // Tablodaki tüm yetkilileri al
+                var yetkiliKayitJson = Request.Form["hdnYetkiliKayitlar"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
+                if (!string.IsNullOrEmpty(yetkiliKayitJson))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
+
+                    foreach (var kayit in yetkiliKayitlar)
+                    {
+                        var yetkiliData = new YetkiliData
+                        {
+                            YetkiliKontakt = kayit.YetkiliKontakt,
+                            YetkiliAdi = kayit.YetkiliAdi,
+                            YetkiSekli = kayit.YetkiSekli,
+                            YetkiTarihi = kayit.YetkiTarihi,
+                            YetkiBitisTarihi = kayit.AksiKararaKadar ? "Aksi Karara Kadar" : kayit.YetkiTarihi,
+                            YetkiGrubu = kayit.YetkiSekli,
+                            SinirliYetkiDetaylari = kayit.SinirliYetkiDetaylari,
+                            YetkiTurleri = kayit.YetkiTurleri,
+                            YetkiTutari = decimal.Parse(kayit.YetkiTutari),
+                            YetkiDovizCinsi = kayit.YetkiDovizCinsi,
+                            YetkiDurumu = kayit.YetkiDurumu,
+                            Imzalar = new List<SignatureImage>()
+                        };
+                        authData.Yetkililer.Add(yetkiliData);
+                    }
+                }
+                else
+                {
+                    // Eğer tablo boşsa, formdaki mevcut veriyi ekle
+                    var yetkiliData = new YetkiliData
+                    {
+                        YetkiliKontakt = txtYetkiliKontakt.Text,
+                        YetkiliAdi = txtYetkiliAdi.Text,
+                        YetkiSekli = selYetkiSekli.SelectedValue,
+                        YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
+                        YetkiBitisTarihi = chkAksiKarar.Checked ? "Aksi Karara Kadar" : yetkiBitisTarihi.Text,
+                        YetkiGrubu = selYetkiGrubu.SelectedValue,
+                        SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
+                        YetkiTurleri = selYetkiTurleri.SelectedValue,
+                        YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
+                        YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
+                        YetkiDurumu = selYetkiDurumu.SelectedValue,
+                        Imzalar = new List<SignatureImage>()
+                    };
+                    authData.Yetkililer.Add(yetkiliData);
+                }
 
                 string signaturesJson = Request.Form["hdnSignatures"];
                 System.Diagnostics.Debug.WriteLine(String.Format("İmza verileri alındı: {0}", signaturesJson));
@@ -421,15 +459,42 @@ namespace AspxExamples
                 }
 
                 // İmzaları kaydet ve yanıt gönder
-                // İmzaları SignatureAuthData'ya ekle
-                foreach (var savedSig in savedSignatures)
+                // İmzaları ilgili yetkililere ekle
+                var yetkiliImzaEslesmesi = Request.Form["hdnYetkiliImzaEslesmesi"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
+                if (!string.IsNullOrEmpty(yetkiliImzaEslesmesi))
                 {
-                    authData.Imzalar.Add(new SignatureImage
+                    var serializer = new JavaScriptSerializer();
+                    var eslesmeler = serializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi); // yetkiliIndex -> imzaIndex eşleşmesi
+
+                    foreach (var eslesme in eslesmeler)
                     {
-                        ImageData = savedSig.Path,
-                        SiraNo = authData.Imzalar.Count + 1,
-                        SourcePdfPath = authData.KaynakPdfAdi
-                    });
+                        if (eslesme.Key < authData.Yetkililer.Count && eslesme.Value < savedSignatures.Count)
+                        {
+                            var savedSig = savedSignatures[eslesme.Value];
+                            authData.Yetkililer[eslesme.Key].Imzalar.Add(new SignatureImage
+                            {
+                                ImageData = savedSig.Path,
+                                SiraNo = authData.Yetkililer[eslesme.Key].Imzalar.Count + 1,
+                                SourcePdfPath = authData.KaynakPdfAdi
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    // Eğer eşleşme bilgisi yoksa, tüm imzaları ilk yetkiliye ekle
+                    foreach (var savedSig in savedSignatures)
+                    {
+                        if (authData.Yetkililer.Count > 0)
+                        {
+                            authData.Yetkililer[0].Imzalar.Add(new SignatureImage
+                            {
+                                ImageData = savedSig.Path,
+                                SiraNo = authData.Yetkililer[0].Imzalar.Count + 1,
+                                SourcePdfPath = authData.KaynakPdfAdi
+                            });
+                        }
+                    }
                 }
 
                 // Session'a kaydet

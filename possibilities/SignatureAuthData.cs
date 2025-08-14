@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace AspxExamples
 {
-    public class SignatureAuthData
+    public class YetkiliData
     {
         public string YetkiliKontakt { get; set; }
         public string YetkiliAdi { get; set; }
@@ -17,11 +17,21 @@ namespace AspxExamples
         public string YetkiDovizCinsi { get; set; }
         public string YetkiDurumu { get; set; }
         public List<SignatureImage> Imzalar { get; set; }
+
+        public YetkiliData()
+        {
+            Imzalar = new List<SignatureImage>();
+        }
+    }
+
+    public class SignatureAuthData
+    {
+        public List<YetkiliData> Yetkililer { get; set; }
         public string KaynakPdfAdi { get; set; }
 
         public SignatureAuthData()
         {
-            Imzalar = new List<SignatureImage>();
+            Yetkililer = new List<YetkiliData>();
         }
     }
 

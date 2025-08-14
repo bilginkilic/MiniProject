@@ -893,22 +893,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>5000711</td>
-                            <td>Toru Kawai</td>
-                            <td>Müştereken</td>
-                            <td>14.07.2026</td>
-                            <td>14.07.2026</td>
-                            <td>A Grubu</td>
-                            <td>C İLE BİRLİKTE 1.000.000 USD işlemlere kadar.</td>
-                            <td>Kredi Sözleşmeleri / Transfer İşlemleri</td>
-                            <td><div class="signature-preview" id="authSignature1"></div></td>
-                            <td><div class="signature-preview" id="authSignature2"></div></td>
-                            <td><div class="signature-preview" id="authSignature3"></div></td>
-                            <td>100.000</td>
-                            <td>USD</td>
-                            <td>Aktif</td>
-                        </tr>
+                       
                     </tbody>
                 </table>
             </div>
@@ -917,6 +902,8 @@
                 <asp:HiddenField ID="hdnSelection" runat="server" />
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
                 <asp:HiddenField ID="hdnSignatures" runat="server" />
+                <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" />
+                <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
                     CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
                 
@@ -1862,10 +1849,93 @@
                             }
                         });
                     }
+
+                    // Yetkili kayıtlarını güncelle
+                    updateYetkiliKayitlar();
                 } catch (err) {
                     console.error('Satır güncelleme hatası:', err);
                     showNotification(err.message || 'Satır güncellenirken bir hata oluştu', 'error');
                     throw err;
+                }
+            }
+
+            function updateYetkiliKayitlar() {
+                try {
+                    const tbody = document.querySelector('.auth-details-table tbody');
+                    if (!tbody) return;
+
+                    const kayitlar = [];
+                    const rows = tbody.querySelectorAll('tr');
+                    
+                    rows.forEach((row, index) => {
+                        const imzalar = [];
+                        // İmza hücrelerini kontrol et (8, 9, 10 indeksli hücreler)
+                        for(let i = 8; i <= 10; i++) {
+                            const signaturePreview = row.cells[i]?.querySelector('.signature-preview');
+                            if (signaturePreview && signaturePreview.style.backgroundImage) {
+                                imzalar.push({
+                                    Base64Image: signaturePreview.style.backgroundImage.replace(/^url\(['"](.+)['"]\)$/, '$1'),
+                                    SlotIndex: i - 8
+                                });
+                            }
+                        }
+
+                        const kayit = {
+                            YetkiliKontakt: row.cells[0].textContent,
+                            YetkiliAdi: row.cells[1].textContent,
+                            YetkiSekli: row.cells[2].textContent,
+                            YetkiTarihi: row.cells[3].textContent,
+                            AksiKararaKadar: row.cells[4].textContent === 'Aksi Karara Kadar',
+                            YetkiGrubu: row.cells[5].textContent,
+                            SinirliYetkiDetaylari: row.cells[6].textContent,
+                            YetkiTurleri: row.cells[7].textContent,
+                            Imzalar: imzalar,
+                            YetkiTutari: row.cells[11].textContent,
+                            YetkiDovizCinsi: row.cells[12].textContent,
+                            YetkiDurumu: row.cells[13].textContent
+                        };
+                        kayitlar.push(kayit);
+                    });
+
+                    // Hidden field'ları güncelle
+                    document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>').value = JSON.stringify(kayitlar);
+                    
+                    // İmza eşleşmelerini güncelle
+                    updateImzaEslesmesi();
+                } catch (err) {
+                    console.error('Yetkili kayıtları güncelleme hatası:', err);
+                    showNotification('Yetkili kayıtları güncellenirken bir hata oluştu', 'error');
+                }
+            }
+
+            function updateImzaEslesmesi() {
+                try {
+                    const tbody = document.querySelector('.auth-details-table tbody');
+                    if (!tbody) return;
+
+                    const eslesmeler = {};
+                    const rows = tbody.querySelectorAll('tr');
+                    
+                    rows.forEach((row, rowIndex) => {
+                        // İmza hücrelerini kontrol et (8, 9, 10 indeksli hücreler)
+                        for(let i = 8; i <= 10; i++) {
+                            const signaturePreview = row.cells[i]?.querySelector('.signature-preview');
+                            if (signaturePreview && signaturePreview.style.backgroundImage) {
+                                // İmza indeksini bul
+                                const imzaIndex = selectedSignatures.findIndex(sig => 
+                                    sig.image === signaturePreview.style.backgroundImage.replace(/^url\(['"](.+)['"]\)$/, '$1')
+                                );
+                                if (imzaIndex !== -1) {
+                                    eslesmeler[rowIndex] = imzaIndex;
+                                }
+                            }
+                        }
+                    });
+
+                    document.getElementById('<%= hdnYetkiliImzaEslesmesi.ClientID %>').value = JSON.stringify(eslesmeler);
+                } catch (err) {
+                    console.error('İmza eşleşmeleri güncelleme hatası:', err);
+                    showNotification('İmza eşleşmeleri güncellenirken bir hata oluştu', 'error');
                 }
             }
 
@@ -1915,7 +1985,115 @@
                 row.addEventListener('dblclick', () => handleRowDoubleClick(row));
                 row.addEventListener('click', () => selectRow(row));
 
+                // Yetkili kayıtlarını güncelle
+                updateYetkiliKayitlar();
+
                 return row;
+            }
+
+            function handleAddUpdate() {
+                try {
+                    console.log('handleAddUpdate başladı');
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (!btnEkle) {
+                        throw new Error('btnEkle elementi bulunamadı');
+                    }
+                    console.log('btnEkle bulundu:', btnEkle);
+                    let isUpdate = false;
+                    if (btnEkle) {
+                        isUpdate = btnEkle.classList.contains('update-mode');
+                    }
+                
+                    // Form verilerini kontrol et
+                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
+                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
+                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
+                    const yetkiTutariNum = parseFloat(yetkiTutari);
+                    const imzalar = [];
+                    
+                    document.querySelectorAll('.signature-slot').forEach(slot => {
+                        if (slot.classList.contains('filled')) {
+                            const slotImage = slot.querySelector('.slot-image');
+                            if (slotImage && slotImage.style.backgroundImage) {
+                                imzalar.push(slotImage.style.backgroundImage);
+                            }
+                        }
+                    });
+
+                    // Zorunlu alan kontrolü
+                    if (!yetkiliKontakt || !yetkiliAdi) {
+                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
+                        return;
+                    }
+
+                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
+                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
+                        return;
+                    }
+                    
+                    // Ondalık basamak kontrolü
+                    if (yetkiTutari.includes('.')) {
+                        const decimalPlaces = yetkiTutari.split('.')[1].length;
+                        if (decimalPlaces > 2) {
+                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
+                            return;
+                        }
+                    }
+
+                    if (imzalar.length === 0) {
+                        showNotification('Lütfen en az bir imza seçin', 'warning');
+                        return;
+                    }
+
+                    // Tarih kontrolü
+                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
+                    const today = new Date();
+                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
+                    const yetkiBitisTarihi = isAksiKarar ? 
+                        'Aksi Karara Kadar' : 
+                        document.getElementById('yetkiBitisTarihi').value;
+                
+                    // Yeni kayıt veya güncelleme için veri hazırla
+                    const formData = {
+                        yetkiliKontakt: yetkiliKontakt,
+                        yetkiliAdi: yetkiliAdi,
+                        yetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
+                        yetkiTarihi: yetkiTarihi,
+                        yetkiBitisTarihi: yetkiBitisTarihi,
+                        yetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
+                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
+                        yetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
+                        yetkiTutari: yetkiTutariNum.toFixed(2),
+                        yetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
+                        yetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
+                        imzalar: imzalar
+                    };
+
+                    if(isUpdate) {
+                        if(!selectedRow) {
+                            throw new Error('Güncellenecek satır seçilmedi');
+                        }
+
+                        // Satırı güncelle
+                        updateTableRow(selectedRow, formData);
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                        btnEkle.classList.remove('update-mode');
+                        selectedRow = null;
+                        showNotification('Kayıt başarıyla güncellendi', 'success');
+                    } else {
+                        // Yeni satır ekle
+                        addTableRow(formData);
+                        showNotification('Yeni kayıt eklendi', 'success');
+                    }
+
+                    // Formu temizle
+                    clearForm();
+                    
+                } catch (err) {
+                    console.error('handleAddUpdate hatası:', err);
+                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
+                }
+            }
             }
 
             function clearForm() {
@@ -2183,7 +2361,7 @@
             // PDF listesi yönetimi
             let pdfList = [];
             const pdfListContainer = document.getElementById('pdfList');
-            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>');
+            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
 
             function initializePdfList() {
                 // URL'den PDF listesini al
