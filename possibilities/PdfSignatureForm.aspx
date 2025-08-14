@@ -2094,7 +2094,7 @@
                     showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
                 }
             }
-            }
+            
 
             function clearForm() {
                 try {
