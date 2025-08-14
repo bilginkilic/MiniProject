@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: yutkus metaxOldddc --%>
+<%-- Created: yutkus metaxOldddccxac --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -905,7 +905,7 @@
                 <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
-                    CssClass="button" OnClick="BtnSaveSignature_Click" Enabled="false" />
+                    CssClass="button" OnClick="BtnSaveSignature_Click" />
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
@@ -1136,7 +1136,7 @@
                     if (persistent) {
                         notification.classList.add('persistent');
                     }
-                    notificationMessage.textContent = message;
+                    notificationMessage.textContent = message ? message.toString() : '';
                     
                     notification.classList.add('show');
                     
@@ -2249,6 +2249,7 @@
                         }
                         return response.json();
                     })
+                    .then(response => response.json())
                     .then(data => {
                         if (!data.success) {
                             throw { 
@@ -2257,8 +2258,21 @@
                             };
                         }
                         
-                        NotificationSystem.show('İmzalar başarıyla kaydedildi', 'success');
-                        setTimeout(() => window.close(), 1500);
+                        showNotification('İmzalar başarıyla kaydedildi', 'success');
+                        
+                        // ModernAspxPopup'a veri gönder
+                        if (window.opener && !window.opener.closed) {
+                            window.opener.postMessage({ type: 'SIGNATURE_SAVED', success: true }, '*');
+                        }
+                        
+                        // Session'da veri varsa kapat
+                        setTimeout(() => {
+                            try {
+                                window.close();
+                            } catch (err) {
+                                console.log('Pencere kapatılamadı:', err);
+                            }
+                        }, 1500);
                     })
                     .catch(error => {
                         ErrorHandler.handle(error, 'saveSignature');

@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
-/* net x 4.8 */
+/* net x 4.8cdscds */
 
 namespace AspxExamples
 {
@@ -499,20 +499,32 @@ namespace AspxExamples
                     }
                 }
 
-                // Session'a kaydet
-                Session["SignatureAuthData"] = authData;
-
-                // Başarılı mesajı göster ve pencereyi kapat
-                ScriptManager.RegisterStartupScript(this, GetType(),
-                    "saveSuccess",
-                    @"
-                    if (window.opener && !window.opener.closed) {
-                        window.opener.postMessage({ success: true }, '*');
-                    }
-                    showNotification('Veriler başarıyla kaydedildi', 'success');
-                    setTimeout(function() { window.close(); }, 1500);
-                    ",
-                    true);
+                try
+                {
+                    // Session'a kaydet
+                    Session["SignatureAuthData"] = authData;
+                    
+                    // Başarılı yanıt döndür
+                    var response = new { success = true, message = "Veriler başarıyla kaydedildi" };
+                    var serializer = new JavaScriptSerializer();
+                    var jsonResponse = serializer.Serialize(response);
+                    
+                    Response.Clear();
+                    Response.ContentType = "application/json";
+                    Response.Write(jsonResponse);
+                    Response.End();
+                }
+                catch (Exception ex)
+                {
+                    var errorResponse = new { success = false, error = ex.Message };
+                    var serializer = new JavaScriptSerializer();
+                    var jsonError = serializer.Serialize(errorResponse);
+                    
+                    Response.Clear();
+                    Response.ContentType = "application/json";
+                    Response.Write(jsonError);
+                    Response.End();
+                }
                 
             }
             catch (Exception ex)
