@@ -67,6 +67,20 @@ namespace AspxExamples
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
         private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
 
+        // Form kontrolleri
+        protected TextBox txtYetkiliKontakt;
+        protected TextBox txtYetkiliAdi;
+        protected DropDownList selYetkiSekli;
+        protected TextBox yetkiBitisTarihi;
+        protected CheckBox chkAksiKarar;
+        protected DropDownList selYetkiGrubu;
+        protected TextBox txtSinirliYetkiDetaylari;
+        protected DropDownList selYetkiTurleri;
+        protected TextBox txtYetkiTutari;
+        protected DropDownList selYetkiDovizCinsi;
+        protected DropDownList selYetkiDurumu;
+        protected Button btnSaveSignature;
+        protected HiddenField hdnCurrentPdfList;
         protected HiddenField hdnPageCount;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -300,18 +314,18 @@ namespace AspxExamples
                 // Form verilerini topla
                 var authData = new SignatureAuthData
                 {
-                    YetkiliKontakt = Request.Form["txtYetkiliKontakt"],
-                    YetkiliAdi = Request.Form["txtYetkiliAdi"],
-                    YetkiSekli = Request.Form["selYetkiSekli"],
+                    YetkiliKontakt = txtYetkiliKontakt.Text,
+                    YetkiliAdi = txtYetkiliAdi.Text,
+                    YetkiSekli = selYetkiSekli.SelectedValue,
                     YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
-                    YetkiBitisTarihi = Request.Form["yetkiBitisTarihi"],
-                    YetkiGrubu = Request.Form["selYetkiGrubu"],
-                    SinirliYetkiDetaylari = Request.Form["txtSinirliYetkiDetaylari"],
-                    YetkiTurleri = Request.Form["selYetkiTurleri"],
-                    YetkiTutari = decimal.Parse(Request.Form["txtYetkiTutari"]),
-                    YetkiDovizCinsi = Request.Form["selYetkiDovizCinsi"],
-                    YetkiDurumu = Request.Form["selYetkiDurumu"],
-                    KaynakPdfAdi = Request.Form["hdnCurrentPdfList"]
+                    YetkiBitisTarihi = chkAksiKarar.Checked ? "Aksi Karara Kadar" : yetkiBitisTarihi.Text,
+                    YetkiGrubu = selYetkiGrubu.SelectedValue,
+                    SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
+                    YetkiTurleri = selYetkiTurleri.SelectedValue,
+                    YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
+                    YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
+                    YetkiDurumu = selYetkiDurumu.SelectedValue,
+                    KaynakPdfAdi = hdnCurrentPdfList.Value
                 };
 
                 string signaturesJson = Request.Form["hdnSignatures"];
