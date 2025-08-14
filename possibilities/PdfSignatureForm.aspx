@@ -1018,7 +1018,8 @@
                         'VALIDATION_ERROR': 'Lütfen tüm zorunlu alanları doldurun.',
                         'FILE_ERROR': 'Dosya işlemi sırasında hata oluştu.',
                         'SAVE_ERROR': 'Kaydetme işlemi sırasında hata oluştu.',
-                        'AUTH_ERROR': 'Yetkilendirme hatası oluştu.'
+                        'AUTH_ERROR': 'Yetkilendirme hatası oluştu.',
+                        'PARSE_ERROR': 'Sunucu yanıtı işlenirken hata oluştu.'
                     };
                     return errorMessages[error.code] || error.message || 'Beklenmeyen bir hata oluştu.';
                 }
@@ -2247,9 +2248,18 @@
                                 message: `HTTP error! status: ${response.status}`
                             };
                         }
-                        return response.json();
+                        return response.text().then(text => {
+                            try {
+                                return JSON.parse(text);
+                            } catch (e) {
+                                console.error('JSON parse error:', e);
+                                throw { 
+                                    code: 'PARSE_ERROR', 
+                                    message: 'Server yanıtı JSON formatında değil'
+                                };
+                            }
+                        });
                     })
-                    .then(response => response.json())
                     .then(data => {
                         if (!data.success) {
                             throw { 

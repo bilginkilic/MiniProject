@@ -512,7 +512,8 @@ namespace AspxExamples
                     Response.Clear();
                     Response.ContentType = "application/json";
                     Response.Write(jsonResponse);
-                    Response.End();
+                    Response.Flush();
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                 }
                 catch (Exception ex)
                 {
