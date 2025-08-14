@@ -501,19 +501,27 @@ namespace AspxExamples
 
                 try
                 {
-                    // Session'a kaydet
-                    Session["SignatureAuthData"] = authData;
-                    
-                    // Başarılı yanıt döndür
-                    var response = new { success = true, message = "Veriler başarıyla kaydedildi" };
-                    var serializer = new JavaScriptSerializer();
-                    var jsonResponse = serializer.Serialize(response);
-                    
-                    Response.Clear();
-                    Response.ContentType = "application/json";
-                    Response.Write(jsonResponse);
-                    Response.Flush();
-                    HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    // Web servise gönderilecek veriyi hazırla
+                    var requestData = new
+                    {
+                        referenceId = Request.QueryString["ref"], // URL'den ref parametresini al
+                        authData = authData
+                    };
+
+                    // ASMX web servis çağrısı
+                    var service = new SignatureService();
+                    var response = service.SaveSignature(requestData.referenceId, authData);
+                        
+                        // Başarılı yanıt döndür
+                        var response = new { success = true, message = "Veriler başarıyla kaydedildi", referenceId = requestData.referenceId };
+                        var jsonResponse = serializer.Serialize(response);
+                        
+                        Response.Clear();
+                        Response.ContentType = "application/json";
+                        Response.Write(jsonResponse);
+                        Response.Flush();
+                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    }
                 }
                 catch (Exception ex)
                 {

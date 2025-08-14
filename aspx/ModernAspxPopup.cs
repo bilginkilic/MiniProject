@@ -141,24 +141,36 @@ namespace AspxExamples
             }
         }
 
-        private void CheckSessionData(object sender, EventArgs e)
-        {
-            try
+                    private string referenceId;
+
+            public ModernAspxPopup(string aspxFileName, string refId)
             {
-                var authData = HttpContext.Current.Session["SignatureAuthData"] as SignatureAuthData;
-                if (authData != null)
+                this.referenceId = refId;
+                InitializeComponent();
+                LoadAspxContent(aspxFileName);
+            }
+
+            private void CheckSessionData(object sender, EventArgs e)
+            {
+                try
                 {
-                    // Session'da veri bulundu
-                    checkSessionTimer.Stop();
-                    this.ResultData = authData;
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
+                    // ASMX web servis çağrısı
+                    var service = new SignatureService();
+                    var response = service.GetSignature(referenceId);
+                        
+                        if (response != null)
+                        {
+                            checkSessionTimer.Stop();
+                            this.ResultData = response;
+                            this.DialogResult = DialogResult.OK;
+                            this.Close();
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Session kontrol hatası: " + ex.Message);
-            }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Web servis kontrol hatası: " + ex.Message);
+                }
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -240,7 +252,7 @@ namespace AspxExamples
             try
             {
                 string url = string.Format("PdfSignatureForm.aspx?ref={0}", circularRefNumber);
-                using (var popup = new ModernAspxPopup(url))
+                using (var popup = new ModernAspxPopup(url, circularRefNumber))
                 {
                     popup.Text = "İmza Sirkülerinden İmza Seçimi";
                     popup.Size = new Size(1280, 900);
