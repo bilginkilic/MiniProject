@@ -446,7 +446,7 @@ namespace AspxExamples
                     setTimeout(function() { window.close(); }, 1500);
                     ",
                     true);
-                }
+                
             }
             catch (Exception ex)
             {
