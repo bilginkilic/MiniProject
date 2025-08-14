@@ -786,8 +786,8 @@
                     <div class="form-row">
                         <label>YETKİLİ KONTAKT:</label>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" id="txtYetkiliKontakt" value="5000711" style="flex: 1;" />
-                            <input type="text" id="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
+                            <asp:TextBox runat="server" ID="txtYetkiliKontakt" Text="5000711" style="flex: 1;" />
+                            <asp:TextBox runat="server" ID="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
                             <button type="button" id="btnYetkiliAra" class="button secondary" style="margin: 0;">
                                 <i class="fas fa-search"></i> Ara
                             </button>
@@ -795,20 +795,20 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ GRUBU:</label>
-                        <select id="selYetkiGrubu" name="selYetkiGrubu">
-                            <option>A Grubu</option>
-                            <option>B Grubu</option>
-                            <option>C Grubu</option>
-                            <option>D Grubu</option>
-                            <option>E Grubu</option>
-                            <option>F Grubu</option>
-                            <option>G Grubu</option>
-                        </select>
+                        <asp:DropDownList runat="server" ID="selYetkiGrubu">
+                            <asp:ListItem Text="A Grubu" Value="A Grubu" />
+                            <asp:ListItem Text="B Grubu" Value="B Grubu" />
+                            <asp:ListItem Text="C Grubu" Value="C Grubu" />
+                            <asp:ListItem Text="D Grubu" Value="D Grubu" />
+                            <asp:ListItem Text="E Grubu" Value="E Grubu" />
+                            <asp:ListItem Text="F Grubu" Value="F Grubu" />
+                            <asp:ListItem Text="G Grubu" Value="G Grubu" />
+                        </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label for="txtYetkiTutari">YETKİ TUTARI:</label>
-                        <input type="number" id="txtYetkiTutari" name="txtYetkiTutari" value="1000000" 
-                               step="0.01" min="0" 
+                        <asp:TextBox runat="server" ID="txtYetkiTutari" Text="1000000" 
+                               TextMode="Number" step="0.01" min="0"
                                onkeypress="return isNumberKey(event)"
                                onpaste="return validatePaste(event)"
                                oninput="validateDecimalPlaces(this, 2)"
@@ -817,15 +817,13 @@
                     <div class="form-row">
                         <label>YETKİ BİTİŞ TARİHİ:</label>
                         <div class="date-input">
-                            <input type="date" 
-                                   id="yetkiBitisTarihi" 
-                                   name="yetkiBitisTarihi" 
-                                   class="form-control"
+                            <asp:TextBox runat="server" ID="yetkiBitisTarihi" 
+                                   TextMode="Date"
+                                   CssClass="form-control"
                                    min="2024-01-01" 
                                    max="2030-12-31" />
                             <div style="display: flex; align-items: center; margin-left: 10px;">
-                                <input type="checkbox" 
-                                       id="chkAksiKarar" 
+                                <asp:CheckBox runat="server" ID="chkAksiKarar" 
                                        style="margin-right: 5px;" 
                                        onchange="handleAksiKararChange(this)" />
                                 <label for="chkAksiKarar" style="font-weight: normal;">Aksi Karara Kadar</label>
@@ -834,35 +832,35 @@
                     </div>
                     <div class="form-row">
                         <label>SINIRLI YETKİ DETAYLARI:</label>
-                        <textarea id="txtSinirliYetkiDetaylari" name="txtSinirliYetkiDetaylari" rows="3" style="resize: vertical; min-height: 60px;"></textarea>
+                        <asp:TextBox runat="server" ID="txtSinirliYetkiDetaylari" TextMode="MultiLine" Rows="3" style="resize: vertical; min-height: 60px;" />
                     </div>
                     <div class="form-row">
                         <label>YETKİ DÖVİZ CİNSİ:</label>
-                        <select id="selYetkiDovizCinsi" name="selYetkiDovizCinsi">
-                            <option>USD</option>
-                            <option>EUR</option>
-                        </select>
+                        <asp:DropDownList runat="server" ID="selYetkiDovizCinsi">
+                            <asp:ListItem Text="USD" Value="USD" />
+                            <asp:ListItem Text="EUR" Value="EUR" />
+                        </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label>YETKİ ŞEKLİ:</label>
-                        <select id="selYetkiSekli" name="selYetkiSekli">
-                            <option>Müştereken</option> 
-                            <option>Müştereken1</option>
-                        </select>
+                        <asp:DropDownList runat="server" ID="selYetkiSekli">
+                            <asp:ListItem Text="Müştereken" Value="Müştereken" />
+                            <asp:ListItem Text="Müştereken1" Value="Müştereken1" />
+                        </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label>YETKİ TÜRLERİ:</label>
-                        <select id="selYetkiTurleri" name="selYetkiTurleri">
-                            <option>Kredi İşlemleri, Hazine İşlemleri</option>
-                            <option>Kredi İşlemleri2, Hazine İşlemleri1</option>
-                        </select>
+                        <asp:DropDownList runat="server" ID="selYetkiTurleri">
+                            <asp:ListItem Text="Kredi İşlemleri, Hazine İşlemleri" Value="Kredi İşlemleri, Hazine İşlemleri" />
+                            <asp:ListItem Text="Kredi İşlemleri2, Hazine İşlemleri1" Value="Kredi İşlemleri2, Hazine İşlemleri1" />
+                        </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DURUMU:</label>
-                        <select id="selYetkiDurumu" name="selYetkiDurumu">
-                            <option>Aktif</option>  
-                            <option>Pasif</option>
-                        </select>
+                        <asp:DropDownList runat="server" ID="selYetkiDurumu">
+                            <asp:ListItem Text="Aktif" Value="Aktif" />
+                            <asp:ListItem Text="Pasif" Value="Pasif" />
+                        </asp:DropDownList>
                     </div>
                 </div>
 
@@ -1476,8 +1474,10 @@
                     }
                 });
                 
-                // Enable/disable save button based on selections
-                btnSave.disabled = selectedSignatures.length === 0;
+                // Enable save button - grid'de data varsa her zaman aktif olmalı
+                const tbody = document.querySelector('.auth-details-table tbody');
+                const hasGridData = tbody && tbody.children.length > 0;
+                btnSave.disabled = false; // Grid'de data varsa veya imza seçilmişse aktif
             }
 
             function deleteSignature(index, event) {
