@@ -557,7 +557,88 @@
     </form>
 
     <script type="text/javascript">
-        // JavaScript functions will go here
+        // Global variables
+        let currentView = 'list';
+        let notificationTimeout;
+
+        // View Management
+        function switchView(view) {
+            const listView = document.getElementById('listView');
+            const detailView = document.getElementById('detailView');
+            const hdnCurrentView = document.getElementById('<%= hdnCurrentView.ClientID %>');
+            
+            if (!listView || !detailView || !hdnCurrentView) {
+                console.error('Required elements not found');
+                return;
+            }
+
+            try {
+                if (view === 'list') {
+                    listView.style.display = 'block';
+                    detailView.style.display = 'none';
+                } else if (view === 'detail') {
+                    listView.style.display = 'none';
+                    detailView.style.display = 'block';
+                }
+                
+                hdnCurrentView.value = view;
+                currentView = view;
+            } catch (err) {
+                console.error('Error switching view:', err);
+                showNotification('Görünüm değiştirme sırasında hata oluştu', 'error');
+            }
+        }
+
+        // Notification System
+        function showNotification(message, type = 'info', duration = 5000) {
+            try {
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                
+                if (!notification || !notificationMessage) {
+                    console.error('Notification elements not found');
+                    return;
+                }
+
+                // Clear any existing timeout
+                if (notificationTimeout) {
+                    clearTimeout(notificationTimeout);
+                }
+
+                // Reset classes and add new ones
+                notification.className = 'notification';
+                notification.classList.add(type);
+                notification.classList.add('show');
+                
+                // Set message
+                notificationMessage.textContent = message;
+
+                // Auto hide after duration
+                if (duration > 0) {
+                    notificationTimeout = setTimeout(() => {
+                        hideNotification();
+                    }, duration);
+                }
+            } catch (err) {
+                console.error('Error showing notification:', err);
+            }
+        }
+
+        function hideNotification() {
+            try {
+                const notification = document.getElementById('notification');
+                if (notification) {
+                    notification.classList.remove('show');
+                }
+                if (notificationTimeout) {
+                    clearTimeout(notificationTimeout);
+                }
+            } catch (err) {
+                console.error('Error hiding notification:', err);
+            }
+        }
+
+        // Loading Management
         function showLoading(message) {
             document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('loadingMessage').textContent = message || 'İşlem yapılıyor...';
@@ -597,11 +678,33 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            const currentView = document.getElementById('<%= hdnCurrentView.ClientID %>').value;
-            switchView(currentView);
+            try {
+                // Initialize view
+                const viewValue = document.getElementById('<%= hdnCurrentView.ClientID %>').value;
+                switchView(viewValue || 'list');
 
-            // Initialize signature selection
-            initializeSignatureSelection();
+                // Initialize notification system
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notificationMessage');
+                if (!notification || !notificationMessage) {
+                    console.error('Notification elements not found during initialization');
+                }
+
+                // Initialize loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const loadingMessage = document.getElementById('loadingMessage');
+                if (!loadingOverlay || !loadingMessage) {
+                    console.error('Loading overlay elements not found during initialization');
+                }
+
+                // Initialize signature selection
+                initializeSignatureSelection();
+
+                console.log('Page initialized successfully');
+            } catch (err) {
+                console.error('Error during page initialization:', err);
+                showNotification('Sayfa başlatılırken hata oluştu', 'error');
+            }
         });
 
         // Signature selection functionality
