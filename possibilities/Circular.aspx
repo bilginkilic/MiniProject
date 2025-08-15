@@ -402,16 +402,14 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
         }
 
         .modal.show {
             display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         .modal-content {
@@ -426,26 +424,40 @@
         }
 
         .modal-header {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid #dee2e6;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: #f8f9fa;
         }
 
         .modal-header h2 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
             color: #333;
+            font-weight: 600;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: #666;
             padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(0,0,0,0.1);
+            color: #333;
         }
 
         .modal-body {
@@ -721,145 +733,13 @@
 
         <!-- Signature and Auth Modal -->
         <div id="signatureAuthModal" class="modal">
-            <div class="modal-content">
+            <div class="modal-content" style="width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0;">
                 <div class="modal-header">
                     <h2>İmza Seçimi ve Yetkili Listesi</h2>
                     <button type="button" class="modal-close" onclick="closeSignatureModal()">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <!-- Tabs -->
-                    <div class="modal-tabs">
-                        <button type="button" class="modal-tab active" data-tab="signatures">İmza Seçimi</button>
-                        <button type="button" class="modal-tab" data-tab="auth">Yetkili Listesi</button>
-                    </div>
-
-                    <!-- Signature Selection Tab -->
-                    <div class="modal-tab-content active" id="signaturesTab">
-                        <div class="upload-panel">
-                            <div class="instructions">
-                                <strong>Nasıl Kullanılır:</strong>
-                                <ol>
-                                    <li>PDF dosyasını yükleyin</li>
-                                    <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
-                                    <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
-                                </ol>
-                            </div>
-                            <asp:FileUpload ID="fuSignature" runat="server" />
-                            <asp:Button ID="btnUploadSignature" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUploadSignature_Click" />
-                        </div>
-
-                        <div id="imageContainer" runat="server" class="image-container">
-                            <div class="tabs" id="pageTabs">
-                                <!-- Tabs will be added here dynamically -->
-                            </div>
-                            <div id="pageContents">
-                                <!-- Tab contents will be added here dynamically -->
-                            </div>
-                        </div>
-
-                        <div class="selected-signatures">
-                            <h3>Seçilen İmzalar</h3>
-                            <div class="signature-slots">
-                                <div class="signature-slot" data-slot="1">
-                                    <div class="slot-placeholder">İmza 1</div>
-                                    <div class="slot-image"></div>
-                                    <button type="button" class="delete-signature" style="display: none;">Sil</button>
-                                </div>
-                                <div class="signature-slot" data-slot="2">
-                                    <div class="slot-placeholder">İmza 2</div>
-                                    <div class="slot-image"></div>
-                                    <button type="button" class="delete-signature" style="display: none;">Sil</button>
-                                </div>
-                                <div class="signature-slot" data-slot="3">
-                                    <div class="slot-placeholder">İmza 3</div>
-                                    <div class="slot-image"></div>
-                                    <button type="button" class="delete-signature" style="display: none;">Sil</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Auth List Tab -->
-                    <div class="modal-tab-content" id="authTab">
-                        <div class="auth-form">
-                            <div class="form-grid">
-                                <div class="form-row">
-                                    <label>YETKİLİ KONTAKT:</label>
-                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                        <asp:TextBox runat="server" ID="txtYetkiliKontakt" Text="5000711" style="flex: 1;" />
-                                        <asp:TextBox runat="server" ID="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
-                                        <button type="button" id="btnYetkiliAra" class="button secondary" style="margin: 0;">
-                                            <i class="fas fa-search"></i> Ara
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <label>YETKİ GRUBU:</label>
-                                    <asp:DropDownList runat="server" ID="selYetkiGrubu">
-                                        <asp:ListItem Text="A Grubu" Value="A Grubu" />
-                                        <asp:ListItem Text="B Grubu" Value="B Grubu" />
-                                        <asp:ListItem Text="C Grubu" Value="C Grubu" />
-                                    </asp:DropDownList>
-                                </div>
-                                <div class="form-row">
-                                    <label>YETKİ TUTARI:</label>
-                                    <asp:TextBox runat="server" ID="txtYetkiTutari" Text="1000000" 
-                                           TextMode="Number" step="0.01" min="0" />
-                                </div>
-                                <div class="form-row">
-                                    <label>YETKİ BİTİŞ TARİHİ:</label>
-                                    <div class="date-input">
-                                        <asp:TextBox runat="server" ID="yetkiBitisTarihi" 
-                                               TextMode="Date"
-                                               CssClass="form-control"
-                                               min="2024-01-01" 
-                                               max="2030-12-31" />
-                                        <div style="display: flex; align-items: center; margin-left: 10px;">
-                                            <asp:CheckBox runat="server" ID="chkAksiKarar" 
-                                                   style="margin-right: 5px;" 
-                                                   onchange="handleAksiKararChange(this)" />
-                                            <label for="chkAksiKarar" style="font-weight: normal;">Aksi Karara Kadar</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="auth-actions">
-                                <button type="button" id="btnEkle" class="button">
-                                    <i class="fas fa-plus"></i> Ekle
-                                </button>
-                                <button type="button" id="btnSil" class="button secondary">
-                                    <i class="fas fa-trash"></i> Sil
-                                </button>
-                            </div>
-
-                            <table class="auth-details-table">
-                                <thead>
-                                    <tr>
-                                        <th>Yetkili Kont. No</th>
-                                        <th>Yetkili Adı Soyadı</th>
-                                        <th>Yetki Şekli</th>
-                                        <th>Yetki Süresi</th>
-                                        <th>Yetki Bitiş Tarihi</th>
-                                        <th>İmza Yetki Grubu</th>
-                                        <th>İmza Örneği 1</th>
-                                        <th>İmza Örneği 2</th>
-                                        <th>İmza Örneği 3</th>
-                                        <th>Yetki Tutarı</th>
-                                        <th>Yetki Döv.</th>
-                                        <th>Durum</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Yetkili kayıtları buraya dinamik olarak eklenecek -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="button primary" onclick="saveSignatureAndAuth()">Kaydet ve Kapat</button>
-                    <button type="button" class="button secondary" onclick="closeSignatureModal()">İptal</button>
+                <div class="modal-body" style="flex: 1; padding: 0;">
+                    <iframe id="signatureFrame" style="width: 100%; height: 100%; border: none;"></iframe>
                 </div>
             </div>
         </div>
@@ -894,49 +774,83 @@
         // Modal Management
         function openSignatureModal() {
             const modal = document.getElementById('signatureAuthModal');
-            if (modal) {
+            const iframe = document.getElementById('signatureFrame');
+            if (modal && iframe) {
+                // Get current sirkuler ref from session
+                const currentSirkulerRef = '<%= Session["CurrentSirkulerRef"] %>';
+                
+                // Set iframe src with ref parameter
+                iframe.src = 'PdfSignatureForm.aspx' + (currentSirkulerRef ? '?ref=' + currentSirkulerRef : '');
+                
                 modal.classList.add('show');
+                
+                // Listen for messages from iframe
+                window.addEventListener('message', handleSignatureMessage);
             }
         }
 
         function closeSignatureModal() {
             const modal = document.getElementById('signatureAuthModal');
+            const iframe = document.getElementById('signatureFrame');
             if (modal) {
                 modal.classList.remove('show');
+                if (iframe) {
+                    iframe.src = 'about:blank';
+                }
+                // Remove message listener
+                window.removeEventListener('message', handleSignatureMessage);
             }
         }
 
-        function saveSignatureAndAuth() {
+        function handleSignatureMessage(event) {
             try {
-                // Get selected signatures and auth data
-                const selectedSignatures = JSON.parse(document.getElementById('<%= hdnSelectedSignatures.ClientID %>').value || '[]');
+                // Verify message origin
+                if (event.origin !== window.location.origin) return;
                 
-                // Update preview
-                updateSignaturePreview(selectedSignatures);
-                
-                // Close modal
-                closeSignatureModal();
-                
-                // Show success message
-                showNotification('İmza ve yetkili bilgileri kaydedildi', 'success');
+                const data = event.data;
+                if (data.type === 'SIGNATURE_SAVED') {
+                    if (data.success) {
+                        // Update preview with received data
+                        updateSignaturePreview(data.data);
+                        
+                        // Close modal
+                        closeSignatureModal();
+                        
+                        // Show success message
+                        showNotification('İmza ve yetkili bilgileri kaydedildi', 'success');
+                    } else {
+                        showNotification('Kayıt sırasında hata oluştu: ' + (data.error || 'Bilinmeyen hata'), 'error');
+                    }
+                }
             } catch (err) {
-                console.error('Error saving signature and auth:', err);
-                showNotification('Kayıt sırasında hata oluştu', 'error');
+                console.error('Error handling signature message:', err);
+                showNotification('İşlem sırasında hata oluştu', 'error');
             }
         }
 
-        function updateSignaturePreview(signatures) {
-            const previewGrid = document.querySelector('.preview-grid');
-            if (!previewGrid) return;
+        function updateSignaturePreview(data) {
+            try {
+                const previewGrid = document.querySelector('.preview-grid');
+                if (!previewGrid) return;
 
-            previewGrid.innerHTML = '';
-            
-            signatures.forEach((sig, index) => {
-                const preview = document.createElement('div');
-                preview.className = 'signature-preview';
-                preview.style.backgroundImage = `url(${sig.image})`;
-                previewGrid.appendChild(preview);
-            });
+                previewGrid.innerHTML = '';
+                
+                if (data && data.gridState && data.gridState.current) {
+                    data.gridState.current.forEach(record => {
+                        if (record.Imzalar && record.Imzalar.length > 0) {
+                            record.Imzalar.forEach(imza => {
+                                const preview = document.createElement('div');
+                                preview.className = 'signature-preview';
+                                preview.style.backgroundImage = `url(${imza.ImageData})`;
+                                preview.title = `${record.YetkiliAdi} - İmza ${imza.SiraNo}`;
+                                previewGrid.appendChild(preview);
+                            });
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error updating signature preview:', err);
+            }
         }
 
         // Tab Management
