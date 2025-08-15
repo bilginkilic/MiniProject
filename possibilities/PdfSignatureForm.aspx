@@ -1695,6 +1695,46 @@
             // Silinen handleFormSubmit fonksiyonu ve tekrar eden kod
             }
 
+            // Grid state tracking
+            let gridState = {
+                added: [],
+                updated: [],
+                deleted: [],
+                current: []
+            };
+
+            function getRowData(row) {
+                const signaturePreviews = Array.from(row.querySelectorAll('.signature-preview'))
+                    .map(preview => preview.style.backgroundImage)
+                    .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
+
+                return {
+                    yetkiliKontakt: row.cells[0].textContent,
+                    yetkiliAdi: row.cells[1].textContent,
+                    yetkiSekli: row.cells[2].textContent,
+                    yetkiTarihi: row.cells[3].textContent,
+                    yetkiBitisTarihi: row.cells[4].textContent,
+                    yetkiGrubu: row.cells[5].textContent,
+                    sinirliYetkiDetaylari: row.cells[6].textContent,
+                    yetkiTurleri: row.cells[7].textContent,
+                    imzalar: signaturePreviews,
+                    yetkiTutari: row.cells[11].textContent,
+                    yetkiDovizCinsi: row.cells[12].textContent,
+                    yetkiDurumu: row.cells[13].textContent
+                };
+            }
+
+            function trackDeletedRow(rowData) {
+                gridState.deleted.push(rowData);
+            }
+
+            function updateGridState() {
+                const tbody = document.querySelector('.auth-details-table tbody');
+                if (!tbody) return;
+
+                gridState.current = Array.from(tbody.rows).map(row => getRowData(row));
+            }
+
             function handleDelete() {
                 try {
                     if(!selectedRow) {
@@ -1702,9 +1742,22 @@
                     }
 
                     if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
+                        // Store deleted row data before removing
+                        const deletedRowData = getRowData(selectedRow);
+                        trackDeletedRow(deletedRowData);
+
                         selectedRow.remove();
                         clearForm();
                         showNotification('Kayıt silindi', 'success');
+
+                        // Enable save button after grid operation
+                        const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                        if (btnSave) {
+                            btnSave.disabled = false;
+                        }
+
+                        // Update grid state tracking
+                        updateGridState();
                     }
                 } catch (err) {
                     console.error('Silme işlemi hatası:', err);
@@ -1851,6 +1904,15 @@
                         });
                     }
 
+                    // Enable save button after grid operation
+                    const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                    }
+
+                    // Update grid state tracking
+                    updateGridState();
+
                     // Yetkili kayıtlarını güncelle
                     updateYetkiliKayitlar();
                 } catch (err) {
@@ -1941,55 +2003,70 @@
             }
 
             function addTableRow(data) {
-                const tbody = document.querySelector('.auth-details-table tbody');
-                if (!tbody) return null;
-                const row = tbody.insertRow(0);
-                const allCells = [
-                    data.yetkiliKontakt || '',
-                    data.yetkiliAdi || '',
-                    document.getElementById('selYetkiSekli').value || 'Müştereken',
-                    data.yetkiTarihi || '',
-                    data.yetkiTarihi || '',
-                    document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                    document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                    document.getElementById('selYetkiTurleri').value || ''
-                ];
+                try {
+                    const tbody = document.querySelector('.auth-details-table tbody');
+                    if (!tbody) return null;
+                    const row = tbody.insertRow(0);
+                    const allCells = [
+                        data.yetkiliKontakt || '',
+                        data.yetkiliAdi || '',
+                        document.getElementById('selYetkiSekli').value || 'Müştereken',
+                        data.yetkiTarihi || '',
+                        data.yetkiTarihi || '',
+                        document.getElementById('selYetkiGrubu').value || 'A Grubu',
+                        document.getElementById('txtSinirliYetkiDetaylari').value || '',
+                        document.getElementById('selYetkiTurleri').value || ''
+                    ];
 
-                // Temel hücreleri ekle
-                allCells.forEach(cellData => {
-                    const cell = row.insertCell();
-                    cell.textContent = cellData;
-                });
+                    // Temel hücreleri ekle
+                    allCells.forEach(cellData => {
+                        const cell = row.insertCell();
+                        cell.textContent = cellData;
+                    });
 
-                // İmza hücreleri
-                for(let i = 0; i < 3; i++) {
-                    const cell = row.insertCell();
-                    const signaturePreview = document.createElement('div');
-                    signaturePreview.className = 'signature-preview';
-                    if(data.imzalar && data.imzalar[i]) {
-                        signaturePreview.style.backgroundImage = data.imzalar[i];
+                    // İmza hücreleri
+                    for(let i = 0; i < 3; i++) {
+                        const cell = row.insertCell();
+                        const signaturePreview = document.createElement('div');
+                        signaturePreview.className = 'signature-preview';
+                        if(data.imzalar && data.imzalar[i]) {
+                            signaturePreview.style.backgroundImage = data.imzalar[i];
+                        }
+                        cell.appendChild(signaturePreview);
                     }
-                    cell.appendChild(signaturePreview);
+
+                    // Son hücreleri ekle
+                    [
+                        document.getElementById('txtYetkiTutari').value || '100.000',
+                        document.getElementById('selYetkiDovizCinsi').value || 'USD',
+                        document.getElementById('selYetkiDurumu').value || 'Aktif'
+                    ].forEach(text => {
+                        const cell = row.insertCell();
+                        cell.textContent = text;
+                    });
+
+                    // Event listener'ları ekle
+                    row.addEventListener('dblclick', () => handleRowDoubleClick(row));
+                    row.addEventListener('click', () => selectRow(row));
+
+                    // Enable save button after grid operation
+                    const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                    }
+
+                    // Update grid state tracking
+                    updateGridState();
+
+                    // Yetkili kayıtlarını güncelle
+                    updateYetkiliKayitlar();
+
+                    return row;
+                } catch (err) {
+                    console.error('Satır ekleme hatası:', err);
+                    showNotification(err.message || 'Satır eklenirken bir hata oluştu', 'error');
+                    return null;
                 }
-
-                // Son hücreleri ekle
-                [
-                    document.getElementById('txtYetkiTutari').value || '100.000',
-                    document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                    document.getElementById('selYetkiDurumu').value || 'Aktif'
-                ].forEach(text => {
-                    const cell = row.insertCell();
-                    cell.textContent = text;
-                });
-
-                // Event listener'ları ekle
-                row.addEventListener('dblclick', () => handleRowDoubleClick(row));
-                row.addEventListener('click', () => selectRow(row));
-
-                // Yetkili kayıtlarını güncelle
-                updateYetkiliKayitlar();
-
-                return row;
             }
 
             function handleAddUpdate() {
@@ -2198,42 +2275,39 @@
 
             function saveSignature() {
                 try {
-                    // Validate signatures
-                    if (selectedSignatures.length === 0) {
-                        throw { code: 'VALIDATION_ERROR', message: 'Lütfen en az bir imza seçin' };
-                    }
+                    showLoading('Veriler kaydediliyor...');
 
-                    // Validate each signature
-                    for (const signature of selectedSignatures) {
-                        if (!Validator.isValidSignature(signature)) {
-                            throw { code: 'VALIDATION_ERROR', message: 'Geçersiz imza formatı' };
-                        }
-                    }
+                    // Get current grid state
+                    updateGridState();
                     
-                    showLoading('İmzalar kaydediliyor...');
-                    
-                    // Disable save button
-                    const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
-                    if (btnSave) {
-                        btnSave.disabled = true;
-                    }
+                    // Prepare data for transfer
+                    const transferData = {
+                        gridState: {
+                            current: gridState.current,
+                            deleted: gridState.deleted
+                        },
+                        timestamp: new Date().getTime()
+                    };
 
-                    // Create FormData and add signatures
+                    // Create FormData and add grid state
                     const formData = new FormData();
                     
-                    // Add ASP.NET form data securely
+                    // Add ASP.NET form data
                     formData.append('__VIEWSTATE', document.getElementById('__VIEWSTATE').value);
                     formData.append('__VIEWSTATEGENERATOR', document.getElementById('__VIEWSTATEGENERATOR').value);
                     formData.append('__EVENTVALIDATION', document.getElementById('__EVENTVALIDATION').value);
                     formData.append('__EVENTTARGET', '<%= btnSaveSignature.UniqueID %>');
                     
-                    // Add signatures with sanitization
-                    formData.append('hdnSignatures', JSON.stringify(selectedSignatures));
+                    // Add grid state data
+                    formData.append('gridState', JSON.stringify({
+                        current: gridState.current,
+                        deleted: gridState.deleted
+                    }));
                     
                     // Add CSRF token
                     SecurityManager.addCsrfToFormData(formData);
                 
-                    // Modern AJAX call using fetch
+                    // Send data to server
                     fetch(window.location.href, {
                         method: 'POST',
                         body: formData,
@@ -2248,17 +2322,17 @@
                                 message: `HTTP error! status: ${response.status}`
                             };
                         }
-                        return response.text().then(text => {
-                            try {
-                                return JSON.parse(text);
-                            } catch (e) {
-                                console.error('JSON parse error:', e);
-                                throw { 
-                                    code: 'PARSE_ERROR', 
-                                    message: 'Server yanıtı JSON formatında değil'
-                                };
-                            }
-                        });
+                        return response.text();
+                    })
+                    .then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            throw { 
+                                code: 'PARSE_ERROR', 
+                                message: 'Server yanıtı JSON formatında değil'
+                            };
+                        }
                     })
                     .then(data => {
                         if (!data.success) {
@@ -2268,14 +2342,32 @@
                             };
                         }
                         
-                        showNotification('İmzalar başarıyla kaydedildi', 'success');
+                        showNotification('Veriler başarıyla kaydedildi', 'success');
                         
-                        // ModernAspxPopup'a veri gönder
+                        // Send data to opener window using multiple methods
                         if (window.opener && !window.opener.closed) {
-                            window.opener.postMessage({ type: 'SIGNATURE_SAVED', success: true }, '*');
+                            // 1. PostMessage for immediate update
+                            window.opener.postMessage({
+                                type: 'SIGNATURE_SAVED',
+                                success: true,
+                                data: transferData
+                            }, '*');
+                            
+                            // 2. Store in sessionStorage as backup
+                            try {
+                                sessionStorage.setItem('SIGNATURE_DATA', JSON.stringify(transferData));
+                            } catch (err) {
+                                console.warn('SessionStorage save failed:', err);
+                            }
+                            
+                            // 3. Set hidden field value
+                            const hdnTransferData = document.getElementById('<%= hdnSignatures.ClientID %>');
+                            if (hdnTransferData) {
+                                hdnTransferData.value = JSON.stringify(transferData);
+                            }
                         }
                         
-                        // Session'da veri varsa kapat
+                        // Close window after delay
                         setTimeout(() => {
                             try {
                                 window.close();
@@ -2286,7 +2378,6 @@
                     })
                     .catch(error => {
                         ErrorHandler.handle(error, 'saveSignature');
-                        if (btnSave) btnSave.disabled = false;
                     })
                     .finally(() => {
                         hideLoading();
@@ -2295,7 +2386,6 @@
                     return false;
                 } catch (error) {
                     ErrorHandler.handle(error, 'saveSignature');
-                    if (btnSave) btnSave.disabled = false;
                     hideLoading();
                     return false;
                 }
