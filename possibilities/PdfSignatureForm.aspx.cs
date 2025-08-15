@@ -114,9 +114,9 @@ namespace AspxExamples
         {
             try
             {
-                if (fileUpload.HasFile)
+                if (fuSignature.HasFile)
                 {
-                    string fileName = Path.GetFileName(fileUpload.FileName);
+                    string fileName = Path.GetFileName(fuSignature.FileName);
                     if (Path.GetExtension(fileName).ToLower() != ".pdf")
                     {
                         ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.", true);
@@ -127,7 +127,7 @@ namespace AspxExamples
                     CleanupOldFiles();
 
                     string pdfPath = Path.Combine(_cdn, fileName);
-                    fileUpload.SaveAs(pdfPath);
+                    fuSignature.SaveAs(pdfPath);
                     Session["LastUploadedPdf"] = pdfPath;
 
                     // PDF'i hemen göster

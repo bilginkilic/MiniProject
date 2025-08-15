@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: yutkus metaxOldddccxac --%>
+<%-- Created: yutkus metastazx --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -743,18 +743,18 @@
                     <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
                 </div>
 
-                <div class="upload-panel">
-                    <div class="instructions">
-                        <strong>Nasıl Kullanılır:</strong>
-                        <ol>
-                            <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
-                            <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
-                            <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
-                        </ol>
-                    </div>
-                    <asp:FileUpload ID="fileUpload" runat="server" />
-                    <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
-                    <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
+                                    <div class="upload-panel">
+                        <div class="instructions">
+                            <strong>Nasıl Kullanılır:</strong>
+                            <ol>
+                                <li>Listeden bir PDF seçin veya yeni bir PDF yükleyin</li>
+                                <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
+                                <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
+                            </ol>
+                        </div>
+                        <asp:FileUpload ID="fuSignature" runat="server" accept=".pdf" />
+                        <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
+                        <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
                 </div>
 
                 <!-- Selected Signatures Container -->
