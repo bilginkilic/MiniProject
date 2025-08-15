@@ -346,55 +346,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Image Selection Styles */
-        .image-container {
-            position: relative;
-            margin-top: 20px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            overflow: hidden;
-        }
 
-        .image-wrapper {
-            width: 100%;
-            height: 500px;
-            overflow: auto;
-            background: #f8f9fa;
-        }
-
-        .image-wrapper img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .selection-box {
-            position: absolute;
-            border: 2px solid #dc3545;
-            background-color: rgba(220,53,69,0.1);
-            pointer-events: none;
-            display: none;
-        }
-
-        /* Tab Styles */
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .tab.active {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-        }
 
         /* Modal Styles */
         .modal {
@@ -1085,74 +1037,7 @@
             }
         });
 
-        // Signature selection functionality
-        let isSelecting = false;
-        let startX, startY;
-        let selectionBox = document.querySelector('.selection-box');
 
-        function initializeSignatureSelection() {
-            const imageWrapper = document.querySelector('.image-wrapper');
-            if (!imageWrapper) return;
-
-            imageWrapper.addEventListener('mousedown', startSelection);
-            document.addEventListener('mousemove', updateSelection);
-            document.addEventListener('mouseup', endSelection);
-        }
-
-        function startSelection(e) {
-            isSelecting = true;
-            const rect = e.target.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
-
-            selectionBox.style.left = startX + 'px';
-            selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0';
-            selectionBox.style.height = '0';
-            selectionBox.style.display = 'block';
-        }
-
-        function updateSelection(e) {
-            if (!isSelecting) return;
-
-            const rect = document.querySelector('.image-wrapper').getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-
-            const width = Math.abs(currentX - startX);
-            const height = Math.abs(currentY - startY);
-            const left = Math.min(currentX, startX);
-            const top = Math.min(currentY, startY);
-
-            selectionBox.style.left = left + 'px';
-            selectionBox.style.top = top + 'px';
-            selectionBox.style.width = width + 'px';
-            selectionBox.style.height = height + 'px';
-        }
-
-        function endSelection(e) {
-            if (!isSelecting) return;
-            isSelecting = false;
-
-            // Save selection coordinates
-            const selection = {
-                left: parseInt(selectionBox.style.left),
-                top: parseInt(selectionBox.style.top),
-                width: parseInt(selectionBox.style.width),
-                height: parseInt(selectionBox.style.height)
-            };
-
-            document.getElementById('<%= hdnSelectedSignatures.ClientID %>').value = JSON.stringify(selection);
-        }
-
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                // TODO: Switch signature page
-            });
-        });
     </script>
 </body>
 </html>
