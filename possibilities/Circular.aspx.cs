@@ -9,7 +9,7 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-
+//metx
 namespace AspxExamples
 {
     public partial class Circular : System.Web.UI.Page
@@ -31,17 +31,33 @@ namespace AspxExamples
                 DataTable dt = new DataTable();
                 dt.Columns.AddRange(new DataColumn[]
                 {
+                    new DataColumn("Detail", typeof(string)),
+                    new DataColumn("SirkulerRef", typeof(string)),
                     new DataColumn("MusteriNo", typeof(string)),
                     new DataColumn("FirmaUnvani", typeof(string)),
                     new DataColumn("DuzenlemeTarihi", typeof(DateTime)),
                     new DataColumn("GecerlilikTarihi", typeof(DateTime)),
                     new DataColumn("SirkulerTipi", typeof(string)),
-                    new DataColumn("SirkulerNoter", typeof(string)),
-                    new DataColumn("Durum", typeof(string))
+                    new DataColumn("SirkulerNoterNo", typeof(string)),
+                    new DataColumn("OzelDurumlar", typeof(string)),
+                    new DataColumn("SirkulerDurumu", typeof(string)),
+                    new DataColumn("SirkulerBelge", typeof(string))
                 });
 
                 // Add sample data
-                dt.Rows.Add("1001", "Test Firma A.Ş.", DateTime.Now, DateTime.Now.AddYears(1), "Ana Sirküler", "123456", "Aktif");
+                dt.Rows.Add(
+                    "Detail",                                  // Detail
+                    "IS-285",                                 // SirkulerRef
+                    "316",                                    // MusteriNo
+                    "NIPPIT OTABAATE A.A.",                  // FirmaUnvani
+                    DateTime.Parse("05/09/2019"),             // DuzenlemeTarihi
+                    DateTime.Parse("14/07/2025"),             // GecerlilikTarihi
+                    "Ana Sirküler",                          // SirkulerTipi
+                    "03104",                                 // SirkulerNoterNo
+                    "Birinci Grup imza yetkililerinden bir kişinin veya, İkinci Grup imza yetkililerinden bir kişinin imzası yeterlidir", // OzelDurumlar
+                    "Aktif",                                 // SirkulerDurumu
+                    "Görüntüle"                             // SirkulerBelge
+                );
                 
                 gvCirculars.DataSource = dt;
                 gvCirculars.DataBind();
