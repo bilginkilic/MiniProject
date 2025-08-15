@@ -1,4 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Circular.aspx.cs" Inherits="AspxExamples.Circular" %>
+<%-- Created: 2024.01.17 14:30 - v1 --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -15,7 +16,7 @@
             width: 100%;
             height: 100%;
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
         }
 
         .main-container {
@@ -28,7 +29,7 @@
 
         /* List View Styles */
         .list-view {
-            background: white;
+            background: #fff0f0;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -56,7 +57,7 @@
         }
 
         .circular-grid th {
-            background: #f8f9fa;
+            background: #fff;
             font-weight: 500;
         }
 
@@ -68,7 +69,7 @@
         /* Detail View Styles */
         .detail-view {
             display: none;
-            background: white;
+            background: #fff0f0;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -145,7 +146,7 @@
         .signature-container {
             margin-top: 20px;
             padding: 20px;
-            background: #f8f9fa;
+            background: #fff;
             border-radius: 8px;
             border: 1px solid #ddd;
         }
@@ -251,7 +252,7 @@
 
         .tab {
             padding: 10px 20px;
-            background: #f8f9fa;
+            background: #fff;
             border: 1px solid #ddd;
             border-radius: 4px;
             cursor: pointer;
