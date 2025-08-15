@@ -29,7 +29,7 @@
 
         /* List View Styles */
         .list-view {
-            background: #fff0f0;
+            background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -40,7 +40,75 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 15px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-panel {
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 20px;
+            border-radius: 6px;
             margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            color: #495057;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .date-range {
+            flex: 2;
+        }
+
+        .date-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-inputs .form-control {
+            flex: 1;
+        }
+
+        .date-inputs span {
+            color: #666;
+            font-weight: 500;
         }
 
         .circular-grid {
@@ -57,8 +125,13 @@
         }
 
         .circular-grid th {
-            background: #fff;
-            font-weight: 500;
+            background: #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
         }
 
         .circular-grid tr:hover {
@@ -69,7 +142,7 @@
         /* Detail View Styles */
         .detail-view {
             display: none;
-            background: #fff0f0;
+            background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -286,30 +359,94 @@
             <!-- List View -->
             <div id="listView" class="list-view">
                 <div class="list-header">
-                    <h2>Sirküler Listesi</h2>
-                    <asp:Button ID="btnNewCircular" runat="server" Text="Yeni Sirküler" CssClass="button primary" OnClick="BtnNewCircular_Click" />
+                    <h2>Sirküler Durumu</h2>
+                    <div class="toolbar">
+                        <asp:Button ID="btnExcel" runat="server" Text="Excel" CssClass="button secondary" OnClick="BtnExcel_Click" />
+                        <asp:Button ID="btnNewCircular" runat="server" Text="Yeni Sirküler" CssClass="button primary" OnClick="BtnNewCircular_Click" />
+                    </div>
+                </div>
+
+                <div class="filter-panel">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Sirküler Durumu:</label>
+                            <asp:DropDownList ID="ddlFilterDurum" runat="server" CssClass="form-control">
+                                <asp:ListItem Text="Seçiniz" Value="" />
+                                <asp:ListItem Text="Aktif" Value="Aktif" />
+                                <asp:ListItem Text="Pasif" Value="Pasif" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-group">
+                            <label>Müşteri No:</label>
+                            <asp:TextBox ID="txtFilterMusteriNo" runat="server" CssClass="form-control" />
+                        </div>
+                        <div class="filter-group">
+                            <label>Sirküler Ref:</label>
+                            <asp:TextBox ID="txtFilterSirkulerRef" runat="server" CssClass="form-control" />
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Yetki Türleri:</label>
+                            <asp:DropDownList ID="ddlFilterYetkiTurleri" runat="server" CssClass="form-control">
+                                <asp:ListItem Text="Kredi İşlemleri" Value="Kredi İşlemleri" />
+                                <asp:ListItem Text="Hazine İşlemleri" Value="Hazine İşlemleri" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-group">
+                            <label>Yetki Şekli:</label>
+                            <asp:DropDownList ID="ddlFilterYetkiSekli" runat="server" CssClass="form-control">
+                                <asp:ListItem Text="Müştereken" Value="Müştereken" />
+                                <asp:ListItem Text="Münferiden" Value="Münferiden" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-group date-range">
+                            <label>Düzenleme Tarihi:</label>
+                            <div class="date-inputs">
+                                <asp:TextBox ID="txtFilterDuzenlemeTarihiBaslangic" runat="server" TextMode="Date" CssClass="form-control" />
+                                <span>-</span>
+                                <asp:TextBox ID="txtFilterDuzenlemeTarihiBitis" runat="server" TextMode="Date" CssClass="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group date-range">
+                            <label>Geçerlilik Tarihi:</label>
+                            <div class="date-inputs">
+                                <asp:TextBox ID="txtFilterGecerlilikTarihiBaslangic" runat="server" TextMode="Date" CssClass="form-control" />
+                                <span>-</span>
+                                <asp:TextBox ID="txtFilterGecerlilikTarihiBitis" runat="server" TextMode="Date" CssClass="form-control" />
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label>Sirküler Tipi:</label>
+                            <asp:DropDownList ID="ddlFilterSirkulerTipi" runat="server" CssClass="form-control">
+                                <asp:ListItem Text="Ana Sirküler" Value="Ana Sirküler" />
+                                <asp:ListItem Text="Ek Sirküler" Value="Ek Sirküler" />
+                            </asp:DropDownList>
+                        </div>
+                    </div>
                 </div>
 
                 <asp:GridView ID="gvCirculars" runat="server" CssClass="circular-grid" AutoGenerateColumns="false" 
                     OnRowCommand="GvCirculars_RowCommand" OnRowDataBound="GvCirculars_RowDataBound">
                     <Columns>
-                        <asp:BoundField DataField="MusteriNo" HeaderText="Müşteri No" />
-                        <asp:BoundField DataField="FirmaUnvani" HeaderText="Firma Ünvanı" />
-                        <asp:BoundField DataField="DuzenlemeTarihi" HeaderText="Düzenleme Tarihi" />
-                        <asp:BoundField DataField="GecerlilikTarihi" HeaderText="Geçerlilik Tarihi" />
-                        <asp:BoundField DataField="SirkulerTipi" HeaderText="Sirküler Tipi" />
-                        <asp:BoundField DataField="SirkulerNoter" HeaderText="Sirküler Noter No" />
-                        <asp:BoundField DataField="Durum" HeaderText="Durum" />
-                        <asp:TemplateField HeaderText="İşlemler">
+                        <asp:TemplateField HeaderText="Detail" ItemStyle-Width="50px">
                             <ItemTemplate>
-                                <asp:LinkButton ID="lnkEdit" runat="server" CommandName="EditCircular" 
-                                    CommandArgument='<%# Container.DataItemIndex %>' Text="Düzenle" />
-                                |
-                                <asp:LinkButton ID="lnkDelete" runat="server" CommandName="DeleteCircular" 
-                                    CommandArgument='<%# Container.DataItemIndex %>' Text="Sil" 
-                                    OnClientClick="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');" />
+                                <asp:LinkButton ID="lnkDetail" runat="server" CommandName="Detail" 
+                                    CommandArgument='<%# Container.DataItemIndex %>' Text="Detail" />
                             </ItemTemplate>
                         </asp:TemplateField>
+                        <asp:BoundField DataField="SirkulerRef" HeaderText="Sirküler Ref." />
+                        <asp:BoundField DataField="MusteriNo" HeaderText="Müşteri No" />
+                        <asp:BoundField DataField="FirmaUnvani" HeaderText="Firma Ünvanı" />
+                        <asp:BoundField DataField="DuzenlemeTarihi" HeaderText="Düzenleme Tarihi" DataFormatString="{0:dd/MM/yyyy}" />
+                        <asp:BoundField DataField="GecerlilikTarihi" HeaderText="Geçerlilik Tarihi" DataFormatString="{0:dd/MM/yyyy}" />
+                        <asp:BoundField DataField="SirkulerTipi" HeaderText="Sirküler Tipi" />
+                        <asp:BoundField DataField="SirkulerNoterNo" HeaderText="Sirküler Noter No" />
+                        <asp:BoundField DataField="OzelDurumlar" HeaderText="Özel Durumlar" />
+                        <asp:BoundField DataField="SirkulerDurumu" HeaderText="Sirküler Durumu" />
+                        <asp:BoundField DataField="SirkulerBelge" HeaderText="Sirküler Belge" />
                     </Columns>
                 </asp:GridView>
             </div>
