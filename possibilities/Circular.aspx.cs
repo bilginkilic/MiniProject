@@ -1,3 +1,4 @@
+// Created: 2024.01.17 14:30 - v1
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -48,7 +49,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 // Log error
-                ShowError("Sirküler listesi yüklenirken hata oluştu: " + ex.Message);
+                ShowError(string.Format("Sirküler listesi yüklenirken hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -91,7 +92,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError("Kayıt sırasında hata oluştu: " + ex.Message);
+                ShowError(string.Format("Kayıt sırasında hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -129,7 +130,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError("İşlem sırasında hata oluştu: " + ex.Message);
+                ShowError(string.Format("İşlem sırasında hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -173,7 +174,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError("Dosya yükleme sırasında hata oluştu: " + ex.Message);
+                ShowError(string.Format("Dosya yükleme sırasında hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -211,13 +212,13 @@ namespace AspxExamples
         private void ShowError(string message)
         {
             ScriptManager.RegisterStartupScript(this, GetType(), "showError", 
-                $"showNotification('{message}', 'error');", true);
+                string.Format("showNotification('{0}', 'error');", message), true);
         }
 
         private void ShowSuccess(string message)
         {
             ScriptManager.RegisterStartupScript(this, GetType(), "showSuccess", 
-                $"showNotification('{message}', 'success');", true);
+                string.Format("showNotification('{0}', 'success');", message), true);
         }
     }
 }
