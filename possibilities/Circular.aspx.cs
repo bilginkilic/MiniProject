@@ -220,5 +220,116 @@ namespace AspxExamples
             ScriptManager.RegisterStartupScript(this, GetType(), "showSuccess", 
                 string.Format("showNotification('{0}', 'success');", message), true);
         }
+
+        protected void BtnExcel_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Get filtered data
+                DataTable dt = GetFilteredData();
+
+                // Create Excel file
+                using (var workbook = new System.Web.UI.WebControls.GridView())
+                {
+                    workbook.DataSource = dt;
+                    workbook.DataBind();
+
+                    // Configure response
+                    Response.Clear();
+                    Response.Buffer = true;
+                    Response.AddHeader("content-disposition", "attachment;filename=Sirkuler_Listesi.xls");
+                    Response.Charset = "";
+                    Response.ContentType = "application/vnd.ms-excel";
+                    Response.ContentEncoding = System.Text.Encoding.UTF8;
+                    Response.BinaryWrite(System.Text.Encoding.UTF8.GetPreamble());
+
+                    // Create StringWriter
+                    using (StringWriter sw = new StringWriter())
+                    {
+                        using (HtmlTextWriter htw = new HtmlTextWriter(sw))
+                        {
+                            // Add Excel styling
+                            Response.Write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />");
+                            Response.Write("<style>td { mso-number-format:\\@; } </style>");
+
+                            // Render grid to Excel
+                            workbook.RenderControl(htw);
+                            Response.Write(sw.ToString());
+                            Response.Flush();
+                            Response.End();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(string.Format("Excel dosyası oluşturulurken hata oluştu: {0}", ex.Message));
+            }
+        }
+
+        private DataTable GetFilteredData()
+        {
+            DataTable dt = new DataTable();
+
+            try
+            {
+                // Add columns
+                dt.Columns.AddRange(new DataColumn[]
+                {
+                    new DataColumn("SirkulerRef", typeof(string)),
+                    new DataColumn("MusteriNo", typeof(string)),
+                    new DataColumn("FirmaUnvani", typeof(string)),
+                    new DataColumn("DuzenlemeTarihi", typeof(DateTime)),
+                    new DataColumn("GecerlilikTarihi", typeof(DateTime)),
+                    new DataColumn("SirkulerTipi", typeof(string)),
+                    new DataColumn("SirkulerNoterNo", typeof(string)),
+                    new DataColumn("OzelDurumlar", typeof(string)),
+                    new DataColumn("SirkulerDurumu", typeof(string)),
+                    new DataColumn("YetkiTurleri", typeof(string)),
+                    new DataColumn("YetkiSekli", typeof(string))
+                });
+
+                // TODO: Get actual data from database with filters
+                // For now, adding sample data
+                dt.Rows.Add(
+                    "IS-285",
+                    "316",
+                    "NIPPIT OTABAATE A.A.",
+                    DateTime.Parse("05/09/2019"),
+                    DateTime.Parse("14/07/2025"),
+                    "Ana Sirküler",
+                    "03104",
+                    "Birinci Grup imza yetkililerinden bir kişinin veya, İkinci Grup imza yetkililerinden bir kişinin imzası yeterlidir",
+                    "Aktif",
+                    "Kredi İşlemleri",
+                    "Müştereken"
+                );
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(txtFilterMusteriNo.Text))
+                {
+                    string musteriNo = txtFilterMusteriNo.Text.Trim();
+                    dt.DefaultView.RowFilter = string.Format("MusteriNo LIKE '%{0}%'", musteriNo);
+                }
+
+                if (!string.IsNullOrEmpty(txtFilterSirkulerRef.Text))
+                {
+                    string sirkulerRef = txtFilterSirkulerRef.Text.Trim();
+                    string currentFilter = dt.DefaultView.RowFilter;
+                    dt.DefaultView.RowFilter = string.IsNullOrEmpty(currentFilter) 
+                        ? string.Format("SirkulerRef LIKE '%{0}%'", sirkulerRef)
+                        : string.Format("{0} AND SirkulerRef LIKE '%{1}%'", currentFilter, sirkulerRef);
+                }
+
+                // Add more filters as needed...
+
+                return dt.DefaultView.ToTable();
+            }
+            catch (Exception ex)
+            {
+                ShowError(string.Format("Veri filtrelenirken hata oluştu: {0}", ex.Message));
+                return dt;
+            }
+        }
     }
 }
