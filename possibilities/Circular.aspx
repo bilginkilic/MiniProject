@@ -580,20 +580,125 @@
                 <!-- Signature Selection Area -->
                 <div class="signature-container">
                     <h3>İmza Seçimi</h3>
-                    <div class="image-container">
-                        <div class="tabs">
-                            <div class="tab active" data-page="1">Sayfa 1</div>
-                            <div class="tab" data-page="2">Sayfa 2</div>
+                    <div class="upload-panel">
+                        <div class="instructions">
+                            <strong>Nasıl Kullanılır:</strong>
+                            <ol>
+                                <li>PDF dosyasını yükleyin</li>
+                                <li>Mouse ile imza alanını seçin (en fazla 3 imza seçebilirsiniz)</li>
+                                <li>Seçimleri tamamladığınızda "Seçilen İmzaları Kaydet" butonuna tıklayın</li>
+                            </ol>
                         </div>
-                        <div class="image-wrapper">
-                            <asp:Image ID="imgSignature" runat="server" />
-                            <div class="selection-box"></div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 20px;">
                         <asp:FileUpload ID="fuSignature" runat="server" />
-                        <asp:Button ID="btnUploadSignature" runat="server" Text="Yükle" CssClass="button secondary" OnClick="BtnUploadSignature_Click" />
+                        <asp:Button ID="btnUploadSignature" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUploadSignature_Click" />
                     </div>
+
+                    <div id="imageContainer" runat="server" class="image-container">
+                        <div class="tabs" id="pageTabs">
+                            <!-- Tabs will be added here dynamically -->
+                        </div>
+                        <div id="pageContents">
+                            <!-- Tab contents will be added here dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Selected Signatures Container -->
+                    <div class="selected-signatures">
+                        <h3>Seçilen İmzalar</h3>
+                        <div class="signature-slots">
+                            <div class="signature-slot" data-slot="1">
+                                <div class="slot-placeholder">İmza 1</div>
+                                <div class="slot-image"></div>
+                                <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                            </div>
+                            <div class="signature-slot" data-slot="2">
+                                <div class="slot-placeholder">İmza 2</div>
+                                <div class="slot-image"></div>
+                                <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                            </div>
+                            <div class="signature-slot" data-slot="3">
+                                <div class="slot-placeholder">İmza 3</div>
+                                <div class="slot-image"></div>
+                                <button type="button" class="delete-signature" style="display: none;">Sil</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auth Details -->
+                <div class="auth-details">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>YETKİLİ KONTAKT:</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <asp:TextBox runat="server" ID="txtYetkiliKontakt" Text="5000711" style="flex: 1;" />
+                                <asp:TextBox runat="server" ID="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
+                                <button type="button" id="btnYetkiliAra" class="button secondary" style="margin: 0;">
+                                    <i class="fas fa-search"></i> Ara
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label>YETKİ GRUBU:</label>
+                            <asp:DropDownList runat="server" ID="selYetkiGrubu">
+                                <asp:ListItem Text="A Grubu" Value="A Grubu" />
+                                <asp:ListItem Text="B Grubu" Value="B Grubu" />
+                                <asp:ListItem Text="C Grubu" Value="C Grubu" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="form-row">
+                            <label>YETKİ TUTARI:</label>
+                            <asp:TextBox runat="server" ID="txtYetkiTutari" Text="1000000" 
+                                   TextMode="Number" step="0.01" min="0" />
+                        </div>
+                        <div class="form-row">
+                            <label>YETKİ BİTİŞ TARİHİ:</label>
+                            <div class="date-input">
+                                <asp:TextBox runat="server" ID="yetkiBitisTarihi" 
+                                       TextMode="Date"
+                                       CssClass="form-control"
+                                       min="2024-01-01" 
+                                       max="2030-12-31" />
+                                <div style="display: flex; align-items: center; margin-left: 10px;">
+                                    <asp:CheckBox runat="server" ID="chkAksiKarar" 
+                                           style="margin-right: 5px;" 
+                                           onchange="handleAksiKararChange(this)" />
+                                    <label for="chkAksiKarar" style="font-weight: normal;">Aksi Karara Kadar</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
+                        <button type="button" id="btnEkle" class="button">
+                            <i class="fas fa-plus"></i> Ekle
+                        </button>
+                        <button type="button" id="btnSil" class="button secondary">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+
+                    <table class="auth-details-table">
+                        <thead>
+                            <tr>
+                                <th>Yetkili Kont. No</th>
+                                <th>Yetkili Adı Soyadı</th>
+                                <th>Yetki Şekli</th>
+                                <th>Yetki Süresi</th>
+                                <th>Yetki Bitiş Tarihi</th>
+                                <th>İmza Yetki Grubu</th>
+                                <th>İmza Örneği 1</th>
+                                <th>İmza Örneği 2</th>
+                                <th>İmza Örneği 3</th>
+                                <th>Yetki Tutarı</th>
+                                <th>Yetki Döv.</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Yetkili kayıtları buraya dinamik olarak eklenecek -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -620,9 +725,40 @@
     </form>
 
     <script type="text/javascript">
-        // Global variables
-        let currentView = 'list';
-        let notificationTimeout;
+        // Global variables and functions
+        var currentView = 'list';
+        var notificationTimeout;
+        var switchView;
+
+        // Initialize all global functions
+        (function initializeGlobalFunctions() {
+            switchView = function(view) {
+                try {
+                    const listView = document.getElementById('listView');
+                    const detailView = document.getElementById('detailView');
+                    const hdnCurrentView = document.getElementById('<%= hdnCurrentView.ClientID %>');
+                    
+                    if (!listView || !detailView || !hdnCurrentView) {
+                        console.error('Required elements not found');
+                        return;
+                    }
+
+                    if (view === 'list') {
+                        listView.style.display = 'block';
+                        detailView.style.display = 'none';
+                    } else if (view === 'detail') {
+                        listView.style.display = 'none';
+                        detailView.style.display = 'block';
+                    }
+                    
+                    hdnCurrentView.value = view;
+                    currentView = view;
+                } catch (err) {
+                    console.error('Error switching view:', err);
+                    showNotification('Görünüm değiştirme sırasında hata oluştu', 'error');
+                }
+            };
+        })();
 
         // View Management
         function switchView(view) {

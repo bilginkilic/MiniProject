@@ -50,8 +50,8 @@ namespace AspxExamples
                     "IS-285",                                 // SirkulerRef
                     "316",                                    // MusteriNo
                     "NIPPIT OTABAATE A.A.",                  // FirmaUnvani
-                    DateTime.Parse("05/09/2019"),             // DuzenlemeTarihi
-                    DateTime.Parse("14/07/2025"),             // GecerlilikTarihi
+                    new DateTime(2025, 08, 15),             // DuzenlemeTarihi
+                    new DateTime(2025, 08, 15),             // GecerlilikTarihi
                     "Ana Sirküler",                          // SirkulerTipi
                     "03104",                                 // SirkulerNoterNo
                     "Birinci Grup imza yetkililerinden bir kişinin veya, İkinci Grup imza yetkililerinden bir kişinin imzası yeterlidir", // OzelDurumlar
@@ -78,10 +78,19 @@ namespace AspxExamples
 
         protected void BtnNewCircular_Click(object sender, EventArgs e)
         {
-            ClearForm();
-            InitializeForm();
-            hdnCurrentView.Value = "detail";
-            ScriptManager.RegisterStartupScript(this, GetType(), "switchView", "switchView('detail');", true);
+            try
+            {
+                ClearForm();
+                InitializeForm();
+                Session["CurrentSirkulerRef"] = null; // Clear current sirkuler ref
+                hdnCurrentView.Value = "detail";
+                ScriptManager.RegisterStartupScript(this, GetType(), "switchView", "switchView('detail');", true);
+                ShowSuccess("Yeni sirküler formu açıldı");
+            }
+            catch (Exception ex)
+            {
+                ShowError(string.Format("Yeni sirküler formu açılırken hata oluştu: {0}", ex.Message));
+            }
         }
 
         protected void BtnSave_Click(object sender, EventArgs e)
@@ -126,12 +135,21 @@ namespace AspxExamples
                 int index = Convert.ToInt32(e.CommandArgument);
                 GridViewRow row = gvCirculars.Rows[index];
 
-                if (e.CommandName == "EditCircular")
+                if (e.CommandName == "Detail")
                 {
                     // Load data into form
-                    txtMusteriNo.Text = row.Cells[0].Text;
-                    txtFirmaUnvani.Text = row.Cells[1].Text;
-                    // ... load other fields
+                    // Load data into form
+                    txtMusteriNo.Text = row.Cells[2].Text; // MusteriNo
+                    txtFirmaUnvani.Text = row.Cells[3].Text; // FirmaUnvani
+                    txtDuzenlemeTarihi.Text = DateTime.Parse(row.Cells[4].Text).ToString("yyyy-MM-dd"); // DuzenlemeTarihi
+                    txtGecerlilikTarihi.Text = DateTime.Parse(row.Cells[5].Text).ToString("yyyy-MM-dd"); // GecerlilikTarihi
+                    ddlSirkulerTipi.SelectedValue = row.Cells[6].Text; // SirkulerTipi
+                    txtSirkulerNoterNo.Text = row.Cells[7].Text; // SirkulerNoterNo
+                    txtOzelDurumlar.Text = row.Cells[8].Text; // OzelDurumlar
+                    ddlSirkulerDurumu.SelectedValue = row.Cells[9].Text; // SirkulerDurumu
+
+                    // Store current sirkuler ref for signature operations
+                    Session["CurrentSirkulerRef"] = row.Cells[1].Text; // SirkulerRef
 
                     // Switch to detail view
                     hdnCurrentView.Value = "detail";
