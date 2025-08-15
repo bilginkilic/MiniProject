@@ -246,10 +246,69 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             display: none;
             z-index: 1000;
+            min-width: 300px;
+            max-width: 500px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
         }
 
         .notification.show {
+            transform: translateX(0);
             display: block;
+        }
+
+        .notification.success {
+            border-left: 4px solid #28a745;
+            background-color: #f0fff4;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc3545;
+            background-color: #fff5f5;
+        }
+
+        .notification.info {
+            border-left: 4px solid #17a2b8;
+            background-color: #f0f9ff;
+        }
+
+        .notification.warning {
+            border-left: 4px solid #ffc107;
+            background-color: #fffbeb;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .notification-message {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 18px;
+            color: #666;
+            background: none;
+            border: none;
+            opacity: 0.7;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
         }
 
         /* Loading Overlay */
@@ -549,7 +608,11 @@
 
         <!-- Notification -->
         <div id="notification" class="notification">
-            <span id="notificationMessage"></span>
+            <button type="button" class="notification-close" onclick="hideNotification()">&times;</button>
+            <div class="notification-content">
+                <div class="notification-icon"></div>
+                <div id="notificationMessage" class="notification-message"></div>
+            </div>
         </div>
 
         <asp:HiddenField ID="hdnCurrentView" runat="server" Value="list" />
@@ -590,38 +653,74 @@
         }
 
         // Notification System
-        function showNotification(message, type = 'info', duration = 5000) {
-            try {
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notificationMessage');
-                
-                if (!notification || !notificationMessage) {
-                    console.error('Notification elements not found');
-                    return;
-                }
+        var notificationSystem = {
+            icons: {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            },
+            show: function(message, type = 'info', duration = 5000) {
+                try {
+                    const notification = document.getElementById('notification');
+                    const notificationMessage = document.getElementById('notificationMessage');
+                    const notificationIcon = notification.querySelector('.notification-icon');
+                    
+                    if (!notification || !notificationMessage || !notificationIcon) {
+                        console.error('Notification elements not found');
+                        return;
+                    }
 
-                // Clear any existing timeout
-                if (notificationTimeout) {
-                    clearTimeout(notificationTimeout);
-                }
+                    // Clear any existing timeout
+                    if (window.notificationTimeout) {
+                        clearTimeout(window.notificationTimeout);
+                    }
 
-                // Reset classes and add new ones
-                notification.className = 'notification';
-                notification.classList.add(type);
-                notification.classList.add('show');
-                
-                // Set message
-                notificationMessage.textContent = message;
+                    // Reset classes and add new ones
+                    notification.className = 'notification';
+                    notification.classList.add(type);
 
-                // Auto hide after duration
-                if (duration > 0) {
-                    notificationTimeout = setTimeout(() => {
-                        hideNotification();
-                    }, duration);
+                    // Set icon and message
+                    notificationIcon.textContent = this.icons[type] || this.icons.info;
+                    notificationMessage.textContent = message;
+
+                    // Show notification with animation
+                    requestAnimationFrame(() => {
+                        notification.classList.add('show');
+                    });
+
+                    // Auto hide after duration
+                    if (duration > 0) {
+                        window.notificationTimeout = setTimeout(() => {
+                            this.hide();
+                        }, duration);
+                    }
+                } catch (err) {
+                    console.error('Error showing notification:', err);
                 }
-            } catch (err) {
-                console.error('Error showing notification:', err);
+            },
+            hide: function() {
+                try {
+                    const notification = document.getElementById('notification');
+                    if (notification) {
+                        notification.classList.remove('show');
+                    }
+                    if (window.notificationTimeout) {
+                        clearTimeout(window.notificationTimeout);
+                    }
+                } catch (err) {
+                    console.error('Error hiding notification:', err);
+                }
             }
+        };
+
+        // Global notification functions
+        function showNotification(message, type = 'info', duration = 5000) {
+            notificationSystem.show(message, type, duration);
+        }
+
+        function hideNotification() {
+            notificationSystem.hide();
         }
 
         function hideNotification() {
