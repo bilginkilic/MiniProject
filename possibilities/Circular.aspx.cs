@@ -1,19 +1,105 @@
 // Created: 2024.01.17 14:30 - v1
 using System;
+using System.Drawing;
+using System.IO;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Data;
-using System.IO;
-using System.Drawing;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-//metx
+using System.Web.Script.Serialization;
+
+namespace AspxExamples
+{
+    public class SignatureData
+    {
+        public int Page { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public string Image { get; set; }
+        public string SourcePdfPath { get; set; }
+    }
+
+    public class SavedSignature
+    {
+        public string Path { get; set; }
+        public int Page { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
+
+    public class YetkiliImza
+    {
+        public string Base64Image { get; set; }
+        public int SlotIndex { get; set; }
+    }
+
+    public class YetkiliKayit
+    {
+        public string YetkiliKontakt { get; set; }
+        public string YetkiliAdi { get; set; }
+        public string YetkiSekli { get; set; }
+        public string YetkiTarihi { get; set; }
+        public bool AksiKararaKadar { get; set; }
+        public string SinirliYetkiDetaylari { get; set; }
+        public string YetkiTurleri { get; set; }
+        public List<YetkiliImza> Imzalar { get; set; }
+        public string YetkiTutari { get; set; }
+        public string YetkiDovizCinsi { get; set; }
+        public string YetkiDurumu { get; set; }
+        public string IslemTipi { get; set; } // "Ekle", "Guncelle", "Sil"
+    }
+
+    public class YetkiliKayitResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public string Error { get; set; }
+        public YetkiliKayit Data { get; set; }
+    }
+
+    public class SignatureAuthData
+    {
+        public string KaynakPdfAdi { get; set; }
+        public List<YetkiliData> Yetkililer { get; set; }
+    }
+
+    public class YetkiliData
+    {
+        public string YetkiliKontakt { get; set; }
+        public string YetkiliAdi { get; set; }
+        public string YetkiSekli { get; set; }
+        public string YetkiTarihi { get; set; }
+        public string YetkiBitisTarihi { get; set; }
+        public string YetkiGrubu { get; set; }
+        public string SinirliYetkiDetaylari { get; set; }
+        public string YetkiTurleri { get; set; }
+        public decimal YetkiTutari { get; set; }
+        public string YetkiDovizCinsi { get; set; }
+        public string YetkiDurumu { get; set; }
+        public List<SignatureImage> Imzalar { get; set; }
+    }
+
+    public class SignatureImage
+    {
+        public string ImageData { get; set; }
+        public int SiraNo { get; set; }
+        public string SourcePdfPath { get; set; }
+    }
+
 namespace AspxExamples
 {
     public partial class Circular : System.Web.UI.Page
     {
+        private string _cdn = @"\\trrgap3027\files\circular\cdn";
+        private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
@@ -183,46 +269,304 @@ namespace AspxExamples
                 if (fuSignature.HasFile)
                 {
                     string fileName = Path.GetFileName(fuSignature.FileName);
-                    string extension = Path.GetExtension(fileName).ToLower();
-
-                    // Validate file type
-                    if (extension != ".pdf")
+                    if (Path.GetExtension(fileName).ToLower() != ".pdf")
                     {
-                        ShowError("Lütfen sadece PDF dosyası yükleyin.");
+                        ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.", true);
                         return;
                     }
 
-                    // Save file and convert to images
-                    string filePath = Server.MapPath("~/Uploads/") + fileName;
-                    fuSignature.SaveAs(filePath);
+                    // Önceki dosyaları temizle
+                    CleanupOldFiles();
 
-                    // Convert PDF to images using PdfToImageAndCrop
-                    ConvertPdfToImages(filePath);
+                    string pdfPath = Path.Combine(_cdn, fileName);
+                    fuSignature.SaveAs(pdfPath);
+                    Session["LastUploadedPdf"] = pdfPath;
 
-                    ShowSuccess("Dosya başarıyla yüklendi.");
+                    // PDF'i hemen göster
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü başlıyor. PDF yolu: {0}", pdfPath));
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü: {0}", _cdn));
+                        
+                        // PDF'yi PNG'ye çevir
+                        int pageCount = PdfToImageAndCrop.ConvertPdfToImages(pdfPath, _cdn);
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü tamamlandı. Sayfa sayısı: {0}", pageCount));
+
+                        // Her sayfanın oluşturulduğunu kontrol et ve base64'e çevir
+                        var imageDataList = new System.Collections.Generic.List<string>();
+                        bool allPagesExist = true;
+
+                        for (int i = 1; i <= pageCount; i++)
+                        {
+                            string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
+                            if (!File.Exists(imagePath))
+                            {
+                                System.Diagnostics.Debug.WriteLine(String.Format("Sayfa bulunamadı: {0}", imagePath));
+                                allPagesExist = false;
+                                break;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    using (var image = System.Drawing.Image.FromFile(imagePath))
+                                    using (var ms = new MemoryStream())
+                                    {
+                                        image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                        byte[] imageBytes = ms.ToArray();
+                                        string base64String = Convert.ToBase64String(imageBytes);
+                                        imageDataList.Add(String.Format("data:image/png;base64,{0}", base64String));
+                                        
+                                        System.Diagnostics.Debug.WriteLine(String.Format("Sayfa {0} base64'e çevrildi, Boyut: {1} bytes", i, imageBytes.Length));
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine(String.Format("Base64 dönüşüm hatası: {0}", ex.Message));
+                                    allPagesExist = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!allPagesExist)
+                        {
+                            ShowError("PDF sayfaları dönüştürülürken bir hata oluştu. Lütfen tekrar deneyiniz.");
+                            return;
+                        }
+
+                        // Sayfa sayısını hidden field'a kaydet
+                        hdnPageCount.Value = pageCount.ToString();
+                        
+                        // JavaScript'e sayfa sayısını ve resim verilerini gönder
+                        var imageDataJson = String.Format("[{0}]", String.Join(",", imageDataList.Select(x => String.Format("'{0}'", x))));
+                        
+                        ScriptManager.RegisterStartupScript(this, GetType(),
+                            "initTabs",
+                            String.Format("var imageDataList = {0}; console.log('Image data loaded, count:', {1}); initializeTabs({1});", 
+                                imageDataJson, pageCount),
+                            true);
+
+                        ShowMessage("İmza sirküleri yüklendi ve görüntüleniyor. İmza alanını seçmek için tıklayıp sürükleyin.", "success");
+                        btnSaveSignature.Enabled = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(String.Format("PDF dönüşümü hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
+                        ShowError(String.Format("İmza sirkülerini görüntülerken bir hata oluştu: {0}", ex.Message));
+                    }
                 }
                 else
                 {
-                    ShowError("Lütfen bir dosya seçin.");
+                    ShowError("Lütfen bir PDF dosyası seçiniz.");
                 }
             }
             catch (Exception ex)
             {
-                ShowError(string.Format("Dosya yükleme sırasında hata oluştu: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine(String.Format("Dosya yükleme hatası: {0}", ex.Message));
+                ShowError(String.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
-        private void ConvertPdfToImages(string pdfPath)
+        private void CleanupOldFiles()
         {
-            // TODO: Implement PDF to image conversion using PdfToImageAndCrop class
+            try
+            {
+                // Tüm PNG dosyalarını temizle
+                foreach (string file in Directory.GetFiles(_cdn, "*.png"))
+                {
+                    try { File.Delete(file); } catch { }
+                }
+
+                // Tüm PDF dosyalarını temizle
+                foreach (string file in Directory.GetFiles(_cdn, "*.pdf"))
+                {
+                    try { File.Delete(file); } catch { }
+                }
+
+                System.Diagnostics.Debug.WriteLine("Eski dosyalar temizlendi");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(String.Format("Dosya temizleme hatası: {0}", ex.Message));
+            }
         }
 
         private void SaveSignatureSelections()
         {
-            string selections = hdnSelectedSignatures.Value;
-            if (!string.IsNullOrEmpty(selections))
+            try
             {
-                // TODO: Process and save signature selections
+                // Form verilerini topla
+                var authData = new SignatureAuthData
+                {
+                    KaynakPdfAdi = hdnCurrentPdfList.Value,
+                    Yetkililer = new List<YetkiliData>()
+                };
+
+                // Tablodaki tüm yetkilileri al
+                var yetkiliKayitJson = Request.Form["hdnYetkiliKayitlar"];
+                if (!string.IsNullOrEmpty(yetkiliKayitJson))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
+
+                    foreach (var kayit in yetkiliKayitlar)
+                    {
+                        var yetkiliData = new YetkiliData
+                        {
+                            YetkiliKontakt = kayit.YetkiliKontakt,
+                            YetkiliAdi = kayit.YetkiliAdi,
+                            YetkiSekli = kayit.YetkiSekli,
+                            YetkiTarihi = kayit.YetkiTarihi,
+                            YetkiBitisTarihi = kayit.AksiKararaKadar ? "Aksi Karara Kadar" : kayit.YetkiTarihi,
+                            YetkiGrubu = kayit.YetkiSekli,
+                            SinirliYetkiDetaylari = kayit.SinirliYetkiDetaylari,
+                            YetkiTurleri = kayit.YetkiTurleri,
+                            YetkiTutari = decimal.Parse(kayit.YetkiTutari),
+                            YetkiDovizCinsi = kayit.YetkiDovizCinsi,
+                            YetkiDurumu = kayit.YetkiDurumu,
+                            Imzalar = new List<SignatureImage>()
+                        };
+                        authData.Yetkililer.Add(yetkiliData);
+                    }
+                }
+
+                string signaturesJson = Request.Form["hdnSignatures"];
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza verileri alındı: {0}", signaturesJson));
+
+                if (string.IsNullOrEmpty(signaturesJson))
+                {
+                    ShowWarning("Lütfen en az bir imza seçiniz.", true);
+                    return;
+                }
+
+                var serializer = new JavaScriptSerializer();
+                var signatures = serializer.Deserialize<List<SignatureData>>(signaturesJson);
+
+                if (signatures == null || signatures.Count == 0)
+                {
+                    ShowError("Geçersiz imza verisi.", true);
+                    return;
+                }
+
+                var savedSignatures = new List<SavedSignature>();
+
+                foreach (var signature in signatures)
+                {
+                    string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", signature.Page));
+                    System.Diagnostics.Debug.WriteLine(String.Format("Kaynak resim yolu: {0}", imagePath));
+
+                    if (!File.Exists(imagePath))
+                    {
+                        ShowError(String.Format("Sayfa {0} için görüntü bulunamadı.", signature.Page));
+                        continue;
+                    }
+
+                    using (var sourceImage = new System.Drawing.Bitmap(imagePath))
+                    {
+                        if (signature.X < 0 || signature.Y < 0 || 
+                            signature.X + signature.Width > sourceImage.Width || 
+                            signature.Y + signature.Height > sourceImage.Height)
+                        {
+                            ShowError(String.Format("Sayfa {0} için seçilen alan resim sınırları dışında.", signature.Page));
+                            continue;
+                        }
+
+                        string outputFileName = String.Format("signature_{0}_{1}.png", DateTime.Now.Ticks, signatures.IndexOf(signature));
+                        string outputPath = Path.Combine(_cdn, outputFileName);
+
+                        try
+                        {
+                            using (var bitmap = new System.Drawing.Bitmap(signature.Width, signature.Height))
+                            {
+                                bitmap.SetResolution(sourceImage.HorizontalResolution, sourceImage.VerticalResolution);
+
+                                using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
+                                {
+                                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                    graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                                    var sourceRect = new System.Drawing.Rectangle(signature.X, signature.Y, signature.Width, signature.Height);
+                                    var destRect = new System.Drawing.Rectangle(0, 0, signature.Width, signature.Height);
+
+                                    graphics.DrawImage(sourceImage, destRect, sourceRect, System.Drawing.GraphicsUnit.Pixel);
+                                }
+
+                                string tempPath = Path.Combine(_cdn, String.Format("temp_{0}", outputFileName));
+                                bitmap.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
+
+                                if (File.Exists(outputPath))
+                                {
+                                    File.Delete(outputPath);
+                                }
+                                File.Move(tempPath, outputPath);
+
+                                savedSignatures.Add(new SavedSignature
+                                {
+                                    Path = _cdnVirtualPath + "/" + outputFileName,
+                                    Page = signature.Page,
+                                    X = signature.X,
+                                    Y = signature.Y,
+                                    Width = signature.Width,
+                                    Height = signature.Height
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}", ex.Message));
+                            ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
+                            continue;
+                        }
+                    }
+                }
+
+                // İmzaları ilgili yetkililere ekle
+                var yetkiliImzaEslesmesi = Request.Form["hdnYetkiliImzaEslesmesi"];
+                if (!string.IsNullOrEmpty(yetkiliImzaEslesmesi))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var eslesmeler = serializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi);
+
+                    foreach (var eslesme in eslesmeler)
+                    {
+                        if (eslesme.Key < authData.Yetkililer.Count && eslesme.Value < savedSignatures.Count)
+                        {
+                            var savedSig = savedSignatures[eslesme.Value];
+                            authData.Yetkililer[eslesme.Key].Imzalar.Add(new SignatureImage
+                            {
+                                ImageData = savedSig.Path,
+                                SiraNo = authData.Yetkililer[eslesme.Key].Imzalar.Count + 1,
+                                SourcePdfPath = authData.KaynakPdfAdi
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    // Eğer eşleşme bilgisi yoksa, tüm imzaları ilk yetkiliye ekle
+                    foreach (var savedSig in savedSignatures)
+                    {
+                        if (authData.Yetkililer.Count > 0)
+                        {
+                            authData.Yetkililer[0].Imzalar.Add(new SignatureImage
+                            {
+                                ImageData = savedSig.Path,
+                                SiraNo = authData.Yetkililer[0].Imzalar.Count + 1,
+                                SourcePdfPath = authData.KaynakPdfAdi
+                            });
+                        }
+                    }
+                }
+
+                ShowSuccess("İmzalar başarıyla kaydedildi.");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
+                ShowError(String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
