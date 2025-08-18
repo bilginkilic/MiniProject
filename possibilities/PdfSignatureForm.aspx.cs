@@ -310,7 +310,7 @@ namespace AspxExamples
         }
 
         [WebMethod]
-        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        [ScriptMethod(UseHttpGet = false, ResponseFormat = ResponseFormat.Json)]
         public static object SaveSignatureWithAjax(string yetkiliKayitlarJson, string signatureDataJson)
         {
             try

@@ -993,6 +993,10 @@
                         });
                     });
 
+                    // Debug için verileri konsola yazdır
+                    console.log('Gönderilecek yetkili kayıtları:', kayitlar);
+                    console.log('Gönderilecek imza verileri:', signatures);
+
                     // Ajax ile gönder
                     $.ajax({
                         type: "POST",
@@ -1003,18 +1007,40 @@
                         }),
                         contentType: "application/json; charset=utf-8",
                         dataType: "json",
+                        beforeSend: function() {
+                            console.log('Ajax isteği gönderiliyor...');
+                            showNotification('Veriler kaydediliyor...', 'info');
+                        },
                         success: function(response) {
-                            if (response.d.success) {
-                                showNotification(response.d.message, 'success');
-                                // Başarılı olduğunda geri dön
-                                window.location.href = document.referrer || '/';
-                            } else {
-                                showNotification(response.d.error, 'error');
+                            console.log('Sunucu yanıtı:', response);
+                            try {
+                                if (response && response.d && response.d.success) {
+                                    showNotification(response.d.message, 'success');
+                                    setTimeout(function() {
+                                        window.location.href = document.referrer || '/';
+                                    }, 1000);
+                                } else {
+                                    var errorMsg = response && response.d && response.d.error ? response.d.error : 'Bilinmeyen bir hata oluştu';
+                                    showNotification(errorMsg, 'error');
+                                }
+                            } catch (err) {
+                                console.error('Yanıt işleme hatası:', err);
+                                showNotification('Sunucu yanıtı işlenirken hata oluştu', 'error');
                             }
                         },
                         error: function(xhr, status, error) {
-                            console.error('Ajax hatası:', error);
-                            showNotification('İşlem sırasında bir hata oluştu: ' + error, 'error');
+                            console.error('Ajax hatası:', {
+                                status: status,
+                                error: error,
+                                response: xhr.responseText
+                            });
+                            try {
+                                var response = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+                                var errorMsg = response && response.Message ? response.Message : error;
+                                showNotification('İşlem sırasında bir hata oluştu: ' + errorMsg, 'error');
+                            } catch (err) {
+                                showNotification('İşlem sırasında bir hata oluştu: ' + error, 'error');
+                            }
                         }
                     });
 
