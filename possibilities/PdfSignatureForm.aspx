@@ -979,23 +979,49 @@
                         kayitlar.push(kayit);
                     });
 
-                    // Hidden field'a kaydet
-                    var hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
-                    if (hdnYetkiliKayitlar) {
-                        hdnYetkiliKayitlar.value = JSON.stringify(kayitlar);
-                        console.log('Yetkili kayıtları güncellendi:', kayitlar);
-                    } else {
-                        throw new Error('hdnYetkiliKayitlar elementi bulunamadı');
-                    }
+                    // İmza verilerini al
+                    var signatures = [];
+                    $('.signature-area').each(function() {
+                        var area = $(this);
+                        signatures.push({
+                            Page: parseInt(area.data('page')),
+                            X: parseInt(area.data('x')),
+                            Y: parseInt(area.data('y')),
+                            Width: parseInt(area.data('width')),
+                            Height: parseInt(area.data('height')),
+                            Image: area.data('image')
+                        });
+                    });
 
-                    // Geri dön butonuna basıldığını belirt
-                    document.getElementById('hdnIsReturnRequested').value = 'true';
+                    // Ajax ile gönder
+                    $.ajax({
+                        type: "POST",
+                        url: "PdfSignatureForm.aspx/SaveSignatureWithAjax",
+                        data: JSON.stringify({
+                            yetkiliKayitlarJson: JSON.stringify(kayitlar),
+                            signatureDataJson: JSON.stringify(signatures)
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.d.success) {
+                                showNotification(response.d.message, 'success');
+                                // Başarılı olduğunda geri dön
+                                window.location.href = document.referrer || '/';
+                            } else {
+                                showNotification(response.d.error, 'error');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Ajax hatası:', error);
+                            showNotification('İşlem sırasında bir hata oluştu: ' + error, 'error');
+                        }
+                    });
 
-                    // Form submit
-                    return true;
+                    return false; // Form submit'i engelle
                 } catch (err) {
                     console.error('Kaydet ve geri dön hatası:', err);
-                    alert('İşlem sırasında bir hata oluştu: ' + err.message);
+                    showNotification('İşlem sırasında bir hata oluştu: ' + err.message, 'error');
                     return false;
                 }
             }
