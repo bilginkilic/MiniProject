@@ -903,9 +903,10 @@
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
                 <asp:HiddenField ID="hdnSignatures" runat="server" />
                 <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" />
+                <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
-                    CssClass="button" OnClick="BtnSaveSignature_Click" />
+                    CssClass="button" OnClick="BtnSaveSignature_Click" OnClientClick="saveAndReturn(); return false;" />
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
@@ -956,6 +957,22 @@
         </div>
 
         <script type="text/javascript">
+            function saveAndReturn() {
+                try {
+                    // Önce tablo verilerini güncelle
+                    updateYetkiliKayitlar();
+                    
+                    // Form submit işlemini gerçekleştir
+                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
+                    
+                    // Geri dön butonuna basıldığını belirt
+                    document.getElementById('hdnIsReturnRequested').value = 'true';
+                } catch (err) {
+                    console.error('Kaydet ve geri dön hatası:', err);
+                    alert('İşlem sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+                }
+            }
+
             // Global notification functions
             window.notificationTimer = null;
 
@@ -1961,7 +1978,13 @@
                     });
 
                     // Hidden field'ları güncelle
-                    document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>').value = JSON.stringify(kayitlar);
+                    var hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                    if (hdnYetkiliKayitlar) {
+                        hdnYetkiliKayitlar.value = JSON.stringify(kayitlar);
+                        console.log('Yetkili kayıtları güncellendi:', kayitlar);
+                    } else {
+                        console.error('hdnYetkiliKayitlar elementi bulunamadı');
+                    }
                     
                     // İmza eşleşmelerini güncelle
                     updateImzaEslesmesi();
