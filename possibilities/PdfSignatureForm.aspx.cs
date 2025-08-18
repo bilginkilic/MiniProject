@@ -324,8 +324,8 @@ namespace AspxExamples
                 var yetkiliKayitJson = Request.Form["hdnYetkiliKayitlar"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
                 if (!string.IsNullOrEmpty(yetkiliKayitJson))
                 {
-                    var serializer = new JavaScriptSerializer();
-                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
+                    var yetkiliKayitSerializer = new JavaScriptSerializer();
+                    var yetkiliKayitlar = yetkiliKayitSerializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
 
                     foreach (var kayit in yetkiliKayitlar)
                     {
@@ -377,8 +377,8 @@ namespace AspxExamples
                     return;
                 }
 
-                var serializer = new JavaScriptSerializer();
-                var signatures = serializer.Deserialize<List<SignatureData>>(signaturesJson);
+                var signatureSerializer = new JavaScriptSerializer();
+                var signatures = signatureSerializer.Deserialize<List<SignatureData>>(signaturesJson);
 
                 if (signatures == null || signatures.Count == 0)
                 {
@@ -465,8 +465,8 @@ namespace AspxExamples
                 var yetkiliImzaEslesmesi = Request.Form["hdnYetkiliImzaEslesmesi"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
                 if (!string.IsNullOrEmpty(yetkiliImzaEslesmesi))
                 {
-                    var serializer = new JavaScriptSerializer();
-                    var eslesmeler = serializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi); // yetkiliIndex -> imzaIndex eşleşmesi
+                    var eslesmeSerializer = new JavaScriptSerializer();
+                    var eslesmeler = eslesmeSerializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi); // yetkiliIndex -> imzaIndex eşleşmesi
 
                     foreach (var eslesme in eslesmeler)
                     {
@@ -522,12 +522,11 @@ namespace AspxExamples
                         Response.Flush();
                         HttpContext.Current.ApplicationInstance.CompleteRequest();
                     }
-                }
                 catch (Exception ex)
                 {
                     var errorResponse = new { success = false, error = ex.Message };
-                    var serializer = new JavaScriptSerializer();
-                    var jsonError = serializer.Serialize(errorResponse);
+                    var errorSerializer = new JavaScriptSerializer();
+                    var jsonError = errorSerializer.Serialize(errorResponse);
                     
                     Response.Clear();
                     Response.ContentType = "application/json";
@@ -547,8 +546,8 @@ namespace AspxExamples
                         error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
                     };
                     
-                    var serializer = new JavaScriptSerializer();
-                    var jsonError = serializer.Serialize(response);
+                    var responseSerializer = new JavaScriptSerializer();
+                    var jsonError = responseSerializer.Serialize(response);
                     Response.Clear();
                     Response.ContentType = "application/json";
                     Response.Write(jsonError);
