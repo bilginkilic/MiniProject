@@ -906,7 +906,7 @@
                 <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
-                    CssClass="button" OnClick="BtnSaveSignature_Click" OnClientClick="saveAndReturn(); return false;" />
+                    CssClass="button" OnClick="BtnSaveSignature_Click" OnClientClick="return saveAndReturn();" />
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
@@ -959,17 +959,44 @@
         <script type="text/javascript">
             function saveAndReturn() {
                 try {
-                    // Önce tablo verilerini güncelle
-                    updateYetkiliKayitlar();
-                    
-                    // Form submit işlemini gerçekleştir
-                    __doPostBack('<%= btnSaveSignature.UniqueID %>', '');
-                    
+                    // Tablodaki tüm yetkili kayıtlarını topla
+                    var kayitlar = [];
+                    $('#yetkiliTable tbody tr').each(function() {
+                        var row = $(this);
+                        var kayit = {
+                            YetkiliKontakt: row.find('.yetkiliKontakt').val(),
+                            YetkiliAdi: row.find('.yetkiliAdi').val(),
+                            YetkiSekli: row.find('.yetkiSekli').val(),
+                            YetkiTarihi: row.find('.yetkiTarihi').val(),
+                            AksiKararaKadar: row.find('.aksiKarar').prop('checked'),
+                            SinirliYetkiDetaylari: row.find('.sinirliYetkiDetaylari').val(),
+                            YetkiTurleri: row.find('.yetkiTurleri').val(),
+                            YetkiTutari: row.find('.yetkiTutari').val(),
+                            YetkiDovizCinsi: row.find('.yetkiDovizCinsi').val(),
+                            YetkiDurumu: row.find('.yetkiDurumu').val(),
+                            Imzalar: []
+                        };
+                        kayitlar.push(kayit);
+                    });
+
+                    // Hidden field'a kaydet
+                    var hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                    if (hdnYetkiliKayitlar) {
+                        hdnYetkiliKayitlar.value = JSON.stringify(kayitlar);
+                        console.log('Yetkili kayıtları güncellendi:', kayitlar);
+                    } else {
+                        throw new Error('hdnYetkiliKayitlar elementi bulunamadı');
+                    }
+
                     // Geri dön butonuna basıldığını belirt
                     document.getElementById('hdnIsReturnRequested').value = 'true';
+
+                    // Form submit
+                    return true;
                 } catch (err) {
                     console.error('Kaydet ve geri dön hatası:', err);
-                    alert('İşlem sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+                    alert('İşlem sırasında bir hata oluştu: ' + err.message);
+                    return false;
                 }
             }
 
