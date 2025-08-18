@@ -316,8 +316,22 @@ namespace AspxExamples
             try
             {
                 // Debug için gelen verileri logla
-                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson: " + yetkiliKayitlarJson);
-                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson: " + signatureDataJson);
+                System.Diagnostics.Debug.WriteLine("SaveSignatureWithAjax başladı");
+                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson uzunluğu: " + (yetkiliKayitlarJson?.Length ?? 0));
+                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson uzunluğu: " + (signatureDataJson?.Length ?? 0));
+                
+                // Gelen verileri parse etmeyi dene
+                try {
+                    var serializer = new JavaScriptSerializer();
+                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitlarJson);
+                    var signatures = serializer.Deserialize<List<SignatureData>>(signatureDataJson);
+                    
+                    System.Diagnostics.Debug.WriteLine("Yetkili kayıt sayısı: " + yetkiliKayitlar?.Count);
+                    System.Diagnostics.Debug.WriteLine("İmza sayısı: " + signatures?.Count);
+                } catch (Exception parseEx) {
+                    System.Diagnostics.Debug.WriteLine("JSON parse hatası: " + parseEx.Message);
+                    throw;
+                }
 
                 // Test amaçlı hemen başarılı yanıt dön
                 return new { success = true, message = "Veriler başarıyla kaydedildi" };

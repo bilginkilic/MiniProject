@@ -989,18 +989,27 @@
                     console.log('Gönderilecek yetkili kayıtları:', kayitlar);
                     console.log('Gönderilecek imza verileri:', signatures);
 
-                    // Test verisi
-                    var testData = {
+                    // Veriyi hazırla
+                    var requestData = {
                         yetkiliKayitlarJson: JSON.stringify(kayitlar),
-                        signatureDataJson: JSON.stringify(signatures)
+                        signatureDataJson: JSON.stringify(signatures.map(function(sig) {
+                            return {
+                                Page: sig.Page,
+                                X: sig.X,
+                                Y: sig.Y,
+                                Width: sig.Width,
+                                Height: sig.Height,
+                                Image: sig.Image
+                            };
+                        }))
                     };
-                    console.log('Gönderilecek veri:', testData);
+                    console.log('Gönderilecek veri:', requestData);
 
                     // Ajax çağrısı
                     $.ajax({
                         url: 'PdfSignatureForm.aspx/SaveSignatureWithAjax',
                         type: 'POST',
-                        data: JSON.stringify(testData),
+                        data: JSON.stringify(requestData),
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         success: function(response) {
@@ -2492,14 +2501,7 @@
                 return new Blob(byteArrays, { type: mimeType });
             }
 
-            // Save button click handler
-            var saveButton = document.getElementById('<%= btnSaveSignature.ClientID %>');
-            if (saveButton) {
-                saveButton.onclick = function(e) {
-                    e.preventDefault();
-                    return saveSignature();
-                };
-            }
+            // Save button click handler artık saveAndReturn kullanıyor
 
             // Ajax timeout kontrolü
             const AJAX_TIMEOUT = 30000; // 30 saniye
