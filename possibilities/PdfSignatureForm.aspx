@@ -1,4 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
+<%@ Register Src="~/possibilities/YetkiliGridView.ascx" TagPrefix="uc1" TagName="YetkiliGridView" %>
 <%-- Created: yutkus metastazx --%>
 
 <!DOCTYPE html>
@@ -381,34 +382,56 @@
         .auth-details .date-input select {
             width: auto;
         }
-        .auth-details-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-        }
-        .auth-details-table th,
-        .auth-details-table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            font-size: 13px;
-            text-align: left;
-        }
-        .auth-details-table th {
+        .gridview-header {
             background: #f8f9fa;
             font-weight: 500;
             color: #333;
+            padding: 12px;
+            border: 1px solid #ddd;
         }
-        .auth-details-table tr:hover {
+        .gridview-row, .gridview-alternating-row {
+            background: white;
+            transition: all 0.2s ease;
+        }
+        .gridview-row:hover, .gridview-alternating-row:hover {
             background: #f8f9fa;
             cursor: pointer;
         }
-        .auth-details-table tr.selected {
+        .gridview-alternating-row {
+            background: #fafafa;
+        }
+        .gridview-row.selected, .gridview-alternating-row.selected {
             background: #fff0f0;
             border-left: 3px solid #dc3545;
         }
-        .auth-details-table tr.clicked {
-            animation: rowClick 0.3s;
+        .gridview-row td, .gridview-alternating-row td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+        .gridview-pager {
+            background: #f8f9fa;
+            padding: 8px;
+            text-align: center;
+        }
+        .gridview-pager a {
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #666;
+            border-radius: 3px;
+        }
+        .gridview-pager a:hover {
+            background: #e9ecef;
+        }
+        .gridview-pager span {
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: 1px solid #dc3545;
+            background: #dc3545;
+            color: white;
+            border-radius: 3px;
         }
         @keyframes rowClick {
             0% { background-color: #e3f2fd; }
@@ -873,29 +896,8 @@
                     </button>
                 </div>
 
-                <table class="auth-details-table">
-                    <thead>
-                        <tr>
-                            <th>Yetkili Kont. No</th>
-                            <th>Yetkili Adı Soyadı</th>
-                            <th>Yetki Şekli</th>
-                            <th>Yetki Süresi</th>
-                            <th>Yetki Bitiş Tarihi</th>
-                            <th>İmza Yetki Grubu</th>
-                            <th>Sınırlı Yetki Detayları</th>
-                            <th>Yetki Türleri</th>
-                            <th>İmza Örneği 1</th>
-                            <th>İmza Örneği 2</th>
-                            <th>İmza Örneği 3</th>
-                            <th>Yetki Tutarı</th>
-                            <th>Yetki Döv.</th>
-                            <th>Durum</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                       
-                    </tbody>
-                </table>
+                <%-- Yetkili Grid View User Control --%>
+                <uc1:YetkiliGridView ID="yetkiliGrid" runat="server" OnYetkiliSelected="yetkiliGrid_YetkiliSelected" OnYetkiliDeleted="yetkiliGrid_YetkiliDeleted" />
             </div>
 
             <div class="footer">
@@ -2076,12 +2078,7 @@
                     if (!btnEkle) {
                         throw new Error('btnEkle elementi bulunamadı');
                     }
-                    console.log('btnEkle bulundu:', btnEkle);
-                    let isUpdate = false;
-                    if (btnEkle) {
-                        isUpdate = btnEkle.classList.contains('update-mode');
-                    }
-                
+                    
                     // Form verilerini kontrol et
                     const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
                     const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
@@ -2089,11 +2086,14 @@
                     const yetkiTutariNum = parseFloat(yetkiTutari);
                     const imzalar = [];
                     
-                    document.querySelectorAll('.signature-slot').forEach(slot => {
+                    document.querySelectorAll('.signature-slot').forEach((slot, index) => {
                         if (slot.classList.contains('filled')) {
                             const slotImage = slot.querySelector('.slot-image');
                             if (slotImage && slotImage.style.backgroundImage) {
-                                imzalar.push(slotImage.style.backgroundImage);
+                                imzalar.push({
+                                    Base64Image: slotImage.style.backgroundImage.replace(/^url\(['"](.+)['"]\)$/, '$1'),
+                                    SlotIndex: index
+                                });
                             }
                         }
                     });
@@ -2133,39 +2133,47 @@
                 
                     // Yeni kayıt veya güncelleme için veri hazırla
                     const formData = {
-                        yetkiliKontakt: yetkiliKontakt,
-                        yetkiliAdi: yetkiliAdi,
-                        yetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        yetkiTarihi: yetkiTarihi,
-                        yetkiBitisTarihi: yetkiBitisTarihi,
-                        yetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        yetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
-                        yetkiTutari: yetkiTutariNum.toFixed(2),
-                        yetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        yetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
-                        imzalar: imzalar
+                        YetkiliKontakt: yetkiliKontakt,
+                        YetkiliAdi: yetkiliAdi,
+                        YetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
+                        YetkiTarihi: yetkiTarihi,
+                        AksiKararaKadar: isAksiKarar,
+                        YetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
+                        SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
+                        YetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
+                        YetkiTutari: yetkiTutariNum.toFixed(2),
+                        YetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
+                        YetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
+                        Imzalar: imzalar,
+                        IslemTipi: btnEkle.classList.contains('update-mode') ? 'Guncelle' : 'Ekle'
                     };
 
-                    if(isUpdate) {
-                        if(!selectedRow) {
-                            throw new Error('Güncellenecek satır seçilmedi');
+                    // AJAX çağrısı yap
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'PdfSignatureForm.aspx/SaveYetkiliKayit', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.d.Success) {
+                                showNotification(response.d.Message, 'success');
+                                clearForm();
+                                // Grid'i yenile
+                                __doPostBack('<%= yetkiliGrid.ClientID %>', '');
+                            } else {
+                                showNotification(response.d.Error || 'İşlem başarısız', 'error');
+                            }
+                        } else {
+                            showNotification('Sunucu hatası', 'error');
                         }
-
-                        // Satırı güncelle
-                        updateTableRow(selectedRow, formData);
-                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                        btnEkle.classList.remove('update-mode');
-                        selectedRow = null;
-                        showNotification('Kayıt başarıyla güncellendi', 'success');
-                    } else {
-                        // Yeni satır ekle
-                        addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
-                    }
-
-                    // Formu temizle
-                    clearForm();
+                    };
+                    
+                    xhr.onerror = function() {
+                        showNotification('Bağlantı hatası', 'error');
+                    };
+                    
+                    xhr.send(JSON.stringify({ kayit: formData }));
                     
                 } catch (err) {
                     console.error('handleAddUpdate hatası:', err);

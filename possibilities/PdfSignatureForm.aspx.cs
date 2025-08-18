@@ -309,6 +309,52 @@ namespace AspxExamples
             }
         }
 
+        protected void yetkiliGrid_YetkiliSelected(object sender, YetkiliEventArgs e)
+        {
+            if (e.Yetkili != null)
+            {
+                // Form alanlarını doldur
+                txtYetkiliKontakt.Text = e.Yetkili.YetkiliKontakt;
+                txtYetkiliAdi.Text = e.Yetkili.YetkiliAdi;
+                selYetkiSekli.SelectedValue = e.Yetkili.YetkiSekli;
+                yetkiBitisTarihi.Text = e.Yetkili.AksiKararaKadar ? "31.12.2050" : e.Yetkili.YetkiTarihi;
+                chkAksiKarar.Checked = e.Yetkili.AksiKararaKadar;
+                selYetkiGrubu.SelectedValue = e.Yetkili.YetkiSekli;
+                txtSinirliYetkiDetaylari.Text = e.Yetkili.SinirliYetkiDetaylari;
+                selYetkiTurleri.SelectedValue = e.Yetkili.YetkiTurleri;
+                txtYetkiTutari.Text = e.Yetkili.YetkiTutari;
+                selYetkiDovizCinsi.SelectedValue = e.Yetkili.YetkiDovizCinsi;
+                selYetkiDurumu.SelectedValue = e.Yetkili.YetkiDurumu;
+
+                // İmzaları yükle
+                if (e.Yetkili.Imzalar != null)
+                {
+                    var signatures = new List<SignatureData>();
+                    foreach (var imza in e.Yetkili.Imzalar)
+                    {
+                        signatures.Add(new SignatureData
+                        {
+                            Image = imza.Base64Image,
+                            SlotIndex = imza.SlotIndex
+                        });
+                    }
+                    hdnSignatures.Value = new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(signatures);
+                }
+
+                // UI'ı güncelle
+                ScriptManager.RegisterStartupScript(this, GetType(), "updateUI",
+                    "if(typeof(updateSignatureSlots) === 'function') { updateSignatureSlots(); }", true);
+            }
+        }
+
+        protected void yetkiliGrid_YetkiliDeleted(object sender, YetkiliEventArgs e)
+        {
+            if (e.Yetkili != null)
+            {
+                ShowMessage($"{e.Yetkili.YetkiliAdi} kaydı silindi.", "success");
+            }
+        }
+
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {
             try
