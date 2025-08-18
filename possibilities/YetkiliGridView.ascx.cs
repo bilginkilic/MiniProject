@@ -1,3 +1,5 @@
+/* v1 - Created: 2024.01.17 - Updated: string.Format kullanımına geçiş */
+
 using System;
 using System.Collections.Generic;
 using System.Web.UI;
@@ -42,17 +44,17 @@ namespace AspxExamples
                     // İmza preview'larını ayarla
                     for (int i = 0; i < 3; i++)
                     {
-                        var preview = e.Row.FindControl($"imgSignature{i + 1}_{yetkili.YetkiliKontakt}") as System.Web.UI.HtmlControls.HtmlGenericControl;
-                        var hdnImza = e.Row.FindControl($"hdnImza{i + 1}") as HiddenField;
+                        var preview = e.Row.FindControl(string.Format("imgSignature{0}_{1}", i + 1, yetkili.YetkiliKontakt)) as System.Web.UI.HtmlControls.HtmlGenericControl;
+                        var hdnImza = e.Row.FindControl(string.Format("hdnImza{0}", i + 1)) as HiddenField;
                         
                         if (preview != null && hdnImza != null && yetkili.Imzalar != null && yetkili.Imzalar.Count > i)
                         {
-                            preview.Style["background-image"] = $"url('{yetkili.Imzalar[i].Base64Image}')";
+                            preview.Style["background-image"] = string.Format("url('{0}')", yetkili.Imzalar[i].Base64Image);
                         }
                     }
 
                     // Row click event
-                    e.Row.Attributes["onclick"] = $"selectRow(this, '{yetkili.YetkiliKontakt}');";
+                    e.Row.Attributes["onclick"] = string.Format("selectRow(this, '{0}');", yetkili.YetkiliKontakt);
                 }
             }
         }
@@ -86,7 +88,7 @@ namespace AspxExamples
             catch (Exception ex)
             {
                 // Log error
-                System.Diagnostics.Debug.WriteLine($"Grid command error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Grid command error: {0}", ex.Message));
                 throw;
             }
         }
