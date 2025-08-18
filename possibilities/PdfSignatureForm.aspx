@@ -1,5 +1,4 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%@ Register Src="~/possibilities/YetkiliGridView.ascx" TagPrefix="uc1" TagName="YetkiliGridView" %>
 <%-- Created: yutkus metastazx --%>
 
 <!DOCTYPE html>
@@ -382,56 +381,34 @@
         .auth-details .date-input select {
             width: auto;
         }
-        .gridview-header {
-            background: #f8f9fa;
-            font-weight: 500;
-            color: #333;
-            padding: 12px;
-            border: 1px solid #ddd;
-        }
-        .gridview-row, .gridview-alternating-row {
+        .auth-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
             background: white;
-            transition: all 0.2s ease;
         }
-        .gridview-row:hover, .gridview-alternating-row:hover {
-            background: #f8f9fa;
-            cursor: pointer;
-        }
-        .gridview-alternating-row {
-            background: #fafafa;
-        }
-        .gridview-row.selected, .gridview-alternating-row.selected {
-            background: #fff0f0;
-            border-left: 3px solid #dc3545;
-        }
-        .gridview-row td, .gridview-alternating-row td {
+        .auth-details-table th,
+        .auth-details-table td {
             padding: 10px;
             border: 1px solid #ddd;
             font-size: 13px;
+            text-align: left;
         }
-        .gridview-pager {
+        .auth-details-table th {
             background: #f8f9fa;
-            padding: 8px;
-            text-align: center;
+            font-weight: 500;
+            color: #333;
         }
-        .gridview-pager a {
-            padding: 5px 10px;
-            margin: 0 2px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: #666;
-            border-radius: 3px;
+        .auth-details-table tr:hover {
+            background: #f8f9fa;
+            cursor: pointer;
         }
-        .gridview-pager a:hover {
-            background: #e9ecef;
+        .auth-details-table tr.selected {
+            background: #fff0f0;
+            border-left: 3px solid #dc3545;
         }
-        .gridview-pager span {
-            padding: 5px 10px;
-            margin: 0 2px;
-            border: 1px solid #dc3545;
-            background: #dc3545;
-            color: white;
-            border-radius: 3px;
+        .auth-details-table tr.clicked {
+            animation: rowClick 0.3s;
         }
         @keyframes rowClick {
             0% { background-color: #e3f2fd; }
@@ -2092,15 +2069,108 @@
                 }
             }
 
-            function clearSignatureSlots() {
-                document.querySelectorAll('.signature-slot').forEach(slot => {
-                    slot.classList.remove('filled');
-                    const slotImage = slot.querySelector('.slot-image');
-                    if (slotImage) {
-                        slotImage.style.backgroundImage = '';
+            function handleAddUpdate() {
+                try {
+                    console.log('handleAddUpdate başladı');
+                    const btnEkle = document.getElementById('btnEkle');
+                    if (!btnEkle) {
+                        throw new Error('btnEkle elementi bulunamadı');
                     }
-                });
-                document.getElementById('hdnSignatures').value = '';
+                    console.log('btnEkle bulundu:', btnEkle);
+                    let isUpdate = false;
+                    if (btnEkle) {
+                        isUpdate = btnEkle.classList.contains('update-mode');
+                    }
+                
+                    // Form verilerini kontrol et
+                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
+                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
+                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
+                    const yetkiTutariNum = parseFloat(yetkiTutari);
+                    const imzalar = [];
+                    
+                    document.querySelectorAll('.signature-slot').forEach(slot => {
+                        if (slot.classList.contains('filled')) {
+                            const slotImage = slot.querySelector('.slot-image');
+                            if (slotImage && slotImage.style.backgroundImage) {
+                                imzalar.push(slotImage.style.backgroundImage);
+                            }
+                        }
+                    });
+
+                    // Zorunlu alan kontrolü
+                    if (!yetkiliKontakt || !yetkiliAdi) {
+                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
+                        return;
+                    }
+
+                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
+                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
+                        return;
+                    }
+                    
+                    // Ondalık basamak kontrolü
+                    if (yetkiTutari.includes('.')) {
+                        const decimalPlaces = yetkiTutari.split('.')[1].length;
+                        if (decimalPlaces > 2) {
+                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
+                            return;
+                        }
+                    }
+
+                    if (imzalar.length === 0) {
+                        showNotification('Lütfen en az bir imza seçin', 'warning');
+                        return;
+                    }
+
+                    // Tarih kontrolü
+                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
+                    const today = new Date();
+                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
+                    const yetkiBitisTarihi = isAksiKarar ? 
+                        'Aksi Karara Kadar' : 
+                        document.getElementById('yetkiBitisTarihi').value;
+                
+                    // Yeni kayıt veya güncelleme için veri hazırla
+                    const formData = {
+                        yetkiliKontakt: yetkiliKontakt,
+                        yetkiliAdi: yetkiliAdi,
+                        yetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
+                        yetkiTarihi: yetkiTarihi,
+                        yetkiBitisTarihi: yetkiBitisTarihi,
+                        yetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
+                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
+                        yetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
+                        yetkiTutari: yetkiTutariNum.toFixed(2),
+                        yetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
+                        yetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
+                        imzalar: imzalar
+                    };
+
+                    if(isUpdate) {
+                        if(!selectedRow) {
+                            throw new Error('Güncellenecek satır seçilmedi');
+                        }
+
+                        // Satırı güncelle
+                        updateTableRow(selectedRow, formData);
+                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
+                        btnEkle.classList.remove('update-mode');
+                        selectedRow = null;
+                        showNotification('Kayıt başarıyla güncellendi', 'success');
+                    } else {
+                        // Yeni satır ekle
+                        addTableRow(formData);
+                        showNotification('Yeni kayıt eklendi', 'success');
+                    }
+
+                    // Formu temizle
+                    clearForm();
+                    
+                } catch (err) {
+                    console.error('handleAddUpdate hatası:', err);
+                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
+                }
             }
             
 

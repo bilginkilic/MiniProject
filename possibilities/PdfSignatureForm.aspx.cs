@@ -1,5 +1,3 @@
-/* v3 - Created: 2024.01.17 - Updated: string.Format kullanımına geçiş tamamlandı */
-
 using System;
 using System.Drawing;
 using System.IO;
@@ -11,8 +9,6 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
-using System.Web.Services;
-using System.Web.Script.Services;
 /* net x 4.8cdscds */
 
 namespace AspxExamples
@@ -108,8 +104,6 @@ namespace AspxExamples
                         return;
                     }
                 }
-
-
 
                 // Başlangıç mesajını göster
                 ShowMessage("PDF formatında imza sirkülerinizi yükleyerek başlayabilirsiniz.", "info");
@@ -315,143 +309,6 @@ namespace AspxExamples
             }
         }
 
-        protected void yetkiliGrid_YetkiliSelected(object sender, YetkiliEventArgs e)
-        {
-            if (e.Yetkili != null)
-            {
-                // Form alanlarını doldur
-                txtYetkiliKontakt.Text = e.Yetkili.YetkiliKontakt;
-                txtYetkiliAdi.Text = e.Yetkili.YetkiliAdi;
-                selYetkiSekli.SelectedValue = e.Yetkili.YetkiSekli;
-                yetkiBitisTarihi.Text = e.Yetkili.AksiKararaKadar ? "31.12.2050" : e.Yetkili.YetkiTarihi;
-                chkAksiKarar.Checked = e.Yetkili.AksiKararaKadar;
-                selYetkiGrubu.SelectedValue = e.Yetkili.YetkiSekli;
-                txtSinirliYetkiDetaylari.Text = e.Yetkili.SinirliYetkiDetaylari;
-                selYetkiTurleri.SelectedValue = e.Yetkili.YetkiTurleri;
-                txtYetkiTutari.Text = e.Yetkili.YetkiTutari;
-                selYetkiDovizCinsi.SelectedValue = e.Yetkili.YetkiDovizCinsi;
-                selYetkiDurumu.SelectedValue = e.Yetkili.YetkiDurumu;
-
-                // İmzaları yükle
-                if (e.Yetkili.Imzalar != null)
-                {
-                    var signatures = new List<SignatureData>();
-                    foreach (var imza in e.Yetkili.Imzalar)
-                    {
-                        signatures.Add(new SignatureData
-                        {
-                            Image = imza.Base64Image,
-                            SlotIndex = imza.SlotIndex
-                        });
-                    }
-                    hdnSignatures.Value = new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(signatures);
-                }
-
-                // UI'ı güncelle
-                ScriptManager.RegisterStartupScript(this, GetType(), "updateUI",
-                    "if(typeof(updateSignatureSlots) === 'function') { updateSignatureSlots(); }", true);
-            }
-        }
-
-        protected void yetkiliGrid_YetkiliDeleted(object sender, YetkiliEventArgs e)
-        {
-            if (e.Yetkili != null)
-            {
-                ShowMessage(string.Format("{0} kaydı silindi.", e.Yetkili.YetkiliAdi), "success");
-            }
-        }
-
-        protected void BtnEkle_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // Form verilerini doğrula
-                if (string.IsNullOrEmpty(txtYetkiliKontakt.Text) || string.IsNullOrEmpty(txtYetkiliAdi.Text))
-                {
-                    ShowWarning("Lütfen yetkili kontakt ve adı alanlarını doldurun");
-                    return;
-                }
-
-                decimal yetkiTutari;
-                if (!decimal.TryParse(txtYetkiTutari.Text, out yetkiTutari) || yetkiTutari <= 0)
-                {
-                    ShowWarning("Lütfen geçerli bir yetki tutarı girin");
-                    return;
-                }
-
-                // İmza kontrolü
-                var signaturesJson = Request.Form["hdnSignatures"];
-                if (string.IsNullOrEmpty(signaturesJson))
-                {
-                    ShowWarning("Lütfen en az bir imza seçin");
-                    return;
-                }
-
-                var signatureSerializer = new JavaScriptSerializer();
-                var signatures = signatureSerializer.Deserialize<List<SignatureData>>(signaturesJson);
-
-                if (signatures == null || signatures.Count == 0)
-                {
-                    ShowError("Geçersiz imza verisi");
-                    return;
-                }
-
-                // Yeni yetkili kaydı oluştur
-                var yetkiliKayit = new YetkiliKayit
-                {
-                    YetkiliKontakt = txtYetkiliKontakt.Text,
-                    YetkiliAdi = txtYetkiliAdi.Text,
-                    YetkiSekli = selYetkiSekli.SelectedValue,
-                    YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
-                    AksiKararaKadar = chkAksiKarar.Checked,
-                    YetkiGrubu = selYetkiGrubu.SelectedValue,
-                    SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
-                    YetkiTurleri = selYetkiTurleri.SelectedValue,
-                    YetkiTutari = yetkiTutari.ToString("0.00"),
-                    YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
-                    YetkiDurumu = selYetkiDurumu.SelectedValue,
-                    IslemTipi = "Ekle",
-                    Imzalar = signatures.Select(s => new YetkiliImza 
-                    { 
-                        Base64Image = s.Image,
-                        SlotIndex = s.SlotIndex 
-                    }).ToArray()
-                };
-
-                // Grid'e ekle
-                yetkiliGrid.AddYetkili(yetkiliKayit);
-
-                // Formu temizle
-                ClearForm();
-                ShowMessage("Yetkili kaydı başarıyla eklendi", "success");
-            }
-            catch (Exception ex)
-            {
-                ShowError(string.Format("İşlem sırasında bir hata oluştu: {0}", ex.Message));
-            }
-        }
-
-        private void ClearForm()
-        {
-            txtYetkiliKontakt.Text = string.Empty;
-            txtYetkiliAdi.Text = string.Empty;
-            txtSinirliYetkiDetaylari.Text = string.Empty;
-            txtYetkiTutari.Text = string.Empty;
-            yetkiBitisTarihi.Text = DateTime.Now.ToString("yyyy-MM-dd");
-            chkAksiKarar.Checked = false;
-            
-            // Dropdown'ları varsayılan değerlerine döndür
-            selYetkiSekli.SelectedIndex = 0;
-            selYetkiGrubu.SelectedIndex = 0;
-            selYetkiTurleri.SelectedIndex = 0;
-            selYetkiDovizCinsi.SelectedIndex = 0;
-            selYetkiDurumu.SelectedIndex = 0;
-
-            // İmzaları temizle
-            ScriptManager.RegisterStartupScript(this, GetType(), "clearSignatures",
-                "if(typeof(clearSignatureSlots) === 'function') { clearSignatureSlots(); }", true);
-        }
-
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {
             try
@@ -467,8 +324,8 @@ namespace AspxExamples
                 var yetkiliKayitJson = Request.Form["hdnYetkiliKayitlar"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
                 if (!string.IsNullOrEmpty(yetkiliKayitJson))
                 {
-                    var yetkiliSerializer = new JavaScriptSerializer();
-                    var yetkiliKayitlar = yetkiliSerializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
+                    var serializer = new JavaScriptSerializer();
+                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitJson);
 
                     foreach (var kayit in yetkiliKayitlar)
                     {
@@ -485,7 +342,7 @@ namespace AspxExamples
                             YetkiTutari = decimal.Parse(kayit.YetkiTutari),
                             YetkiDovizCinsi = kayit.YetkiDovizCinsi,
                             YetkiDurumu = kayit.YetkiDurumu,
-                            Imzalar = new SignatureImage[0]
+                            Imzalar = new List<SignatureImage>()
                         };
                         authData.Yetkililer.Add(yetkiliData);
                     }
@@ -506,7 +363,7 @@ namespace AspxExamples
                         YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
                         YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
                         YetkiDurumu = selYetkiDurumu.SelectedValue,
-                                                    Imzalar = new SignatureImage[0]
+                        Imzalar = new List<SignatureImage>()
                     };
                     authData.Yetkililer.Add(yetkiliData);
                 }
@@ -520,8 +377,8 @@ namespace AspxExamples
                     return;
                 }
 
-                var signatureSerializer = new JavaScriptSerializer();
-                var signatures = signatureSerializer.Deserialize<List<SignatureData>>(signaturesJson);
+                var serializer = new JavaScriptSerializer();
+                var signatures = serializer.Deserialize<List<SignatureData>>(signaturesJson);
 
                 if (signatures == null || signatures.Count == 0)
                 {
@@ -608,8 +465,8 @@ namespace AspxExamples
                 var yetkiliImzaEslesmesi = Request.Form["hdnYetkiliImzaEslesmesi"]; // Bu hidden field'ı frontend'e eklememiz gerekecek
                 if (!string.IsNullOrEmpty(yetkiliImzaEslesmesi))
                 {
-                    var eslemeSerializer = new JavaScriptSerializer();
-                    var eslesmeler = eslemeSerializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi); // yetkiliIndex -> imzaIndex eşleşmesi
+                    var serializer = new JavaScriptSerializer();
+                    var eslesmeler = serializer.Deserialize<Dictionary<int, int>>(yetkiliImzaEslesmesi); // yetkiliIndex -> imzaIndex eşleşmesi
 
                     foreach (var eslesme in eslesmeler)
                     {
@@ -664,12 +521,13 @@ namespace AspxExamples
                         Response.Write(jsonResponse);
                         Response.Flush();
                         HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    }
                 }
                 catch (Exception ex)
                 {
                     var errorResponse = new { success = false, error = ex.Message };
-                    var errorSerializer = new JavaScriptSerializer();
-                    var jsonError = errorSerializer.Serialize(errorResponse);
+                    var serializer = new JavaScriptSerializer();
+                    var jsonError = serializer.Serialize(errorResponse);
                     
                     Response.Clear();
                     Response.ContentType = "application/json";
@@ -689,8 +547,8 @@ namespace AspxExamples
                         error = String.Format("İmza kaydedilirken bir hata oluştu: {0}", ex.Message)
                     };
                     
-                    var responseSerializer = new JavaScriptSerializer();
-                    var jsonError = responseSerializer.Serialize(response);
+                    var serializer = new JavaScriptSerializer();
+                    var jsonError = serializer.Serialize(response);
                     Response.Clear();
                     Response.ContentType = "application/json";
                     Response.Write(jsonError);
