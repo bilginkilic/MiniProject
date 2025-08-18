@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
-/* net x 4.8cdscds */
+/* net x kulaklık */
 
 namespace AspxExamples
 {
