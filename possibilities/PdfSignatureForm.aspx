@@ -959,94 +959,68 @@
         <script type="text/javascript">
             function saveAndReturn() {
                 try {
-                    // Tablodaki tüm yetkili kayıtlarını topla
-                    var kayitlar = [];
-                    $('#yetkiliTable tbody tr').each(function() {
-                        var row = $(this);
-                        var kayit = {
-                            YetkiliKontakt: row.find('.yetkiliKontakt').val(),
-                            YetkiliAdi: row.find('.yetkiliAdi').val(),
-                            YetkiSekli: row.find('.yetkiSekli').val(),
-                            YetkiTarihi: row.find('.yetkiTarihi').val(),
-                            AksiKararaKadar: row.find('.aksiKarar').prop('checked'),
-                            SinirliYetkiDetaylari: row.find('.sinirliYetkiDetaylari').val(),
-                            YetkiTurleri: row.find('.yetkiTurleri').val(),
-                            YetkiTutari: row.find('.yetkiTutari').val(),
-                            YetkiDovizCinsi: row.find('.yetkiDovizCinsi').val(),
-                            YetkiDurumu: row.find('.yetkiDurumu').val(),
-                            Imzalar: []
-                        };
-                        kayitlar.push(kayit);
-                    });
+                    console.group('Kaydet ve Geri Dön İşlemi');
+                    console.log('Fonksiyon başladı');
+
+                    // Grid state'i güncelle
+                    updateGridState();
+                    
+                    // Kayıtları gridState'den al
+                    var kayitlar = gridState.current;
+                    console.log('Grid kayıtları:', kayitlar);
 
                     // İmza verilerini al
                     var signatures = [];
-                    $('.signature-area').each(function() {
-                        var area = $(this);
-                        signatures.push({
-                            Page: parseInt(area.data('page')),
-                            X: parseInt(area.data('x')),
-                            Y: parseInt(area.data('y')),
-                            Width: parseInt(area.data('width')),
-                            Height: parseInt(area.data('height')),
-                            Image: area.data('image')
-                        });
+                    document.querySelectorAll('.signature-area').forEach(function(area) {
+                        if (area.dataset.image) {
+                            signatures.push({
+                                Page: parseInt(area.dataset.page),
+                                X: parseInt(area.dataset.x),
+                                Y: parseInt(area.dataset.y),
+                                Width: parseInt(area.dataset.width),
+                                Height: parseInt(area.dataset.height),
+                                Image: area.dataset.image
+                            });
+                        }
                     });
+                    console.log('İmza verileri:', signatures);
 
                     // Debug için verileri konsola yazdır
                     console.log('Gönderilecek yetkili kayıtları:', kayitlar);
                     console.log('Gönderilecek imza verileri:', signatures);
 
-                    // Önceki Ajax isteğini iptal et
-                    if (currentAjaxRequest) {
-                        currentAjaxRequest.abort();
-                    }
+                    // Test verisi
+                    var testData = {
+                        yetkiliKayitlarJson: JSON.stringify(kayitlar),
+                        signatureDataJson: JSON.stringify(signatures)
+                    };
+                    console.log('Gönderilecek veri:', testData);
 
-                    // Yeni Ajax isteği
-                    currentAjaxRequest = $.ajax({
-                        timeout: AJAX_TIMEOUT,
-                        type: "POST",
-                        url: "PdfSignatureForm.aspx/SaveSignatureWithAjax",
-                        data: JSON.stringify({
-                            yetkiliKayitlarJson: JSON.stringify(kayitlar),
-                            signatureDataJson: JSON.stringify(signatures)
-                        }),
-                        contentType: "application/json; charset=utf-8",
-                        dataType: "json",
-                        beforeSend: function() {
-                            console.log('Ajax isteği gönderiliyor...');
-                            showNotification('Veriler kaydediliyor...', 'info');
-                        },
+                    // Ajax çağrısı
+                    $.ajax({
+                        url: 'PdfSignatureForm.aspx/SaveSignatureWithAjax',
+                        type: 'POST',
+                        data: JSON.stringify(testData),
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
                         success: function(response) {
-                            console.log('Sunucu yanıtı:', response);
-                            try {
-                                if (response && response.d && response.d.success) {
-                                    showNotification(response.d.message, 'success');
-                                    setTimeout(function() {
-                                        window.location.href = document.referrer || '/';
-                                    }, 1000);
-                                } else {
-                                    var errorMsg = response && response.d && response.d.error ? response.d.error : 'Bilinmeyen bir hata oluştu';
-                                    showNotification(errorMsg, 'error');
-                                }
-                            } catch (err) {
-                                console.error('Yanıt işleme hatası:', err);
-                                showNotification('Sunucu yanıtı işlenirken hata oluştu', 'error');
+                            console.log('Başarılı yanıt:', response);
+                            if (response.d && response.d.success) {
+                                showNotification('Veriler başarıyla kaydedildi', 'success');
+                                setTimeout(function() {
+                                    window.location.href = document.referrer || '/';
+                                }, 1000);
+                            } else {
+                                showNotification(response.d.error || 'Bilinmeyen bir hata oluştu', 'error');
                             }
                         },
                         error: function(xhr, status, error) {
                             console.error('Ajax hatası:', {
                                 status: status,
                                 error: error,
-                                response: xhr.responseText
+                                responseText: xhr.responseText
                             });
-                            try {
-                                var response = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-                                var errorMsg = response && response.Message ? response.Message : error;
-                                showNotification('İşlem sırasında bir hata oluştu: ' + errorMsg, 'error');
-                            } catch (err) {
-                                showNotification('İşlem sırasında bir hata oluştu: ' + error, 'error');
-                            }
+                            showNotification('İşlem sırasında bir hata oluştu', 'error');
                         }
                     });
 

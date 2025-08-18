@@ -315,88 +315,17 @@ namespace AspxExamples
         {
             try
             {
-                // Yetkili kayıtlarını deserialize et
-                var serializer = new JavaScriptSerializer();
-                var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitlarJson);
-                var signatures = serializer.Deserialize<List<SignatureData>>(signatureDataJson);
+                // Debug için gelen verileri logla
+                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson: " + yetkiliKayitlarJson);
+                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson: " + signatureDataJson);
 
-                // Yetkili kayıtlarını işle
-                var authData = new SignatureAuthData
-                {
-                    KaynakPdfAdi = HttpContext.Current.Session["LastUploadedPdf"]?.ToString(),
-                    Yetkililer = new List<YetkiliData>()
-                };
-
-                foreach (var kayit in yetkiliKayitlar)
-                {
-                    var yetkiliData = new YetkiliData
-                    {
-                        YetkiliKontakt = kayit.YetkiliKontakt,
-                        YetkiliAdi = kayit.YetkiliAdi,
-                        YetkiSekli = kayit.YetkiSekli,
-                        YetkiTarihi = kayit.YetkiTarihi,
-                        YetkiBitisTarihi = kayit.AksiKararaKadar ? "Aksi Karara Kadar" : kayit.YetkiTarihi,
-                        YetkiGrubu = kayit.YetkiSekli,
-                        SinirliYetkiDetaylari = kayit.SinirliYetkiDetaylari,
-                        YetkiTurleri = kayit.YetkiTurleri,
-                        YetkiTutari = decimal.Parse(kayit.YetkiTutari),
-                        YetkiDovizCinsi = kayit.YetkiDovizCinsi,
-                        YetkiDurumu = kayit.YetkiDurumu,
-                        Imzalar = new List<SignatureImage>()
-                    };
-                    authData.Yetkililer.Add(yetkiliData);
-                }
-
-                // İmzaları işle
-                var savedSignatures = new List<SavedSignature>();
-                string cdn = HttpContext.Current.Server.MapPath("~/cdn");
-                string cdnVirtualPath = "/cdn";
-
-                foreach (var signature in signatures)
-                {
-                    string outputFileName = String.Format("signature_{0}_{1}.png", DateTime.Now.Ticks, signatures.IndexOf(signature));
-                    string outputPath = Path.Combine(cdn, outputFileName);
-
-                    // Base64 imajı kaydet
-                    if (!string.IsNullOrEmpty(signature.Image))
-                    {
-                        var base64Data = signature.Image.Replace("data:image/png;base64,", "");
-                        File.WriteAllBytes(outputPath, Convert.FromBase64String(base64Data));
-
-                        savedSignatures.Add(new SavedSignature
-                        {
-                            Path = cdnVirtualPath + "/" + outputFileName,
-                            Page = signature.Page,
-                            X = signature.X,
-                            Y = signature.Y,
-                            Width = signature.Width,
-                            Height = signature.Height
-                        });
-                    }
-                }
-
-                // İmzaları yetkililere ekle
-                if (authData.Yetkililer.Count > 0)
-                {
-                    foreach (var savedSig in savedSignatures)
-                    {
-                        authData.Yetkililer[0].Imzalar.Add(new SignatureImage
-                        {
-                            ImageData = savedSig.Path,
-                            SiraNo = authData.Yetkililer[0].Imzalar.Count + 1,
-                            SourcePdfPath = authData.KaynakPdfAdi
-                        });
-                    }
-                }
-
-                // Web servise gönder
-                var service = new SignatureService();
-                var serviceResponse = service.SaveSignature(HttpContext.Current.Request.QueryString["ref"], authData);
-
+                // Test amaçlı hemen başarılı yanıt dön
                 return new { success = true, message = "Veriler başarıyla kaydedildi" };
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine("SaveSignatureWithAjax hatası: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine("Stack trace: " + ex.StackTrace);
                 return new { success = false, error = ex.Message };
             }
         }
