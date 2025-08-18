@@ -1,4 +1,4 @@
-/* v2 - Created: 2024.01.17 - Updated: Using direktifleri ve array düzenlemesi */
+/* v3 - Created: 2024.01.17 - Updated: string.Format kullanımına geçiş tamamlandı */
 
 using System;
 using System.Drawing;
@@ -355,7 +355,7 @@ namespace AspxExamples
         {
             if (e.Yetkili != null)
             {
-                ShowMessage($"{e.Yetkili.YetkiliAdi} kaydı silindi.", "success");
+                ShowMessage(string.Format("{0} kaydı silindi.", e.Yetkili.YetkiliAdi), "success");
             }
         }
 
