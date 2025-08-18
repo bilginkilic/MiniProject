@@ -109,8 +109,7 @@ namespace AspxExamples
                     }
                 }
 
-                // Grid'i bağla
-                BindGrid();
+
 
                 // Başlangıç mesajını göster
                 ShowMessage("PDF formatında imza sirkülerinizi yükleyerek başlayabilirsiniz.", "info");
@@ -316,167 +315,49 @@ namespace AspxExamples
             }
         }
 
-        private void BindGrid()
+        protected void yetkiliGrid_YetkiliSelected(object sender, YetkiliEventArgs e)
         {
-            var yetkiliList = Session["YetkiliList"] as List<YetkiliKayit>;
-            if (yetkiliList == null)
+            if (e.Yetkili != null)
             {
-                yetkiliList = new List<YetkiliKayit>();
-                Session["YetkiliList"] = yetkiliList;
-            }
-
-            grdYetkililer.DataSource = yetkiliList;
-            grdYetkililer.DataBind();
-        }
-
-        protected void grdYetkililer_RowDataBound(object sender, GridViewRowEventArgs e)
-        {
-            if (e.Row.RowType == DataControlRowType.DataRow)
-            {
-                var yetkili = e.Row.DataItem as YetkiliKayit;
-                if (yetkili != null)
-                {
-                    // İmza preview'larını ayarla
-                    for (int i = 0; i < 3; i++)
-                    {
-                        var preview = e.Row.FindControl(string.Format("hdnImza{0}", i + 1)) as HiddenField;
-                        if (preview != null && yetkili.Imzalar != null && yetkili.Imzalar.Length > i)
-                        {
-                            var parentDiv = preview.Parent as System.Web.UI.HtmlControls.HtmlGenericControl;
-                            if (parentDiv != null)
-                            {
-                                parentDiv.Style["background-image"] = string.Format("url('{0}')", yetkili.Imzalar[i].Base64Image);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        protected void grdYetkililer_RowCommand(object sender, GridViewCommandEventArgs e)
-        {
-            try
-            {
-                int index = Convert.ToInt32(e.CommandArgument);
-                var yetkiliList = Session["YetkiliList"] as List<YetkiliKayit>;
-
-                if (yetkiliList != null && index >= 0 && index < yetkiliList.Count)
-                {
-                    var yetkili = yetkiliList[index];
-
-                    switch (e.CommandName)
-                    {
-                        case "Edit":
-                            PopulateForm(yetkili);
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowError(string.Format("Grid işlemi sırasında hata: {0}", ex.Message));
-            }
-        }
-
-        protected void grdYetkililer_RowDeleting(object sender, GridViewDeleteEventArgs e)
-        {
-            try
-            {
-                var yetkiliList = Session["YetkiliList"] as List<YetkiliKayit>;
-                if (yetkiliList != null && e.RowIndex >= 0 && e.RowIndex < yetkiliList.Count)
-                {
-                    var yetkili = yetkiliList[e.RowIndex];
-                    yetkiliList.RemoveAt(e.RowIndex);
-                    Session["YetkiliList"] = yetkiliList;
-                    ShowMessage(string.Format("{0} kaydı silindi.", yetkili.YetkiliAdi), "success");
-                    BindGrid();
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowError(string.Format("Kayıt silinirken hata: {0}", ex.Message));
-            }
-        }
-
-        protected void grdYetkililer_RowEditing(object sender, GridViewEditEventArgs e)
-        {
-            var yetkiliList = Session["YetkiliList"] as List<YetkiliKayit>;
-            if (yetkiliList != null && e.NewEditIndex >= 0 && e.NewEditIndex < yetkiliList.Count)
-            {
-                PopulateForm(yetkiliList[e.NewEditIndex]);
-            }
-        }
-
-        protected void grdYetkililer_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
-            grdYetkililer.PageIndex = e.NewPageIndex;
-            BindGrid();
-        }
-
-        protected void grdYetkililer_Sorting(object sender, GridViewSortEventArgs e)
-        {
-            var yetkiliList = Session["YetkiliList"] as List<YetkiliKayit>;
-            if (yetkiliList != null)
-            {
-                string sortDirection = ViewState["SortDirection"]?.ToString() ?? "ASC";
-                ViewState["SortDirection"] = sortDirection == "ASC" ? "DESC" : "ASC";
-
-                yetkiliList = sortDirection == "ASC" ?
-                    yetkiliList.OrderBy(y => GetPropertyValue(y, e.SortExpression)).ToList() :
-                    yetkiliList.OrderByDescending(y => GetPropertyValue(y, e.SortExpression)).ToList();
-
-                Session["YetkiliList"] = yetkiliList;
-                BindGrid();
-            }
-        }
-
-        private object GetPropertyValue(object obj, string propertyName)
-        {
-            return obj.GetType().GetProperty(propertyName)?.GetValue(obj, null) ?? "";
-        }
-
-        protected string GetImzaValue(object dataItem, int index)
-        {
-            var yetkili = dataItem as YetkiliKayit;
-            if (yetkili?.Imzalar != null && yetkili.Imzalar.Length > index)
-            {
-                return yetkili.Imzalar[index].Base64Image;
-            }
-            return string.Empty;
-        }
-
-        private void PopulateForm(YetkiliKayit yetkili)
-        {
-            if (yetkili != null)
-            {
-                txtYetkiliKontakt.Text = yetkili.YetkiliKontakt;
-                txtYetkiliAdi.Text = yetkili.YetkiliAdi;
-                selYetkiSekli.SelectedValue = yetkili.YetkiSekli;
-                yetkiBitisTarihi.Text = yetkili.AksiKararaKadar ? "31.12.2050" : yetkili.YetkiTarihi;
-                chkAksiKarar.Checked = yetkili.AksiKararaKadar;
-                selYetkiGrubu.SelectedValue = yetkili.YetkiSekli;
-                txtSinirliYetkiDetaylari.Text = yetkili.SinirliYetkiDetaylari;
-                selYetkiTurleri.SelectedValue = yetkili.YetkiTurleri;
-                txtYetkiTutari.Text = yetkili.YetkiTutari;
-                selYetkiDovizCinsi.SelectedValue = yetkili.YetkiDovizCinsi;
-                selYetkiDurumu.SelectedValue = yetkili.YetkiDurumu;
+                // Form alanlarını doldur
+                txtYetkiliKontakt.Text = e.Yetkili.YetkiliKontakt;
+                txtYetkiliAdi.Text = e.Yetkili.YetkiliAdi;
+                selYetkiSekli.SelectedValue = e.Yetkili.YetkiSekli;
+                yetkiBitisTarihi.Text = e.Yetkili.AksiKararaKadar ? "31.12.2050" : e.Yetkili.YetkiTarihi;
+                chkAksiKarar.Checked = e.Yetkili.AksiKararaKadar;
+                selYetkiGrubu.SelectedValue = e.Yetkili.YetkiSekli;
+                txtSinirliYetkiDetaylari.Text = e.Yetkili.SinirliYetkiDetaylari;
+                selYetkiTurleri.SelectedValue = e.Yetkili.YetkiTurleri;
+                txtYetkiTutari.Text = e.Yetkili.YetkiTutari;
+                selYetkiDovizCinsi.SelectedValue = e.Yetkili.YetkiDovizCinsi;
+                selYetkiDurumu.SelectedValue = e.Yetkili.YetkiDurumu;
 
                 // İmzaları yükle
-                if (yetkili.Imzalar != null)
+                if (e.Yetkili.Imzalar != null)
                 {
-                    var signatures = yetkili.Imzalar.Select(imza => new SignatureData
+                    var signatures = new List<SignatureData>();
+                    foreach (var imza in e.Yetkili.Imzalar)
                     {
-                        Image = imza.Base64Image,
-                        SlotIndex = imza.SlotIndex
-                    }).ToList();
-
-                    var signatureSerializer = new JavaScriptSerializer();
-                    hdnSignatures.Value = signatureSerializer.Serialize(signatures);
-
-                    // UI'ı güncelle
-                    ScriptManager.RegisterStartupScript(this, GetType(), "updateUI",
-                        "if(typeof(updateSignatureSlots) === 'function') { updateSignatureSlots(); }", true);
+                        signatures.Add(new SignatureData
+                        {
+                            Image = imza.Base64Image,
+                            SlotIndex = imza.SlotIndex
+                        });
+                    }
+                    hdnSignatures.Value = new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(signatures);
                 }
+
+                // UI'ı güncelle
+                ScriptManager.RegisterStartupScript(this, GetType(), "updateUI",
+                    "if(typeof(updateSignatureSlots) === 'function') { updateSignatureSlots(); }", true);
+            }
+        }
+
+        protected void yetkiliGrid_YetkiliDeleted(object sender, YetkiliEventArgs e)
+        {
+            if (e.Yetkili != null)
+            {
+                ShowMessage(string.Format("{0} kaydı silindi.", e.Yetkili.YetkiliAdi), "success");
             }
         }
 
