@@ -888,9 +888,9 @@
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
-                    <button type="button" id="btnEkle" class="button">
-                        <i class="fas fa-plus"></i> Ekle
-                    </button>
+                    <asp:Button ID="btnEkle" runat="server" Text="Ekle" CssClass="button" OnClick="BtnEkle_Click">
+                        <i class="fas fa-plus"></i>
+                    </asp:Button>
                     <button type="button" id="btnSil" class="button secondary">
                         <i class="fas fa-trash"></i> Sil
                     </button>
@@ -2071,114 +2071,15 @@
                 }
             }
 
-            function handleAddUpdate() {
-                try {
-                    console.log('handleAddUpdate başladı');
-                    const btnEkle = document.getElementById('btnEkle');
-                    if (!btnEkle) {
-                        throw new Error('btnEkle elementi bulunamadı');
+            function clearSignatureSlots() {
+                document.querySelectorAll('.signature-slot').forEach(slot => {
+                    slot.classList.remove('filled');
+                    const slotImage = slot.querySelector('.slot-image');
+                    if (slotImage) {
+                        slotImage.style.backgroundImage = '';
                     }
-                    
-                    // Form verilerini kontrol et
-                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
-                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
-                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
-                    const yetkiTutariNum = parseFloat(yetkiTutari);
-                    const imzalar = [];
-                    
-                    document.querySelectorAll('.signature-slot').forEach((slot, index) => {
-                        if (slot.classList.contains('filled')) {
-                            const slotImage = slot.querySelector('.slot-image');
-                            if (slotImage && slotImage.style.backgroundImage) {
-                                imzalar.push({
-                                    Base64Image: slotImage.style.backgroundImage.replace(/^url\(['"](.+)['"]\)$/, '$1'),
-                                    SlotIndex: index
-                                });
-                            }
-                        }
-                    });
-
-                    // Zorunlu alan kontrolü
-                    if (!yetkiliKontakt || !yetkiliAdi) {
-                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
-                        return;
-                    }
-
-                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
-                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
-                        return;
-                    }
-                    
-                    // Ondalık basamak kontrolü
-                    if (yetkiTutari.includes('.')) {
-                        const decimalPlaces = yetkiTutari.split('.')[1].length;
-                        if (decimalPlaces > 2) {
-                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
-                            return;
-                        }
-                    }
-
-                    if (imzalar.length === 0) {
-                        showNotification('Lütfen en az bir imza seçin', 'warning');
-                        return;
-                    }
-
-                    // Tarih kontrolü
-                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
-                    const today = new Date();
-                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
-                    const yetkiBitisTarihi = isAksiKarar ? 
-                        'Aksi Karara Kadar' : 
-                        document.getElementById('yetkiBitisTarihi').value;
-                
-                    // Yeni kayıt veya güncelleme için veri hazırla
-                    const formData = {
-                        YetkiliKontakt: yetkiliKontakt,
-                        YetkiliAdi: yetkiliAdi,
-                        YetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        YetkiTarihi: yetkiTarihi,
-                        AksiKararaKadar: isAksiKarar,
-                        YetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        YetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
-                        YetkiTutari: yetkiTutariNum.toFixed(2),
-                        YetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        YetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
-                        Imzalar: imzalar,
-                        IslemTipi: btnEkle.classList.contains('update-mode') ? 'Guncelle' : 'Ekle'
-                    };
-
-                    // AJAX çağrısı yap
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', 'PdfSignatureForm.aspx/SaveYetkiliKayit', true);
-                    xhr.setRequestHeader('Content-Type', 'application/json');
-                    
-                    xhr.onload = function() {
-                        if (xhr.status === 200) {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.d.Success) {
-                                showNotification(response.d.Message, 'success');
-                                clearForm();
-                                // Grid'i yenile
-                                __doPostBack('<%= yetkiliGrid.ClientID %>', '');
-                            } else {
-                                showNotification(response.d.Error || 'İşlem başarısız', 'error');
-                            }
-                        } else {
-                            showNotification('Sunucu hatası', 'error');
-                        }
-                    };
-                    
-                    xhr.onerror = function() {
-                        showNotification('Bağlantı hatası', 'error');
-                    };
-                    
-                    xhr.send(JSON.stringify({ kayit: formData }));
-                    
-                } catch (err) {
-                    console.error('handleAddUpdate hatası:', err);
-                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
-                }
+                });
+                document.getElementById('hdnSignatures').value = '';
             }
             
 

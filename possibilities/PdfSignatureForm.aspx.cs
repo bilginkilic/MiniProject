@@ -359,6 +359,97 @@ namespace AspxExamples
             }
         }
 
+        protected void BtnEkle_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Form verilerini doğrula
+                if (string.IsNullOrEmpty(txtYetkiliKontakt.Text) || string.IsNullOrEmpty(txtYetkiliAdi.Text))
+                {
+                    ShowWarning("Lütfen yetkili kontakt ve adı alanlarını doldurun");
+                    return;
+                }
+
+                decimal yetkiTutari;
+                if (!decimal.TryParse(txtYetkiTutari.Text, out yetkiTutari) || yetkiTutari <= 0)
+                {
+                    ShowWarning("Lütfen geçerli bir yetki tutarı girin");
+                    return;
+                }
+
+                // İmza kontrolü
+                var signaturesJson = Request.Form["hdnSignatures"];
+                if (string.IsNullOrEmpty(signaturesJson))
+                {
+                    ShowWarning("Lütfen en az bir imza seçin");
+                    return;
+                }
+
+                var signatureSerializer = new JavaScriptSerializer();
+                var signatures = signatureSerializer.Deserialize<List<SignatureData>>(signaturesJson);
+
+                if (signatures == null || signatures.Count == 0)
+                {
+                    ShowError("Geçersiz imza verisi");
+                    return;
+                }
+
+                // Yeni yetkili kaydı oluştur
+                var yetkiliKayit = new YetkiliKayit
+                {
+                    YetkiliKontakt = txtYetkiliKontakt.Text,
+                    YetkiliAdi = txtYetkiliAdi.Text,
+                    YetkiSekli = selYetkiSekli.SelectedValue,
+                    YetkiTarihi = DateTime.Now.ToString("dd.MM.yyyy"),
+                    AksiKararaKadar = chkAksiKarar.Checked,
+                    YetkiGrubu = selYetkiGrubu.SelectedValue,
+                    SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
+                    YetkiTurleri = selYetkiTurleri.SelectedValue,
+                    YetkiTutari = yetkiTutari.ToString("0.00"),
+                    YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
+                    YetkiDurumu = selYetkiDurumu.SelectedValue,
+                    IslemTipi = "Ekle",
+                    Imzalar = signatures.Select(s => new YetkiliImza 
+                    { 
+                        Base64Image = s.Image,
+                        SlotIndex = s.SlotIndex 
+                    }).ToArray()
+                };
+
+                // Grid'e ekle
+                yetkiliGrid.AddYetkili(yetkiliKayit);
+
+                // Formu temizle
+                ClearForm();
+                ShowMessage("Yetkili kaydı başarıyla eklendi", "success");
+            }
+            catch (Exception ex)
+            {
+                ShowError(string.Format("İşlem sırasında bir hata oluştu: {0}", ex.Message));
+            }
+        }
+
+        private void ClearForm()
+        {
+            txtYetkiliKontakt.Text = string.Empty;
+            txtYetkiliAdi.Text = string.Empty;
+            txtSinirliYetkiDetaylari.Text = string.Empty;
+            txtYetkiTutari.Text = string.Empty;
+            yetkiBitisTarihi.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            chkAksiKarar.Checked = false;
+            
+            // Dropdown'ları varsayılan değerlerine döndür
+            selYetkiSekli.SelectedIndex = 0;
+            selYetkiGrubu.SelectedIndex = 0;
+            selYetkiTurleri.SelectedIndex = 0;
+            selYetkiDovizCinsi.SelectedIndex = 0;
+            selYetkiDurumu.SelectedIndex = 0;
+
+            // İmzaları temizle
+            ScriptManager.RegisterStartupScript(this, GetType(), "clearSignatures",
+                "if(typeof(clearSignatureSlots) === 'function') { clearSignatureSlots(); }", true);
+        }
+
         protected void BtnSaveSignature_Click(object sender, EventArgs e)
         {
             try
