@@ -906,7 +906,7 @@
                 <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
-                    CssClass="button" OnClick="BtnSaveSignature_Click" OnClientClick="return saveAndReturn();" />
+                    CssClass="button" OnClientClick="return saveAndReturn();" />
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
@@ -997,8 +997,14 @@
                     console.log('Gönderilecek yetkili kayıtları:', kayitlar);
                     console.log('Gönderilecek imza verileri:', signatures);
 
-                    // Ajax ile gönder
-                    $.ajax({
+                    // Önceki Ajax isteğini iptal et
+                    if (currentAjaxRequest) {
+                        currentAjaxRequest.abort();
+                    }
+
+                    // Yeni Ajax isteği
+                    currentAjaxRequest = $.ajax({
+                        timeout: AJAX_TIMEOUT,
                         type: "POST",
                         url: "PdfSignatureForm.aspx/SaveSignatureWithAjax",
                         data: JSON.stringify({
@@ -2521,47 +2527,20 @@
                 };
             }
 
-            // Initialize Sys.WebForms.PageRequestManager for AJAX handling
-            if (typeof(Sys) !== 'undefined') {
-                var prm = Sys.WebForms.PageRequestManager.getInstance();
-                
-                prm.add_initializeRequest(function(sender, args) {
-                    if (args.get_postBackElement().id === '<%= btnSaveSignature.ClientID %>') {
-                        showLoading('İmza kaydediliyor...');
-                    }
-                });
-                
-                prm.add_endRequest(function(sender, args) {
-                    hideLoading();
-                    if (args.get_error() != undefined) {
-                        var errorMessage = args.get_error().message;
-                        console.error('Server error:', errorMessage);
-                        showNotification('İmza kaydedilirken bir hata oluştu: ' + errorMessage, 'error');
-                        args.set_errorHandled(true);
-                        btnSave.disabled = false;
-                    } else {
-                        // Başarılı işlem sonrası sadece seçimi temizle, sayfayı yeniden yükleme
-                        if (currentSelection) {
-                            clearSelection();
-                            // Seçim butonunu aktif bırak, böylece yeni seçim yapılabilir
-                            btnSave.disabled = false;
-                        }
-                    }
-                });
+            // Ajax timeout kontrolü
+            const AJAX_TIMEOUT = 30000; // 30 saniye
+            let currentAjaxRequest = null;
 
-                // Timeout kontrolü
-                var saveTimeout;
-                prm.add_beginRequest(function() {
-                    saveTimeout = setTimeout(function() {
-                        hideLoading();
-                        showNotification('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
-                        btnSave.disabled = false;
-                    }, 30000); // 30 saniye timeout
-                });
-
-                prm.add_endRequest(function() {
-                    clearTimeout(saveTimeout);
-                });
+            function handleAjaxTimeout() {
+                if (currentAjaxRequest) {
+                    currentAjaxRequest.abort();
+                }
+                hideLoading();
+                showNotification('İmza kaydetme işlemi zaman aşımına uğradı. Lütfen tekrar deneyiniz.', 'error');
+                const btnSave = document.getElementById('<%= btnSaveSignature.ClientID %>');
+                if (btnSave) {
+                    btnSave.disabled = false;
+                }
             }
 
             // Modify file upload event
