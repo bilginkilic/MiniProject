@@ -323,8 +323,33 @@ namespace AspxExamples
                 // Gelen verileri parse etmeyi dene
                 try {
                     var serializer = new JavaScriptSerializer();
-                    var yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitlarJson);
-                    var signatures = serializer.Deserialize<List<SignatureData>>(signatureDataJson);
+                    // Set max length for JSON deserialization
+                    serializer.MaxJsonLength = Int32.MaxValue;
+                    
+                    // Try to deserialize with error handling
+                    List<YetkiliKayit> yetkiliKayitlar;
+                    List<SignatureData> signatures;
+                    
+                    try {
+                        yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitlarJson);
+                        signatures = serializer.Deserialize<List<SignatureData>>(signatureDataJson);
+                        
+                        // Validate YetkiliImza data
+                        if (yetkiliKayitlar != null) {
+                            foreach (var kayit in yetkiliKayitlar) {
+                                if (kayit.Imzalar != null) {
+                                    foreach (var imza in kayit.Imzalar) {
+                                        if (imza.Base64Image == null) {
+                                            throw new Exception("İmza verisi eksik veya hatalı format");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (InvalidOperationException ex) {
+                        System.Diagnostics.Debug.WriteLine("Deserialization error: " + ex.Message);
+                        throw new Exception("İmza verisi uygun formatta değil: " + ex.Message);
+                    }
                     
                     System.Diagnostics.Debug.WriteLine("Yetkili kayıt sayısı: " + yetkiliKayitlar?.Count);
                     System.Diagnostics.Debug.WriteLine("İmza sayısı: " + signatures?.Count);
