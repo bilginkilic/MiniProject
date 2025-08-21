@@ -1005,32 +1005,29 @@
                     };
                     console.log('Gönderilecek veri:', requestData);
 
-                    // Ajax çağrısı
-                    $.ajax({
-                        url: 'PdfSignatureForm.aspx/SaveSignatureWithAjax',
-                        type: 'POST',
-                        data: JSON.stringify(requestData),
-                        contentType: 'application/json; charset=utf-8',
-                        dataType: 'json',
-                        success: function(response) {
-                            console.log('Başarılı yanıt:', response);
-                            if (response.d && response.d.success) {
-                                showNotification('Veriler başarıyla kaydedildi', 'success');
-                                setTimeout(function() {
-                                    window.location.href = document.referrer || '/';
-                                }, 1000);
-                            } else {
-                                showNotification(response.d.error || 'Bilinmeyen bir hata oluştu', 'error');
-                            }
+                    // Fetch API ile çağrı
+                    fetch('PdfSignatureForm.aspx/SaveSignatureWithAjax', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8'
                         },
-                        error: function(xhr, status, error) {
-                            console.error('Ajax hatası:', {
-                                status: status,
-                                error: error,
-                                responseText: xhr.responseText
-                            });
-                            showNotification('İşlem sırasında bir hata oluştu', 'error');
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Başarılı yanıt:', data);
+                        if (data.d && data.d.success) {
+                            showNotification('Veriler başarıyla kaydedildi', 'success');
+                            setTimeout(() => {
+                                window.location.href = document.referrer || '/';
+                            }, 1000);
+                        } else {
+                            showNotification(data.d.error || 'Bilinmeyen bir hata oluştu', 'error');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Fetch hatası:', error);
+                        showNotification('İşlem sırasında bir hata oluştu: ' + error.message, 'error');
                     });
 
                     return false; // Form submit'i engelle
