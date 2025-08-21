@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* net x mesk */
+/* net x mesjk */
 
 namespace AspxExamples
 {
@@ -658,8 +658,8 @@ namespace AspxExamples
                     var response = service.SaveSignature(requestData.referenceId, authData);
                         
                         // Başarılı yanıt döndür
-                        var response = new { success = true, message = "Veriler başarıyla kaydedildi", referenceId = requestData.referenceId };
-                        var jsonResponse = serializer.Serialize(response);
+                        var successResponse = new { success = true, message = "Veriler başarıyla kaydedildi", referenceId = requestData.referenceId };
+                        var jsonResponse = JsonConvert.SerializeObject(successResponse);
                         
                         Response.Clear();
                         Response.ContentType = "application/json";
@@ -670,8 +670,7 @@ namespace AspxExamples
                 catch (Exception ex)
                 {
                     var errorResponse = new { success = false, error = ex.Message };
-                    var errorSerializer = new JavaScriptSerializer();
-                    var jsonError = errorSerializer.Serialize(errorResponse);
+                    var jsonError = JsonConvert.SerializeObject(errorResponse);
                     
                     Response.Clear();
                     Response.ContentType = "application/json";
