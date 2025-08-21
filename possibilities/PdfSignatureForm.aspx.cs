@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* net x kulaklık */
+/* net x mesk */
 
 namespace AspxExamples
 {
@@ -337,21 +337,42 @@ namespace AspxExamples
 
                         foreach (JObject kayitObj in yetkiliKayitlarArray)
                         {
-                            var kayit = new YetkiliKayit
-                            {
-                                YetkiliKontakt = kayitObj["YetkiliKontakt"]?.ToString(),
-                                YetkiliAdi = kayitObj["YetkiliAdi"]?.ToString(),
-                                YetkiSekli = kayitObj["YetkiSekli"]?.ToString(),
-                                YetkiTarihi = kayitObj["YetkiTarihi"]?.ToString(),
-                                AksiKararaKadar = kayitObj["AksiKararaKadar"]?.Value<bool>() ?? false,
-                                SinirliYetkiDetaylari = kayitObj["SinirliYetkiDetaylari"]?.ToString(),
-                                YetkiTurleri = kayitObj["YetkiTurleri"]?.ToString(),
-                                YetkiTutari = kayitObj["YetkiTutari"]?.ToString(),
-                                YetkiDovizCinsi = kayitObj["YetkiDovizCinsi"]?.ToString(),
-                                YetkiDurumu = kayitObj["YetkiDurumu"]?.ToString(),
-                                IslemTipi = kayitObj["IslemTipi"]?.ToString(),
-                                Imzalar = new List<YetkiliImza>()
-                            };
+                            var kayit = new YetkiliKayit();
+                            
+                            var kontaktToken = kayitObj["YetkiliKontakt"];
+                            kayit.YetkiliKontakt = kontaktToken != null ? kontaktToken.ToString() : null;
+                            
+                            var adiToken = kayitObj["YetkiliAdi"];
+                            kayit.YetkiliAdi = adiToken != null ? adiToken.ToString() : null;
+                            
+                            var sekliToken = kayitObj["YetkiSekli"];
+                            kayit.YetkiSekli = sekliToken != null ? sekliToken.ToString() : null;
+                            
+                            var tarihToken = kayitObj["YetkiTarihi"];
+                            kayit.YetkiTarihi = tarihToken != null ? tarihToken.ToString() : null;
+                            
+                            var aksiKararToken = kayitObj["AksiKararaKadar"];
+                            kayit.AksiKararaKadar = aksiKararToken != null ? aksiKararToken.Value<bool>() : false;
+                            
+                            var detayToken = kayitObj["SinirliYetkiDetaylari"];
+                            kayit.SinirliYetkiDetaylari = detayToken != null ? detayToken.ToString() : null;
+                            
+                            var turToken = kayitObj["YetkiTurleri"];
+                            kayit.YetkiTurleri = turToken != null ? turToken.ToString() : null;
+                            
+                            var tutarToken = kayitObj["YetkiTutari"];
+                            kayit.YetkiTutari = tutarToken != null ? tutarToken.ToString() : null;
+                            
+                            var dovizToken = kayitObj["YetkiDovizCinsi"];
+                            kayit.YetkiDovizCinsi = dovizToken != null ? dovizToken.ToString() : null;
+                            
+                            var durumToken = kayitObj["YetkiDurumu"];
+                            kayit.YetkiDurumu = durumToken != null ? durumToken.ToString() : null;
+                            
+                            var islemToken = kayitObj["IslemTipi"];
+                            kayit.IslemTipi = islemToken != null ? islemToken.ToString() : null;
+                            
+                            kayit.Imzalar = new List<YetkiliImza>();
 
                             // İmzaları parse et
                             var imzalarArray = kayitObj["Imzalar"] as JArray;
@@ -359,11 +380,15 @@ namespace AspxExamples
                             {
                                 foreach (JObject imzaObj in imzalarArray)
                                 {
-                                    kayit.Imzalar.Add(new YetkiliImza
-                                    {
-                                        Base64Image = imzaObj["Base64Image"]?.ToString(),
-                                        SlotIndex = imzaObj["SlotIndex"]?.Value<int>() ?? 0
-                                    });
+                                    var imza = new YetkiliImza();
+                                    
+                                    var base64Token = imzaObj["Base64Image"];
+                                    imza.Base64Image = base64Token != null ? base64Token.ToString() : null;
+                                    
+                                    var slotToken = imzaObj["SlotIndex"];
+                                    imza.SlotIndex = slotToken != null ? slotToken.Value<int>() : 0;
+                                    
+                                    kayit.Imzalar.Add(imza);
                                 }
                             }
 
@@ -372,16 +397,30 @@ namespace AspxExamples
 
                         foreach (JObject sigObj in signaturesArray)
                         {
-                            signatures.Add(new SignatureData
-                            {
-                                Page = sigObj["Page"]?.Value<int>() ?? 0,
-                                X = sigObj["X"]?.Value<int>() ?? 0,
-                                Y = sigObj["Y"]?.Value<int>() ?? 0,
-                                Width = sigObj["Width"]?.Value<int>() ?? 0,
-                                Height = sigObj["Height"]?.Value<int>() ?? 0,
-                                Image = sigObj["Image"]?.ToString(),
-                                SourcePdfPath = sigObj["SourcePdfPath"]?.ToString()
-                            });
+                            var signatureData = new SignatureData();
+                            
+                            var pageToken = sigObj["Page"];
+                            signatureData.Page = pageToken != null ? pageToken.Value<int>() : 0;
+                            
+                            var xToken = sigObj["X"];
+                            signatureData.X = xToken != null ? xToken.Value<int>() : 0;
+                            
+                            var yToken = sigObj["Y"];
+                            signatureData.Y = yToken != null ? yToken.Value<int>() : 0;
+                            
+                            var widthToken = sigObj["Width"];
+                            signatureData.Width = widthToken != null ? widthToken.Value<int>() : 0;
+                            
+                            var heightToken = sigObj["Height"];
+                            signatureData.Height = heightToken != null ? heightToken.Value<int>() : 0;
+                            
+                            var imageToken = sigObj["Image"];
+                            signatureData.Image = imageToken != null ? imageToken.ToString() : null;
+                            
+                            var sourcePathToken = sigObj["SourcePdfPath"];
+                            signatureData.SourcePdfPath = sourcePathToken != null ? sourcePathToken.ToString() : null;
+                            
+                            signatures.Add(signatureData);
                         }
 
                         System.Diagnostics.Debug.WriteLine("JSON başarıyla parse edildi");
