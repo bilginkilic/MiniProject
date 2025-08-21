@@ -327,8 +327,16 @@ namespace AspxExamples
                 // Gelen verileri parse etmeyi dene
                 try {
                     var serializer = new JavaScriptSerializer();
+                    serializer.MaxJsonLength = Int32.MaxValue; // Maksimum JSON uzunluğunu artır
                     try {
-                        // JObject ile parse et
+                        // JSON ayarlarını yapılandır
+                        var jsonSettings = new JsonSerializerSettings
+                        {
+                            MaxDepth = 128,
+                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                        };
+
+                        // JObject ile parse et - büyük JSON'lar için
                         var yetkiliKayitlarArray = JArray.Parse(yetkiliKayitlarJson);
                         var signaturesArray = JArray.Parse(signatureDataJson);
 
@@ -659,7 +667,7 @@ namespace AspxExamples
                         
                         // Başarılı yanıt döndür
                         var successResponse = new { success = true, message = "Veriler başarıyla kaydedildi", referenceId = requestData.referenceId };
-                        var jsonResponse = JsonConvert.SerializeObject(successResponse);
+                        var jsonResponse = JsonConvert.SerializeObject(successResponse, jsonSettings);
                         
                         Response.Clear();
                         Response.ContentType = "application/json";
@@ -670,7 +678,7 @@ namespace AspxExamples
                 catch (Exception ex)
                 {
                     var errorResponse = new { success = false, error = ex.Message };
-                    var jsonError = JsonConvert.SerializeObject(errorResponse);
+                    var jsonError = JsonConvert.SerializeObject(errorResponse, jsonSettings);
                     
                     Response.Clear();
                     Response.ContentType = "application/json";
