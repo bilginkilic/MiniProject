@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* net x mesjk */
+/* net x eta */
 
 namespace AspxExamples
 {
@@ -69,6 +69,11 @@ namespace AspxExamples
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
+        private static readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
+        {
+            MaxDepth = 128,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
         private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
 
         // Form kontrolleri
@@ -329,13 +334,6 @@ namespace AspxExamples
                     var serializer = new JavaScriptSerializer();
                     serializer.MaxJsonLength = Int32.MaxValue; // Maksimum JSON uzunluğunu artır
                     try {
-                        // JSON ayarlarını yapılandır
-                        var jsonSettings = new JsonSerializerSettings
-                        {
-                            MaxDepth = 128,
-                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                        };
-
                         // JObject ile parse et - büyük JSON'lar için
                         var yetkiliKayitlarArray = JArray.Parse(yetkiliKayitlarJson);
                         var signaturesArray = JArray.Parse(signatureDataJson);
