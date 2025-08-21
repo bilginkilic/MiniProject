@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 /* net x kulaklık */
 
 namespace AspxExamples
@@ -318,37 +320,81 @@ namespace AspxExamples
                 // Debug için gelen verileri logla
                 System.Diagnostics.Debug.WriteLine("SaveSignatureWithAjax başladı");
                 System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson uzunluğu: " + (yetkiliKayitlarJson?.Length ?? 0));
+                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson içeriği: " + yetkiliKayitlarJson);
+                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson içeriği: " + signatureDataJson);
                 System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson uzunluğu: " + (signatureDataJson?.Length ?? 0));
                 
                 // Gelen verileri parse etmeyi dene
                 try {
                     var serializer = new JavaScriptSerializer();
-                    // Set max length for JSON deserialization
-                    serializer.MaxJsonLength = Int32.MaxValue;
-                    
-                    // Try to deserialize with error handling
-                    List<YetkiliKayit> yetkiliKayitlar;
-                    List<SignatureData> signatures;
-                    
                     try {
-                        yetkiliKayitlar = serializer.Deserialize<List<YetkiliKayit>>(yetkiliKayitlarJson);
-                        signatures = serializer.Deserialize<List<SignatureData>>(signatureDataJson);
-                        
-                        // Validate YetkiliImza data
-                        if (yetkiliKayitlar != null) {
-                            foreach (var kayit in yetkiliKayitlar) {
-                                if (kayit.Imzalar != null) {
-                                    foreach (var imza in kayit.Imzalar) {
-                                        if (imza.Base64Image == null) {
-                                            throw new Exception("İmza verisi eksik veya hatalı format");
-                                        }
-                                    }
+                        // JObject ile parse et
+                        var yetkiliKayitlarArray = JArray.Parse(yetkiliKayitlarJson);
+                        var signaturesArray = JArray.Parse(signatureDataJson);
+
+                        yetkiliKayitlar = new List<YetkiliKayit>();
+                        signatures = new List<SignatureData>();
+
+                        foreach (JObject kayitObj in yetkiliKayitlarArray)
+                        {
+                            var kayit = new YetkiliKayit
+                            {
+                                YetkiliKontakt = kayitObj["YetkiliKontakt"]?.ToString(),
+                                YetkiliAdi = kayitObj["YetkiliAdi"]?.ToString(),
+                                YetkiSekli = kayitObj["YetkiSekli"]?.ToString(),
+                                YetkiTarihi = kayitObj["YetkiTarihi"]?.ToString(),
+                                AksiKararaKadar = kayitObj["AksiKararaKadar"]?.Value<bool>() ?? false,
+                                SinirliYetkiDetaylari = kayitObj["SinirliYetkiDetaylari"]?.ToString(),
+                                YetkiTurleri = kayitObj["YetkiTurleri"]?.ToString(),
+                                YetkiTutari = kayitObj["YetkiTutari"]?.ToString(),
+                                YetkiDovizCinsi = kayitObj["YetkiDovizCinsi"]?.ToString(),
+                                YetkiDurumu = kayitObj["YetkiDurumu"]?.ToString(),
+                                IslemTipi = kayitObj["IslemTipi"]?.ToString(),
+                                Imzalar = new List<YetkiliImza>()
+                            };
+
+                            // İmzaları parse et
+                            var imzalarArray = kayitObj["Imzalar"] as JArray;
+                            if (imzalarArray != null)
+                            {
+                                foreach (JObject imzaObj in imzalarArray)
+                                {
+                                    kayit.Imzalar.Add(new YetkiliImza
+                                    {
+                                        Base64Image = imzaObj["Base64Image"]?.ToString(),
+                                        SlotIndex = imzaObj["SlotIndex"]?.Value<int>() ?? 0
+                                    });
                                 }
                             }
+
+                            yetkiliKayitlar.Add(kayit);
                         }
-                    } catch (InvalidOperationException ex) {
-                        System.Diagnostics.Debug.WriteLine("Deserialization error: " + ex.Message);
-                        throw new Exception("İmza verisi uygun formatta değil: " + ex.Message);
+
+                        foreach (JObject sigObj in signaturesArray)
+                        {
+                            signatures.Add(new SignatureData
+                            {
+                                Page = sigObj["Page"]?.Value<int>() ?? 0,
+                                X = sigObj["X"]?.Value<int>() ?? 0,
+                                Y = sigObj["Y"]?.Value<int>() ?? 0,
+                                Width = sigObj["Width"]?.Value<int>() ?? 0,
+                                Height = sigObj["Height"]?.Value<int>() ?? 0,
+                                Image = sigObj["Image"]?.ToString(),
+                                SourcePdfPath = sigObj["SourcePdfPath"]?.ToString()
+                            });
+                        }
+
+                        System.Diagnostics.Debug.WriteLine("JSON başarıyla parse edildi");
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("JSON parse hatası: " + ex.Message);
+                        throw new Exception("JSON verisi geçerli değil: " + ex.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Beklenmeyen hata: " + ex.Message);
+                        throw;
                     }
                     
                     System.Diagnostics.Debug.WriteLine("Yetkili kayıt sayısı: " + yetkiliKayitlar?.Count);
