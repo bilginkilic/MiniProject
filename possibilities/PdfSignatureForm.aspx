@@ -1736,17 +1736,17 @@
                 
                     // Yeni kayıt veya güncelleme için veri hazırla
                     const formData = {
-                        yetkiliKontakt: yetkiliKontakt,
-                        yetkiliAdi: yetkiliAdi,
-                        yetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
-                        yetkiTarihi: yetkiTarihi,
-                        yetkiBitisTarihi: yetkiBitisTarihi,
-                        sinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
-                        yetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
-                        yetkiTutari: yetkiTutariNum.toFixed(2),
-                        yetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
-                        yetkiDurumu: 'Aktif',
-                        imzalar: imzalar
+                        YetkiliKontakt: yetkiliKontakt,
+                        YetkiliAdi: yetkiliAdi,
+                        YetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                        YetkiTarihi: yetkiTarihi,
+                        YetkiBitisTarihi: yetkiBitisTarihi,
+                        SinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
+                        YetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                        YetkiTutari: yetkiTutariNum.toFixed(2),
+                        YetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
+                        YetkiDurumu: 'Aktif',
+                        Imzalar: imzalar
                     };
 
                     if(isUpdate) {
