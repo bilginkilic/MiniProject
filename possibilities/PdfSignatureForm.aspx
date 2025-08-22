@@ -1791,18 +1791,18 @@
                     .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
 
                 return {
-                    yetkiliKontakt: row.cells[0].textContent,
-                    yetkiliAdi: row.cells[1].textContent,
-                    yetkiSekli: row.cells[2].textContent,
-                    yetkiTarihi: row.cells[3].textContent,
-                    yetkiBitisTarihi: row.cells[4].textContent,
-                    yetkiGrubu: row.cells[5].textContent,
-                    sinirliYetkiDetaylari: row.cells[6].textContent,
-                    yetkiTurleri: row.cells[7].textContent,
-                    imzalar: signaturePreviews,
-                    yetkiTutari: row.cells[11].textContent,
-                    yetkiDovizCinsi: row.cells[12].textContent,
-                    yetkiDurumu: row.cells[13].textContent
+                    YetkiliKontakt: row.cells[0].textContent,
+                    YetkiliAdi: row.cells[1].textContent,
+                    YetkiSekli: row.cells[2].textContent,
+                    YetkiTarihi: row.cells[3].textContent,
+                    YetkiBitisTarihi: row.cells[4].textContent,
+                    YetkiGrubu: row.cells[5].textContent,
+                    SinirliYetkiDetaylari: row.cells[6].textContent,
+                    YetkiTurleri: row.cells[7].textContent,
+                    Imzalar: signaturePreviews,
+                    YetkiTutari: row.cells[11].textContent,
+                    YetkiDovizCinsi: row.cells[12].textContent,
+                    YetkiDurumu: row.cells[13].textContent
                 };
             }
 
