@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* net x eta */
+/* net x kunyt */
 
 namespace AspxExamples
 {
@@ -381,19 +381,54 @@ namespace AspxExamples
                             kayit.Imzalar = new List<YetkiliImza>();
 
                             // İmzaları parse et
-                            var imzalarArray = kayitObj["Imzalar"] as JArray;
-                            if (imzalarArray != null)
+                            var imzalarToken = kayitObj["Imzalar"];
+                            if (imzalarToken != null)
                             {
-                                foreach (JObject imzaObj in imzalarArray)
+                                // Token tipini kontrol et
+                                if (imzalarToken.Type == JTokenType.Array)
                                 {
+                                    var imzalarArray = (JArray)imzalarToken;
+                                    foreach (JToken imzaToken in imzalarArray)
+                                    {
+                                        var imza = new YetkiliImza();
+                                        
+                                        if (imzaToken.Type == JTokenType.Object)
+                                        {
+                                            var imzaObj = (JObject)imzaToken;
+                                            var base64Token = imzaObj["Base64Image"];
+                                            imza.Base64Image = base64Token?.ToString();
+                                            
+                                            var slotToken = imzaObj["SlotIndex"];
+                                            imza.SlotIndex = slotToken != null ? slotToken.Value<int>() : 0;
+                                        }
+                                        else
+                                        {
+                                            // Eğer obje değilse, direkt string olarak al
+                                            imza.Base64Image = imzaToken.ToString();
+                                            imza.SlotIndex = 0;
+                                        }
+                                        
+                                        kayit.Imzalar.Add(imza);
+                                    }
+                                }
+                                else if (imzalarToken.Type == JTokenType.String || imzalarToken.Type == JTokenType.Object)
+                                {
+                                    // Tek bir imza varsa
                                     var imza = new YetkiliImza();
-                                    
-                                    var base64Token = imzaObj["Base64Image"];
-                                    imza.Base64Image = base64Token != null ? base64Token.ToString() : null;
-                                    
-                                    var slotToken = imzaObj["SlotIndex"];
-                                    imza.SlotIndex = slotToken != null ? slotToken.Value<int>() : 0;
-                                    
+                                    if (imzalarToken.Type == JTokenType.Object)
+                                    {
+                                        var imzaObj = (JObject)imzalarToken;
+                                        var base64Token = imzaObj["Base64Image"];
+                                        imza.Base64Image = base64Token?.ToString();
+                                        
+                                        var slotToken = imzaObj["SlotIndex"];
+                                        imza.SlotIndex = slotToken != null ? slotToken.Value<int>() : 0;
+                                    }
+                                    else
+                                    {
+                                        imza.Base64Image = imzalarToken.ToString();
+                                        imza.SlotIndex = 0;
+                                    }
                                     kayit.Imzalar.Add(imza);
                                 }
                             }
