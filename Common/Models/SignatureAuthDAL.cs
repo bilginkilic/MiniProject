@@ -5,237 +5,182 @@ using System.Data.SqlClient;
 
 namespace AspxExamples.Common.Models
 {
-    public class SignatureAuthDAL : DbManager
+    public class SignatureAuthDAL
     {
-        #region Singleton
-        private static SignatureAuthDAL instance;
-        private static readonly object lockObject = new object();
-
-        public static SignatureAuthDAL Instance
+        public static List<YetkiliData> SelectYetkiliByCircular(int circularId, string yetkiDurumu = null)
         {
-            get
+            using (APPDb db = new APPDb())
             {
-                if (instance == null)
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
                 {
-                    lock (lockObject)
-                    {
-                        if (instance == null)
-                        {
-                            instance = new SignatureAuthDAL();
-                        }
-                    }
-                }
-                return instance;
+                    db.Parameter("circularId", circularId),
+                    db.Parameter("yetkiDurumu", yetkiDurumu)
+                });
+
+                return db.SetSpCommand("SGN.SelectYetkiliByCircular",
+                    appParam.ToArray()
+                ).ExecuteList<YetkiliData>();
             }
         }
 
-        private SignatureAuthDAL() : base() { }
-        #endregion
-
-        #region YetkiliData Methods
-        public YetkiliData GetYetkiliById(int id)
+        public static YetkiliData SelectYetkiliById(int id)
         {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SELECT_BY_ID"))
+            using (APPDb db = new APPDb())
             {
-                cmd.Parameters.AddWithValue("@ID", id);
-                
-                using (DataTable dt = AppDb.GetDataTable(cmd))
-                {
-                    if (dt.Rows.Count == 0) return null;
-                    
-                    return MapYetkiliDataFromRow(dt.Rows[0]);
-                }
+                return db.SetSpCommand("SGN.SelectYetkiliById",
+                    db.Parameter("ID", id)
+                ).ExecuteEntity<YetkiliData>();
             }
         }
 
-        public List<YetkiliData> GetYetkiliByCircular(int circularId)
-        {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SELECT_BY_CIRCULAR"))
-            {
-                cmd.Parameters.AddWithValue("@CircularID", circularId);
-                
-                using (DataTable dt = AppDb.GetDataTable(cmd))
-                {
-                    return MapYetkiliDataList(dt);
-                }
-            }
-        }
-
-        public List<YetkiliData> SearchYetkili(string yetkiliAdi = null, string yetkiGrubu = null, 
+        public static List<YetkiliData> SearchYetkili(string yetkiliAdi = null, string yetkiGrubu = null, 
             string yetkiDurumu = null, DateTime? baslangicTarihi = null, DateTime? bitisTarihi = null)
         {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SEARCH"))
+            using (APPDb db = new APPDb())
             {
-                if (!string.IsNullOrEmpty(yetkiliAdi))
-                    cmd.Parameters.AddWithValue("@YetkiliAdi", yetkiliAdi);
-                else
-                    cmd.Parameters.AddWithValue("@YetkiliAdi", DBNull.Value);
-
-                if (!string.IsNullOrEmpty(yetkiGrubu))
-                    cmd.Parameters.AddWithValue("@YetkiGrubu", yetkiGrubu);
-                else
-                    cmd.Parameters.AddWithValue("@YetkiGrubu", DBNull.Value);
-
-                if (!string.IsNullOrEmpty(yetkiDurumu))
-                    cmd.Parameters.AddWithValue("@YetkiDurumu", yetkiDurumu);
-                else
-                    cmd.Parameters.AddWithValue("@YetkiDurumu", DBNull.Value);
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("yetkiliAdi", yetkiliAdi),
+                    db.Parameter("yetkiGrubu", yetkiGrubu),
+                    db.Parameter("yetkiDurumu", yetkiDurumu)
+                });
 
                 if (baslangicTarihi.HasValue)
-                    cmd.Parameters.AddWithValue("@BaslangicTarihi", baslangicTarihi.Value);
-                else
-                    cmd.Parameters.AddWithValue("@BaslangicTarihi", DBNull.Value);
+                {
+                    appParam.Add(db.Parameter("baslangicTarihi", baslangicTarihi.Value));
+                }
 
                 if (bitisTarihi.HasValue)
-                    cmd.Parameters.AddWithValue("@BitisTarihi", bitisTarihi.Value);
-                else
-                    cmd.Parameters.AddWithValue("@BitisTarihi", DBNull.Value);
-
-                using (DataTable dt = AppDb.GetDataTable(cmd))
                 {
-                    return MapYetkiliDataList(dt);
+                    appParam.Add(db.Parameter("bitisTarihi", bitisTarihi.Value));
                 }
+
+                return db.SetSpCommand("SGN.SearchYetkili",
+                    appParam.ToArray()
+                ).ExecuteList<YetkiliData>();
             }
         }
 
-        public int InsertYetkili(YetkiliData yetkili)
+        public static int InsertYetkili(YetkiliData yetkili)
         {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_INSERT"))
+            using (APPDb db = new APPDb())
             {
-                cmd.Parameters.AddWithValue("@CircularID", yetkili.CircularID);
-                cmd.Parameters.AddWithValue("@YetkiliKontakt", (object)yetkili.YetkiliKontakt ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiliAdi", (object)yetkili.YetkiliAdi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiSekli", (object)yetkili.YetkiSekli ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTarihi", (object)yetkili.YetkiTarihi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiBitisTarihi", (object)yetkili.YetkiBitisTarihi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiGrubu", (object)yetkili.YetkiGrubu ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@SinirliYetkiDetaylari", (object)yetkili.SinirliYetkiDetaylari ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTurleri", (object)yetkili.YetkiTurleri ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTutari", yetkili.YetkiTutari);
-                cmd.Parameters.AddWithValue("@YetkiDovizCinsi", (object)yetkili.YetkiDovizCinsi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiDurumu", (object)yetkili.YetkiDurumu ?? DBNull.Value);
-
-                return Convert.ToInt32(AppDb.ExecuteScalar(cmd));
-            }
-        }
-
-        public void UpdateYetkili(YetkiliData yetkili)
-        {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_UPDATE"))
-            {
-                cmd.Parameters.AddWithValue("@ID", yetkili.ID);
-                cmd.Parameters.AddWithValue("@CircularID", yetkili.CircularID);
-                cmd.Parameters.AddWithValue("@YetkiliKontakt", (object)yetkili.YetkiliKontakt ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiliAdi", (object)yetkili.YetkiliAdi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiSekli", (object)yetkili.YetkiSekli ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTarihi", (object)yetkili.YetkiTarihi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiBitisTarihi", (object)yetkili.YetkiBitisTarihi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiGrubu", (object)yetkili.YetkiGrubu ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@SinirliYetkiDetaylari", (object)yetkili.SinirliYetkiDetaylari ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTurleri", (object)yetkili.YetkiTurleri ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiTutari", yetkili.YetkiTutari);
-                cmd.Parameters.AddWithValue("@YetkiDovizCinsi", (object)yetkili.YetkiDovizCinsi ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@YetkiDurumu", (object)yetkili.YetkiDurumu ?? DBNull.Value);
-
-                AppDb.ExecuteNonQuery(cmd);
-            }
-        }
-        #endregion
-
-        #region Signature Methods
-        public List<SignatureImage> GetSignaturesByAuthDetail(int authDetailId)
-        {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SIGNATURES_SELECT_BY_AUTHDETAIL"))
-            {
-                cmd.Parameters.AddWithValue("@AuthDetailID", authDetailId);
-                
-                using (DataTable dt = AppDb.GetDataTable(cmd))
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
                 {
-                    return MapSignatureList(dt);
+                    db.Parameter("CircularID", yetkili.CircularID),
+                    db.Parameter("YetkiliKontakt", yetkili.YetkiliKontakt),
+                    db.Parameter("YetkiliAdi", yetkili.YetkiliAdi),
+                    db.Parameter("YetkiSekli", yetkili.YetkiSekli),
+                    db.Parameter("YetkiTarihi", yetkili.YetkiTarihi),
+                    db.Parameter("YetkiBitisTarihi", yetkili.YetkiBitisTarihi),
+                    db.Parameter("YetkiGrubu", yetkili.YetkiGrubu),
+                    db.Parameter("YetkiTurleri", yetkili.YetkiTurleri),
+                    db.Parameter("YetkiTutari", yetkili.YetkiTutari),
+                    db.Parameter("YetkiDovizCinsi", yetkili.YetkiDovizCinsi),
+                    db.Parameter("YetkiDurumu", yetkili.YetkiDurumu)
+                });
+
+                if (!string.IsNullOrEmpty(yetkili.SinirliYetkiDetaylari))
+                {
+                    appParam.Add(db.Parameter("SinirliYetkiDetaylari", yetkili.SinirliYetkiDetaylari));
                 }
+
+                return db.SetSpCommand("SGN.InsertYetkili",
+                    appParam.ToArray()
+                ).ExecuteScalar<int>();
             }
         }
 
-        public int InsertSignature(SignatureImage signature)
+        public static void UpdateYetkili(YetkiliData yetkili)
         {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SIGNATURES_INSERT"))
+            using (APPDb db = new APPDb())
             {
-                cmd.Parameters.AddWithValue("@AuthDetailID", signature.AuthDetailID);
-                cmd.Parameters.AddWithValue("@ImageData", Convert.FromBase64String(signature.ImageData));
-                cmd.Parameters.AddWithValue("@SiraNo", signature.SiraNo);
-                cmd.Parameters.AddWithValue("@SourcePdfPath", (object)signature.SourcePdfPath ?? DBNull.Value);
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("ID", yetkili.ID),
+                    db.Parameter("CircularID", yetkili.CircularID),
+                    db.Parameter("YetkiliKontakt", yetkili.YetkiliKontakt),
+                    db.Parameter("YetkiliAdi", yetkili.YetkiliAdi),
+                    db.Parameter("YetkiSekli", yetkili.YetkiSekli),
+                    db.Parameter("YetkiTarihi", yetkili.YetkiTarihi),
+                    db.Parameter("YetkiBitisTarihi", yetkili.YetkiBitisTarihi),
+                    db.Parameter("YetkiGrubu", yetkili.YetkiGrubu),
+                    db.Parameter("YetkiTurleri", yetkili.YetkiTurleri),
+                    db.Parameter("YetkiTutari", yetkili.YetkiTutari),
+                    db.Parameter("YetkiDovizCinsi", yetkili.YetkiDovizCinsi),
+                    db.Parameter("YetkiDurumu", yetkili.YetkiDurumu)
+                });
 
-                return Convert.ToInt32(AppDb.ExecuteScalar(cmd));
+                if (!string.IsNullOrEmpty(yetkili.SinirliYetkiDetaylari))
+                {
+                    appParam.Add(db.Parameter("SinirliYetkiDetaylari", yetkili.SinirliYetkiDetaylari));
+                }
+
+                db.SetSpCommand("SGN.UpdateYetkili",
+                    appParam.ToArray()
+                ).ExecuteNonQuery();
             }
         }
 
-        public void UpdateSignature(SignatureImage signature)
+        public static List<SignatureImage> SelectSignaturesByAuthDetail(int authDetailId)
         {
-            using (SqlCommand cmd = AppDb.GetCommand("SP_SGN_AUTHDETAIL_SIGNATURES_UPDATE"))
+            using (APPDb db = new APPDb())
             {
-                cmd.Parameters.AddWithValue("@ID", signature.ID);
-                cmd.Parameters.AddWithValue("@AuthDetailID", signature.AuthDetailID);
-                cmd.Parameters.AddWithValue("@ImageData", Convert.FromBase64String(signature.ImageData));
-                cmd.Parameters.AddWithValue("@SiraNo", signature.SiraNo);
-                cmd.Parameters.AddWithValue("@SourcePdfPath", (object)signature.SourcePdfPath ?? DBNull.Value);
-
-                AppDb.ExecuteNonQuery(cmd);
+                return db.SetSpCommand("SGN.SelectSignaturesByAuthDetail",
+                    db.Parameter("AuthDetailID", authDetailId)
+                ).ExecuteList<SignatureImage>();
             }
         }
-        #endregion
 
-        #region Helper Methods
-        private YetkiliData MapYetkiliDataFromRow(DataRow row)
+        public static int InsertSignature(SignatureImage signature)
         {
-            return new YetkiliData
+            using (APPDb db = new APPDb())
             {
-                ID = Convert.ToInt32(row["ID"]),
-                CircularID = Convert.ToInt32(row["CircularID"]),
-                YetkiliKontakt = row["YetkiliKontakt"] as string,
-                YetkiliAdi = row["YetkiliAdi"] as string,
-                YetkiSekli = row["YetkiSekli"] as string,
-                YetkiTarihi = row["YetkiTarihi"] as DateTime?,
-                YetkiBitisTarihi = row["YetkiBitisTarihi"] as DateTime?,
-                YetkiGrubu = row["YetkiGrubu"] as string,
-                SinirliYetkiDetaylari = row["SinirliYetkiDetaylari"] as string,
-                YetkiTurleri = row["YetkiTurleri"] as string,
-                YetkiTutari = row["YetkiTutari"] != DBNull.Value ? Convert.ToDecimal(row["YetkiTutari"]) : 0,
-                YetkiDovizCinsi = row["YetkiDovizCinsi"] as string,
-                YetkiDurumu = row["YetkiDurumu"] as string
-            };
-        }
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("AuthDetailID", signature.AuthDetailID),
+                    db.Parameter("ImageData", Convert.FromBase64String(signature.ImageData)),
+                    db.Parameter("SiraNo", signature.SiraNo)
+                });
 
-        private List<YetkiliData> MapYetkiliDataList(DataTable dt)
-        {
-            List<YetkiliData> list = new List<YetkiliData>();
-            foreach (DataRow row in dt.Rows)
-            {
-                list.Add(MapYetkiliDataFromRow(row));
+                if (!string.IsNullOrEmpty(signature.SourcePdfPath))
+                {
+                    appParam.Add(db.Parameter("SourcePdfPath", signature.SourcePdfPath));
+                }
+
+                return db.SetSpCommand("SGN.InsertSignature",
+                    appParam.ToArray()
+                ).ExecuteScalar<int>();
             }
-            return list;
         }
 
-        private SignatureImage MapSignatureFromRow(DataRow row)
+        public static void UpdateSignature(SignatureImage signature)
         {
-            return new SignatureImage
+            using (APPDb db = new APPDb())
             {
-                ID = Convert.ToInt32(row["ID"]),
-                AuthDetailID = Convert.ToInt32(row["AuthDetailID"]),
-                ImageData = Convert.ToBase64String((byte[])row["ImageData"]),
-                SiraNo = Convert.ToInt32(row["SiraNo"]),
-                SourcePdfPath = row["SourcePdfPath"] as string
-            };
-        }
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("ID", signature.ID),
+                    db.Parameter("AuthDetailID", signature.AuthDetailID),
+                    db.Parameter("ImageData", Convert.FromBase64String(signature.ImageData)),
+                    db.Parameter("SiraNo", signature.SiraNo)
+                });
 
-        private List<SignatureImage> MapSignatureList(DataTable dt)
-        {
-            List<SignatureImage> list = new List<SignatureImage>();
-            foreach (DataRow row in dt.Rows)
-            {
-                list.Add(MapSignatureFromRow(row));
+                if (!string.IsNullOrEmpty(signature.SourcePdfPath))
+                {
+                    appParam.Add(db.Parameter("SourcePdfPath", signature.SourcePdfPath));
+                }
+
+                db.SetSpCommand("SGN.UpdateSignature",
+                    appParam.ToArray()
+                ).ExecuteNonQuery();
             }
-            return list;
         }
-        #endregion
     }
 }
