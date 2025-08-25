@@ -1,4 +1,4 @@
-/* v10 - Created: 2024.01.17 - Fixed file viewing */
+/* v11 - Created: 2024.01.17 - Fixed physical path issue */
 
 using System;
 using System.IO;
@@ -12,18 +12,20 @@ namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        private string _cdn = @"\\trrgap3027\files\circular\cdn";
-        private string _cdnVirtualPath = "/cdn";
+        // CDN klasör yolu - fiziksel yol
+        private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
+        // Web'den erişim için virtual path
+        private const string CDN_VIRTUAL_PATH = "http://trrgap3027/circular/cdn";
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                if (!Directory.Exists(_cdn))
+                if (!Directory.Exists(CDN_PATH))
                 {
                     try 
                     {
-                        Directory.CreateDirectory(_cdn);
+                        Directory.CreateDirectory(CDN_PATH);
                     }
                     catch (Exception ex)
                     {
@@ -55,16 +57,23 @@ namespace AspxExamples
                         throw new Exception("Sadece PDF dosyaları yüklenebilir.");
                     }
 
+                    // Benzersiz dosya adı oluştur
                     string uniqueFileName = string.Format("{0}_{1}", 
                         DateTime.Now.Ticks.ToString(), 
                         fileName);
 
-                    string pdfPath = Path.Combine(_cdn, uniqueFileName);
+                    // CDN klasörüne kaydet
+                    string pdfPath = Path.Combine(CDN_PATH, uniqueFileName);
                     fuPdfUpload.SaveAs(pdfPath);
 
-                    string webPath = string.Format("{0}/{1}", 
-                        _cdnVirtualPath.TrimStart('/'), 
+                    System.Diagnostics.Debug.WriteLine(string.Format("Dosya kaydedildi: {0}", pdfPath));
+
+                    // Web URL'i oluştur
+                    string webUrl = string.Format("{0}/{1}", 
+                        CDN_VIRTUAL_PATH.TrimEnd('/'), 
                         uniqueFileName);
+
+                    System.Diagnostics.Debug.WriteLine(string.Format("Web URL: {0}", webUrl));
                     
                     string script = string.Format(@"
                         fileList.push('{0}');
@@ -72,13 +81,14 @@ namespace AspxExamples
                         viewFile('{0}');
                         enableSaveButton();
                         showNotification('Dosya başarıyla yüklendi', 'success');
-                    ", webPath);
+                    ", webUrl);
                     
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(string.Format("Hata: {0}", ex.Message));
                 string errorScript = string.Format(
                     "showNotification('{0}', 'error');", 
                     HttpUtility.JavaScriptStringEncode(ex.Message)
@@ -96,6 +106,16 @@ namespace AspxExamples
                 if (string.IsNullOrEmpty(filePath))
                 {
                     throw new Exception("Dosya yolu belirtilmedi.");
+                }
+
+                // URL'den dosya adını al
+                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
+                
+                // Fiziksel yolu kontrol et
+                string fullPath = Path.Combine(CDN_PATH, fileName);
+                if (!File.Exists(fullPath))
+                {
+                    throw new Exception("Dosya bulunamadı.");
                 }
 
                 return new { 
@@ -118,8 +138,11 @@ namespace AspxExamples
         {
             try
             {
+                // URL'den dosya adını al
                 string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
-                string fullPath = Path.Combine(HttpContext.Current.Server.MapPath("~/cdn"), fileName);
+                
+                // CDN klasöründeki tam yolu oluştur
+                string fullPath = Path.Combine(CDN_PATH, fileName);
 
                 if (File.Exists(fullPath))
                 {
