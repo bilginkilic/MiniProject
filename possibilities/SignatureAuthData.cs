@@ -41,4 +41,34 @@ namespace AspxExamples
         public int SiraNo { get; set; }        // İmzanın sıra numarası
         public string SourcePdfPath { get; set; } // İmzanın alındığı PDF dosyası
     }
+
+    public class CircularData
+    {
+        public int ID { get; set; }
+        public string CustomerNo { get; set; }
+        public string CompanyTitle { get; set; }
+        public DateTime? IssuedDate { get; set; }
+        public DateTime? ValidityDate { get; set; }
+        public DateTime? InternalBylawsTsgDate { get; set; }
+        public string SpecialCases { get; set; }
+        public string CircularType { get; set; }
+        public string CircularNotaryNo { get; set; }
+        public string Description { get; set; }
+        public string CircularStatus { get; set; }
+        public bool? IsABoardOfDirectorsDecisionRequired { get; set; }
+        public DateTime? MainCircularDate { get; set; }
+        public string MainCircularRef { get; set; }
+        public string AdditionalDocuments { get; set; }
+        public string RecordStatus { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public DateTime? LastUpdate { get; set; }
+        public string Channel { get; set; }
+
+        public List<YetkiliData> Yetkililer { get; set; }
+
+        public CircularData()
+        {
+            Yetkililer = new List<YetkiliData>();
+        }
+    }
 }
