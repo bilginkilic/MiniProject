@@ -6,7 +6,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com;">
     <title>PDF Dosya Yükleme ve Görüntüleme</title>
     
     <!-- Font Awesome -->
@@ -85,9 +84,16 @@
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+        }
+
+        .upload-container {
             display: flex;
-            flex-direction: column;
             gap: 10px;
+            align-items: center;
+        }
+
+        .file-upload-wrapper {
+            flex: 1;
         }
 
         .file-list {
@@ -121,6 +127,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .file-name i {
+            margin-right: 8px;
+            color: #dc3545;
         }
 
         .file-actions {
@@ -159,6 +170,8 @@
         .button.secondary {
             background: #6c757d;
             color: white;
+            min-width: auto;
+            padding: 8px;
         }
 
         .button.secondary:hover {
@@ -174,17 +187,6 @@
 
         .button.danger:hover {
             background: #c82333;
-        }
-
-        .button.view {
-            background: #17a2b8;
-            color: white;
-            min-width: auto;
-            padding: 8px;
-        }
-
-        .button.view:hover {
-            background: #138496;
         }
 
         .button:disabled {
@@ -208,57 +210,6 @@
             border: none;
         }
 
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #dc3545;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 4px;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: none;
-            z-index: 1000;
-        }
-
-        .notification.success {
-            border-left: 4px solid #28a745;
-        }
-
-        .notification.error {
-            border-left: 4px solid #dc3545;
-        }
-
-        .notification.warning {
-            border-left: 4px solid #ffc107;
-        }
-
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -273,7 +224,7 @@
         .empty-state i {
             font-size: 48px;
             margin-bottom: 10px;
-            color: #ccc;
+            color: #dc3545;
         }
 
         .instructions {
@@ -327,25 +278,56 @@
             background: #5a6268;
         }
 
-        /* File upload styling */
-        .upload-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .file-upload-wrapper {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-upload-wrapper input[type="file"] {
-            font-size: 14px;
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
 
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #dc3545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .notification.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .notification.warning {
+            border-left: 4px solid #ffc107;
+        }
     </style>
 </head>
 <body>
@@ -460,7 +442,7 @@
                             ${file.split('/').pop()}
                         </span>
                         <div class="file-actions">
-                            <button type="button" class="button view" onclick="viewFile('${file}')" title="Görüntüle">
+                            <button type="button" class="button secondary" onclick="viewFile('${file}')" title="Görüntüle">
                                 <i class="fas fa-eye"></i>
                             </button>
                             <button type="button" class="button danger" onclick="deleteFile('${file}', ${index})" title="Sil">

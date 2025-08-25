@@ -1,4 +1,4 @@
-/* v7 - Created: 2024.01.17 - Fixed CDN URL */
+/* v9 - Created: 2024.01.17 - Simplified to show PDF directly */
 
 using System;
 using System.IO;
@@ -12,39 +12,33 @@ namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        // CDN klasör yolu
         private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
         private const string ALLOWED_EXTENSION = ".pdf";
-        private const string CDN_WEB_PATH = "http://trrgap3027/circular/cdn";  // Tam URL olarak CDN adresi
+        private const string CDN_WEB_PATH = "http://trrgap3027/circular/cdn";
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                // CDN klasörünün varlığını kontrol et
                 if (!Directory.Exists(CDN_PATH))
                 {
                     try 
                     {
                         Directory.CreateDirectory(CDN_PATH);
-                        System.Diagnostics.Debug.WriteLine(string.Format("CDN klasörü oluşturuldu: {0}", CDN_PATH));
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine(string.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
                         ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
                         return;
                     }
                 }
 
-                // URL'den dosya yolu parametresini kontrol et ve hidden field'a ata
                 string filePath = Request.QueryString["file"];
                 if (!string.IsNullOrEmpty(filePath))
                 {
                     hdnCurrentFile.Value = filePath;
                 }
 
-                // Kaydet butonunu devre dışı bırak
                 btnSave.Enabled = false;
             }
         }
@@ -57,31 +51,22 @@ namespace AspxExamples
                 {
                     string fileName = Path.GetFileName(fuPdfUpload.FileName);
                     
-                    // Dosya uzantısı kontrolü
                     if (!fileName.EndsWith(ALLOWED_EXTENSION, StringComparison.OrdinalIgnoreCase))
                     {
                         throw new Exception(string.Format("Sadece {0} dosyaları yüklenebilir.", ALLOWED_EXTENSION));
                     }
 
-                    // Benzersiz dosya adı oluştur (timestamp_filename.pdf)
                     string uniqueFileName = string.Format("{0}_{1}", 
                         DateTime.Now.Ticks.ToString(), 
                         fileName);
 
-                    // CDN klasöründe tam dosya yolu oluştur
                     string cdnFilePath = Path.Combine(CDN_PATH, uniqueFileName);
-                    
-                    // Dosyayı CDN klasörüne kaydet
                     fuPdfUpload.SaveAs(cdnFilePath);
 
-                    // Web erişimi için tam URL oluştur
                     string webUrl = string.Format("{0}/{1}", 
                         CDN_WEB_PATH.TrimEnd('/'), 
                         uniqueFileName);
-
-                    System.Diagnostics.Debug.WriteLine(string.Format("Dosya yüklendi. URL: {0}", webUrl));
                     
-                    // Client-side script ile dosya listesini güncelle ve kaydet butonunu aktif et
                     string script = string.Format(@"
                         fileList.push('{0}');
                         updateFileList();
@@ -95,9 +80,6 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("Dosya yükleme hatası: {0}", ex.Message));
-                
-                // Hata durumunda kullanıcıya bildir
                 string errorScript = string.Format(
                     "showNotification('{0}', 'error');", 
                     HttpUtility.JavaScriptStringEncode(ex.Message)
@@ -112,14 +94,12 @@ namespace AspxExamples
         {
             try
             {
-                // Dosya yolunu kontrol et
                 if (string.IsNullOrEmpty(filePath))
                 {
                     throw new Exception("Dosya yolu belirtilmedi.");
                 }
 
-                // URL'den dosya adını al
-                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
+                string fileName = Path.GetFileName(filePath);
                 string fullPath = Path.Combine(CDN_PATH, fileName);
 
                 if (!File.Exists(fullPath))
@@ -127,7 +107,6 @@ namespace AspxExamples
                     throw new Exception("Dosya bulunamadı.");
                 }
 
-                // Başarılı yanıt döndür
                 return new { 
                     success = true, 
                     filePath = filePath 
@@ -148,11 +127,9 @@ namespace AspxExamples
         {
             try
             {
-                // URL'den dosya adını al
-                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
+                string fileName = Path.GetFileName(filePath);
                 string fullPath = Path.Combine(CDN_PATH, fileName);
 
-                // Dosyayı sil ve sonucu döndür
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);
