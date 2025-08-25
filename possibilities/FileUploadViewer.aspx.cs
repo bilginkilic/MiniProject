@@ -1,3 +1,5 @@
+/* v1 - Created: 2024.01.17 - Initial version */
+
 using System;
 using System.IO;
 using System.Web;
@@ -47,28 +49,30 @@ namespace AspxExamples
                     }
 
                     // Dosya adını benzersiz yap
-                    string uniqueFileName = $"{DateTime.Now.Ticks}_{fileName}";
+                    string uniqueFileName = string.Format("{0}_{1}", DateTime.Now.Ticks, fileName);
                     string filePath = Path.Combine(Server.MapPath(UPLOAD_FOLDER), uniqueFileName);
                     
                     // Dosyayı kaydet
                     fuPdfUpload.SaveAs(filePath);
 
                     // Relative path oluştur
-                    string relativePath = $"{UPLOAD_FOLDER.TrimStart('~')}{uniqueFileName}";
+                    string relativePath = string.Format("{0}{1}", UPLOAD_FOLDER.TrimStart('~'), uniqueFileName);
                     
                     // Client-side script ile dosya listesini güncelle
-                    string script = $@"
-                        fileList.push('{relativePath}');
+                    string script = string.Format(@"
+                        fileList.push('{0}');
                         updateFileList();
-                        viewFile('{relativePath}');
+                        viewFile('{0}');
                         showNotification('Dosya başarıyla yüklendi', 'success');
-                    ";
+                    ", relativePath);
+                    
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
                 }
             }
             catch (Exception ex)
             {
-                string errorScript = $"showNotification('{HttpUtility.JavaScriptStringEncode(ex.Message)}', 'error');";
+                string errorScript = string.Format("showNotification('{0}', 'error');", 
+                    HttpUtility.JavaScriptStringEncode(ex.Message));
                 ScriptManager.RegisterStartupScript(this, GetType(), "uploadError", errorScript, true);
             }
         }
@@ -86,7 +90,7 @@ namespace AspxExamples
                     throw new Exception("Geçersiz dosya yolu.");
                 }
 
-                string fullPath = HttpContext.Current.Server.MapPath("~" + filePath);
+                string fullPath = HttpContext.Current.Server.MapPath(string.Format("~{0}", filePath));
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);
