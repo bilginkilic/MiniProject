@@ -1,4 +1,4 @@
-/* v4 - Created: 2024.01.17 - Added save and return functionality */
+/* v6 - Created: 2024.01.17 - Reverted to working version with improvements */
 
 using System;
 using System.IO;
@@ -24,7 +24,17 @@ namespace AspxExamples
                 // CDN klasörünün varlığını kontrol et
                 if (!Directory.Exists(CDN_PATH))
                 {
-                    throw new DirectoryNotFoundException(string.Format("CDN klasörü bulunamadı: {0}", CDN_PATH));
+                    try 
+                    {
+                        Directory.CreateDirectory(CDN_PATH);
+                        System.Diagnostics.Debug.WriteLine(string.Format("CDN klasörü oluşturuldu: {0}", CDN_PATH));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(string.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
+                        ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
+                        return;
+                    }
                 }
 
                 // URL'den dosya yolu parametresini kontrol et ve hidden field'a ata
@@ -66,8 +76,10 @@ namespace AspxExamples
 
                     // Web erişimi için relative path oluştur
                     string webPath = string.Format("{0}/{1}", 
-                        CDN_WEB_PATH, 
+                        CDN_WEB_PATH.TrimStart('/'), 
                         uniqueFileName);
+
+                    System.Diagnostics.Debug.WriteLine(string.Format("Dosya yüklendi. Path: {0}", webPath));
                     
                     // Client-side script ile dosya listesini güncelle ve kaydet butonunu aktif et
                     string script = string.Format(@"
@@ -83,6 +95,8 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(string.Format("Dosya yükleme hatası: {0}", ex.Message));
+                
                 // Hata durumunda kullanıcıya bildir
                 string errorScript = string.Format(
                     "showNotification('{0}', 'error');", 
@@ -104,7 +118,7 @@ namespace AspxExamples
                     throw new Exception("Dosya yolu belirtilmedi.");
                 }
 
-                // Dosyanın CDN klasöründe olduğunu kontrol et
+                // Dosya adını al
                 string fileName = Path.GetFileName(filePath);
                 string fullPath = Path.Combine(CDN_PATH, fileName);
 
@@ -134,16 +148,15 @@ namespace AspxExamples
         {
             try
             {
+                // Dosya adını al
+                string fileName = Path.GetFileName(filePath);
+                string fullPath = Path.Combine(CDN_PATH, fileName);
+
                 // Güvenlik kontrolü - sadece CDN klasöründeki dosyaların silinmesine izin ver
-                string normalizedPath = filePath.Replace('/', Path.DirectorySeparatorChar);
-                if (!normalizedPath.StartsWith("/cdn/", StringComparison.OrdinalIgnoreCase))
+                if (!fullPath.StartsWith(CDN_PATH, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new Exception("Geçersiz dosya yolu. Sadece CDN klasöründeki dosyalar silinebilir.");
                 }
-
-                // Dosya yolunu server path'e çevir
-                string fileName = Path.GetFileName(filePath);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
 
                 // Dosyayı sil ve sonucu döndür
                 if (File.Exists(fullPath))
@@ -158,6 +171,15 @@ namespace AspxExamples
             {
                 return new { success = false, message = ex.Message };
             }
+        }
+
+        private void ShowError(string message)
+        {
+            string script = string.Format(
+                "showNotification('{0}', 'error');",
+                HttpUtility.JavaScriptStringEncode(message)
+            );
+            ScriptManager.RegisterStartupScript(this, GetType(), "error", script, true);
         }
     }
 }
