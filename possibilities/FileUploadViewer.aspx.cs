@@ -113,8 +113,8 @@ namespace AspxExamples
             }
         }
 
-        [WebMethod]
-        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        [System.Web.Services.WebMethod]
+        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
         public static object SaveAndReturn(string filePath)
         {
             try

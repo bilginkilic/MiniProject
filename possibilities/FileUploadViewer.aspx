@@ -298,7 +298,11 @@
 </head>
 <body>
     <form id="form1" runat="server">
-        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
+        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true">
+            <Services>
+                <asp:ServiceReference Path="~/FileUploadViewer.aspx" />
+            </Services>
+        </asp:ScriptManager>
         
         <div class="container">
             <div class="header">
@@ -501,16 +505,9 @@
 
                 showLoading();
                 
-                fetch('FileUploadViewer.aspx/SaveAndReturn', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ filePath: currentFile })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.d && data.d.success) {
+                // Web method'u çağır
+                PageMethods.SaveAndReturn(currentFile, function(response) {
+                    if (response.success) {
                         if (window.opener && !window.opener.closed) {
                             window.opener.postMessage({
                                 type: 'FILE_SELECTED',
@@ -523,14 +520,12 @@
                             window.close();
                         }, 1000);
                     } else {
-                        showNotification(data.d.error || 'Kaydetme işlemi başarısız oldu', 'error');
+                        showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
                     }
-                })
-                .catch(error => {
+                    hideLoading();
+                }, function(error) {
                     console.error('Kaydetme hatası:', error);
                     showNotification('İşlem sırasında bir hata oluştu', 'error');
-                })
-                .finally(() => {
                     hideLoading();
                 });
 
