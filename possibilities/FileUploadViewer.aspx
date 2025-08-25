@@ -6,8 +6,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com;">
     <title>PDF Dosya Yükleme ve Görüntüleme</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
     <style type="text/css">
         html, body { 
             margin: 0; 
@@ -31,10 +35,11 @@
             flex: 1;
             display: grid;
             grid-template-columns: 300px 1fr;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto 1fr auto;
             grid-template-areas: 
                 "header header"
-                "sidebar main";
+                "sidebar main"
+                "footer footer";
             gap: 20px;
             max-width: 1600px;
             margin: 0 auto;
@@ -80,6 +85,9 @@
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .file-list {
@@ -131,15 +139,21 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .button i {
+            font-size: 16px;
         }
 
         .button.primary {
-            background: #2196f3;
+            background: #dc3545;
             color: white;
         }
 
         .button.primary:hover {
-            background: #1976d2;
+            background: #c82333;
         }
 
         .button.secondary {
@@ -154,10 +168,23 @@
         .button.danger {
             background: #dc3545;
             color: white;
+            min-width: auto;
+            padding: 8px;
         }
 
         .button.danger:hover {
             background: #c82333;
+        }
+
+        .button.view {
+            background: #17a2b8;
+            color: white;
+            min-width: auto;
+            padding: 8px;
+        }
+
+        .button.view:hover {
+            background: #138496;
         }
 
         .button:disabled {
@@ -198,7 +225,7 @@
             width: 50px;
             height: 50px;
             border: 5px solid #f3f3f3;
-            border-top: 5px solid #2196f3;
+            border-top: 5px solid #dc3545;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -272,6 +299,53 @@
             color: #666;
         }
 
+        .footer {
+            grid-area: footer;
+            display: flex;
+            justify-content: flex-end;
+            padding: 20px 0 0 0;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .button.save {
+            background: #28a745;
+            color: white;
+        }
+
+        .button.save:hover {
+            background: #218838;
+        }
+
+        .button.cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .button.cancel:hover {
+            background: #5a6268;
+        }
+
+        /* File upload styling */
+        .upload-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-upload-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            font-size: 14px;
+            width: 100%;
+            max-width: 100%;
+        }
+
     </style>
 </head>
 <body>
@@ -289,14 +363,22 @@
                     <ul>
                         <li>PDF dosyası seçmek için "Dosya Seç" butonunu kullanın</li>
                         <li>Seçilen dosyayı yüklemek için "Yükle" butonuna tıklayın</li>
-                        <li>Yüklenen dosyaları listeden seçerek görüntüleyebilirsiniz</li>
-                        <li>Dosyaları silmek için çöp kutusu ikonuna tıklayın</li>
+                        <li>Yüklenen dosyayı görüntüleyebilirsiniz</li>
+                        <li>İşlemi tamamlamak için "Kaydet ve Kapat" butonuna tıklayın</li>
                     </ul>
                 </div>
 
                 <div class="upload-panel">
-                    <asp:FileUpload ID="fuPdfUpload" runat="server" accept=".pdf" />
-                    <asp:Button ID="btnUpload" runat="server" Text="Yükle" CssClass="button primary" OnClick="BtnUpload_Click" />
+                    <div class="upload-container">
+                        <div class="file-upload-wrapper">
+                            <asp:FileUpload ID="fuPdfUpload" runat="server" accept=".pdf" />
+                        </div>
+                        <asp:Button ID="btnUpload" runat="server" 
+                            Text="Yükle" 
+                            CssClass="button primary" 
+                            OnClick="BtnUpload_Click"
+                            OnClientClick="return validateFileUpload();" />
+                    </div>
                 </div>
 
                 <div class="file-list" id="fileList">
@@ -312,6 +394,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="footer">
+                <asp:Button ID="btnCancel" runat="server" 
+                    Text="İptal" 
+                    CssClass="button cancel" 
+                    OnClientClick="window.close(); return false;" />
+                <asp:Button ID="btnSave" runat="server" 
+                    Text="Kaydet ve Kapat" 
+                    CssClass="button save" 
+                    Enabled="false" />
+            </div>
         </div>
 
         <!-- Loading Overlay -->
@@ -326,6 +419,7 @@
 
         <asp:HiddenField ID="hdnCurrentFile" runat="server" />
         <asp:HiddenField ID="hdnFileList" runat="server" />
+        <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
 
         <script type="text/javascript">
             let currentFile = null;
@@ -361,12 +455,15 @@
                     fileItem.className = 'file-item' + (file === currentFile ? ' active' : '');
                     
                     fileItem.innerHTML = `
-                        <span class="file-name">${file.split('/').pop()}</span>
+                        <span class="file-name">
+                            <i class="fas fa-file-pdf"></i>
+                            ${file.split('/').pop()}
+                        </span>
                         <div class="file-actions">
-                            <button type="button" class="button secondary" onclick="viewFile('${file}')">
+                            <button type="button" class="button view" onclick="viewFile('${file}')" title="Görüntüle">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button type="button" class="button danger" onclick="deleteFile('${file}', ${index})">
+                            <button type="button" class="button danger" onclick="deleteFile('${file}', ${index})" title="Sil">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -375,8 +472,20 @@
                     fileListElement.appendChild(fileItem);
                 });
 
-                // Hidden field güncelle
                 document.getElementById('<%= hdnFileList.ClientID %>').value = JSON.stringify(fileList);
+            }
+
+            function validateFileUpload() {
+                const fileUpload = document.getElementById('<%= fuPdfUpload.ClientID %>');
+                if (!fileUpload.value) {
+                    showNotification('Lütfen bir PDF dosyası seçin', 'warning');
+                    return false;
+                }
+                if (!fileUpload.value.toLowerCase().endsWith('.pdf')) {
+                    showNotification('Lütfen sadece PDF dosyası seçin', 'warning');
+                    return false;
+                }
+                return true;
             }
 
             function viewFile(filePath) {
@@ -394,7 +503,6 @@
                 if (confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
                     showLoading();
                     
-                    // AJAX ile silme işlemi
                     fetch('FileUploadViewer.aspx/DeleteFile', {
                         method: 'POST',
                         headers: {
@@ -431,9 +539,64 @@
                 }
             }
 
+            function saveAndReturn() {
+                try {
+                    showLoading();
+                    
+                    const requestData = {
+                        filePath: currentFile
+                    };
+
+                    fetch('FileUploadViewer.aspx/SaveAndReturn', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.d && data.d.success) {
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.postMessage({
+                                    type: 'FILE_SELECTED',
+                                    filePath: currentFile
+                                }, '*');
+                            }
+                            
+                            showNotification('Dosya başarıyla kaydedildi', 'success');
+                            setTimeout(() => {
+                                window.close();
+                            }, 1000);
+                        } else {
+                            showNotification(data.d.error || 'Kaydetme işlemi başarısız oldu', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Kaydetme hatası:', error);
+                        showNotification('İşlem sırasında bir hata oluştu', 'error');
+                    })
+                    .finally(() => {
+                        hideLoading();
+                    });
+
+                    return false;
+                } catch (err) {
+                    console.error('saveAndReturn hatası:', err);
+                    showNotification('İşlem sırasında bir hata oluştu', 'error');
+                    hideLoading();
+                    return false;
+                }
+            }
+
+            function enableSaveButton() {
+                document.getElementById('<%= btnSave.ClientID %>').disabled = false;
+            }
+
             // Sayfa yüklendiğinde
             window.addEventListener('load', function() {
-                // URL'den dosya yolu parametresini kontrol et
+                document.getElementById('<%= btnSave.ClientID %>').onclick = saveAndReturn;
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const filePath = urlParams.get('file');
                 
@@ -441,7 +604,6 @@
                     viewFile(decodeURIComponent(filePath));
                 }
                 
-                // Kaydedilmiş dosya listesini yükle
                 const savedList = document.getElementById('<%= hdnFileList.ClientID %>').value;
                 if (savedList) {
                     try {

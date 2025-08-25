@@ -1,4 +1,4 @@
-/* v3 - Created: 2024.01.17 - Changed upload location to network CDN folder */
+/* v4 - Created: 2024.01.17 - Added save and return functionality */
 
 using System;
 using System.IO;
@@ -33,6 +33,9 @@ namespace AspxExamples
                 {
                     hdnCurrentFile.Value = filePath;
                 }
+
+                // Kaydet butonunu devre dışı bırak
+                btnSave.Enabled = false;
             }
         }
 
@@ -66,11 +69,12 @@ namespace AspxExamples
                         CDN_WEB_PATH, 
                         uniqueFileName);
                     
-                    // Client-side script ile dosya listesini güncelle
+                    // Client-side script ile dosya listesini güncelle ve kaydet butonunu aktif et
                     string script = string.Format(@"
                         fileList.push('{0}');
                         updateFileList();
                         viewFile('{0}');
+                        enableSaveButton();
                         showNotification('Dosya başarıyla yüklendi', 'success');
                     ", webPath);
                     
@@ -90,19 +94,56 @@ namespace AspxExamples
 
         [WebMethod]
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object SaveAndReturn(string filePath)
+        {
+            try
+            {
+                // Dosya yolunu kontrol et
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    throw new Exception("Dosya yolu belirtilmedi.");
+                }
+
+                // Dosyanın CDN klasöründe olduğunu kontrol et
+                string fileName = Path.GetFileName(filePath);
+                string fullPath = Path.Combine(CDN_PATH, fileName);
+
+                if (!File.Exists(fullPath))
+                {
+                    throw new Exception("Dosya bulunamadı.");
+                }
+
+                // Başarılı yanıt döndür
+                return new { 
+                    success = true, 
+                    filePath = filePath 
+                };
+            }
+            catch (Exception ex)
+            {
+                return new { 
+                    success = false, 
+                    error = ex.Message 
+                };
+            }
+        }
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public static object DeleteFile(string filePath)
         {
             try
             {
-                // Web path'i dosya sistemindeki path'e çevir
-                string fileName = Path.GetFileName(filePath);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
-
                 // Güvenlik kontrolü - sadece CDN klasöründeki dosyaların silinmesine izin ver
-                if (!fullPath.StartsWith(CDN_PATH, StringComparison.OrdinalIgnoreCase))
+                string normalizedPath = filePath.Replace('/', Path.DirectorySeparatorChar);
+                if (!normalizedPath.StartsWith("/cdn/", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new Exception("Geçersiz dosya yolu. Sadece CDN klasöründeki dosyalar silinebilir.");
                 }
+
+                // Dosya yolunu server path'e çevir
+                string fileName = Path.GetFileName(filePath);
+                string fullPath = Path.Combine(CDN_PATH, fileName);
 
                 // Dosyayı sil ve sonucu döndür
                 if (File.Exists(fullPath))
