@@ -1,44 +1,39 @@
-/* v12 - Created: 2024.01.17 - Fixed control names */
-
 using System;
 using System.IO;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using System.Web.Services;
 using System.Web.Script.Services;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
-        private const string CDN_VIRTUAL_PATH = "http://trrgap3027/circular/cdn";
+        private string _cdn = @"\\trrgap3027\files\circular\cdn";
+        private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                if (!Directory.Exists(CDN_PATH))
+                // CDN klasörünü kontrol et
+                if (!Directory.Exists(_cdn))
                 {
-                    try 
+                    try
                     {
-                        Directory.CreateDirectory(CDN_PATH);
+                        Directory.CreateDirectory(_cdn);
+                        System.Diagnostics.Debug.WriteLine($"CDN klasörü oluşturuldu: {_cdn}");
                     }
                     catch (Exception ex)
                     {
+                        System.Diagnostics.Debug.WriteLine($"CDN klasörü oluşturma hatası: {ex.Message}");
                         ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
                         return;
                     }
                 }
-
-                string filePath = Request.QueryString["file"];
-                if (!string.IsNullOrEmpty(filePath))
-                {
-                    hdnSelectedFile.Value = filePath;
-                }
-
-                btnSaveAndClose.Enabled = false;
             }
         }
 
@@ -49,74 +44,51 @@ namespace AspxExamples
                 if (fuPdfUpload.HasFile)
                 {
                     string fileName = Path.GetFileName(fuPdfUpload.FileName);
-                    
-                    if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    if (Path.GetExtension(fileName).ToLower() != ".pdf")
                     {
-                        throw new Exception("Sadece PDF dosyaları yüklenebilir.");
+                        ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.");
+                        return;
                     }
 
-                    string uniqueFileName = string.Format("{0}_{1}", 
-                        DateTime.Now.Ticks.ToString(), 
-                        fileName);
+                    // Önceki dosyaları temizle
+                    CleanupOldFiles();
 
-                    string pdfPath = Path.Combine(CDN_PATH, uniqueFileName);
+                    string pdfPath = Path.Combine(_cdn, fileName);
                     fuPdfUpload.SaveAs(pdfPath);
 
-                    string webUrl = string.Format("{0}/{1}", 
-                        CDN_VIRTUAL_PATH.TrimEnd('/'), 
-                        uniqueFileName);
-                    
-                    string script = string.Format(@"
-                        fileList.push('{0}');
-                        updateFileList();
-                        viewFile('{0}');
-                        enableSaveButton();
-                        showNotification('Dosya başarıyla yüklendi', 'success');
-                    ", webUrl);
-                    
-                    ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
+                    // JavaScript'e dosya yolunu gönder
+                    var fileData = new { filePath = pdfPath };
+                    var script = $"fileList.push('{pdfPath.Replace("\\", "\\\\")}'); viewFile('{pdfPath.Replace("\\", "\\\\")}'); enableSaveButton();";
+                    ScriptManager.RegisterStartupScript(this, GetType(), "uploadComplete", script, true);
+
+                    ShowMessage("Dosya başarıyla yüklendi.", "success");
+                }
+                else
+                {
+                    ShowError("Lütfen bir dosya seçiniz.");
                 }
             }
             catch (Exception ex)
             {
-                string errorScript = string.Format(
-                    "showNotification('{0}', 'error');", 
-                    HttpUtility.JavaScriptStringEncode(ex.Message)
-                );
-                ScriptManager.RegisterStartupScript(this, GetType(), "uploadError", errorScript, true);
+                ShowError($"Dosya yüklenirken bir hata oluştu: {ex.Message}");
             }
         }
 
-        [WebMethod]
-        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-        public static object SaveAndReturn(string filePath)
+        private void CleanupOldFiles()
         {
             try
             {
-                if (string.IsNullOrEmpty(filePath))
+                // Tüm PDF dosyalarını temizle
+                foreach (string file in Directory.GetFiles(_cdn, "*.pdf"))
                 {
-                    throw new Exception("Dosya yolu belirtilmedi.");
+                    try { File.Delete(file); } catch { }
                 }
 
-                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
-
-                if (!File.Exists(fullPath))
-                {
-                    throw new Exception("Dosya bulunamadı.");
-                }
-
-                return new { 
-                    success = true, 
-                    filePath = filePath 
-                };
+                System.Diagnostics.Debug.WriteLine("Eski dosyalar temizlendi");
             }
             catch (Exception ex)
             {
-                return new { 
-                    success = false, 
-                    error = ex.Message 
-                };
+                System.Diagnostics.Debug.WriteLine($"Dosya temizleme hatası: {ex.Message}");
             }
         }
 
@@ -126,15 +98,11 @@ namespace AspxExamples
         {
             try
             {
-                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
-
-                if (File.Exists(fullPath))
+                if (File.Exists(filePath))
                 {
-                    File.Delete(fullPath);
+                    File.Delete(filePath);
                     return new { success = true };
                 }
-                
                 return new { success = false, message = "Dosya bulunamadı." };
             }
             catch (Exception ex)
@@ -143,13 +111,38 @@ namespace AspxExamples
             }
         }
 
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object SaveAndReturn(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    return new { success = true };
+                }
+                return new { success = false, error = "Dosya bulunamadı." };
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, error = ex.Message };
+            }
+        }
+
         private void ShowError(string message)
         {
-            string script = string.Format(
-                "showNotification('{0}', 'error');",
-                HttpUtility.JavaScriptStringEncode(message)
-            );
-            ScriptManager.RegisterStartupScript(this, GetType(), "error", script, true);
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "showNotification",
+                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', 'error');",
+                true);
+        }
+
+        private void ShowMessage(string message, string type = "info")
+        {
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "showNotification",
+                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', '{type}');",
+                true);
         }
     }
 }

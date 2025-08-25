@@ -445,7 +445,9 @@
                 currentFile = filePath;
                 
                 const viewer = document.getElementById('pdfViewer');
-                viewer.innerHTML = `<iframe src="${filePath}" onload="hideLoading()"></iframe>`;
+                // PDF'i file:// protokolü ile aç
+                var fileUrl = "file://" + filePath;
+                viewer.innerHTML = `<iframe src="${fileUrl}" onload="hideLoading()"></iframe>`;
                 
                 document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
                 updateFileList();
