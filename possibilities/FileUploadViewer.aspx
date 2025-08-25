@@ -3,48 +3,16 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
 <head runat="server">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
-    <title>PDF Dosya Yükleme ve Görüntüleme</title>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    
-    <style type="text/css">
-        /* ... Önceki stiller aynen kalacak ... */
-
-        .upload-panel {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .upload-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .file-upload-wrapper {
-            width: 100%;
-        }
-
-        .file-upload-wrapper input[type="file"] {
-            width: 100%;
-            padding: 5px;
-        }
-
-        /* Diğer stiller aynen kalacak */
-    </style>
+    <!-- ... Head içeriği aynen kalacak ... -->
 </head>
 <body>
     <form id="form1" runat="server">
         <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
         
         <div class="container">
-            <!-- ... Header kısmı aynen kalacak ... -->
+            <div class="header">
+                <h1>PDF Dosya Yükleme ve Görüntüleme</h1>
+            </div>
 
             <div class="sidebar">
                 <div class="instructions">
@@ -75,10 +43,41 @@
                 </div>
             </div>
 
-            <!-- ... Diğer içerik aynen kalacak ... -->
+            <div class="main-content">
+                <div class="pdf-viewer" id="pdfViewer">
+                    <div class="empty-state">
+                        <i class="fas fa-file-pdf"></i>
+                        <p>Görüntülenecek PDF dosyası seçilmedi</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <asp:Button ID="btnCancel" runat="server" 
+                    Text="İptal" 
+                    CssClass="button cancel" 
+                    OnClientClick="window.close(); return false;" />
+                <asp:Button ID="btnSaveAndClose" runat="server" 
+                    Text="Kaydet ve Kapat" 
+                    CssClass="button save" 
+                    Enabled="false" />
+            </div>
         </div>
 
-        <!-- ... Loading ve Notification divleri aynen kalacak ... -->
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="notification">
+            <span id="notificationMessage"></span>
+        </div>
+
+        <!-- Hidden Fields -->
+        <asp:HiddenField ID="hdnSelectedFile" runat="server" />
+        <asp:HiddenField ID="hdnFileList" runat="server" />
+        <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
 
         <script type="text/javascript">
             let currentFile = null;
@@ -118,11 +117,24 @@
                 document.getElementById('<%= hdnFileList.ClientID %>').value = JSON.stringify(Array.from(uniqueFiles));
             }
 
-            // ... Diğer fonksiyonlar aynen kalacak ...
+            function viewFile(filePath) {
+                showLoading();
+                currentFile = filePath;
+                
+                const viewer = document.getElementById('pdfViewer');
+                viewer.innerHTML = `<iframe src="${filePath}" onload="hideLoading()"></iframe>`;
+                
+                document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
+                updateFileList();
+            }
+
+            function enableSaveButton() {
+                document.getElementById('<%= btnSaveAndClose.ClientID %>').disabled = false;
+            }
 
             // Sayfa yüklendiğinde
             window.addEventListener('load', function() {
-                document.getElementById('<%= btnSave.ClientID %>').onclick = saveAndReturn;
+                document.getElementById('<%= btnSaveAndClose.ClientID %>').onclick = saveAndReturn;
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const filePath = urlParams.get('file');
@@ -139,7 +151,6 @@
                 if (savedList) {
                     try {
                         const parsed = JSON.parse(savedList);
-                        // Duplicate kontrolü yaparak ekle
                         parsed.forEach(file => {
                             if (!fileList.includes(file)) {
                                 fileList.push(file);
@@ -151,6 +162,8 @@
                     }
                 }
             });
+
+            // ... Diğer fonksiyonlar aynen kalacak ...
         </script>
     </form>
 </body>
