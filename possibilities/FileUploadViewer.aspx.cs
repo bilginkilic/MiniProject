@@ -10,6 +10,7 @@ using System.Web.Script.Services;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
+
 namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
@@ -59,7 +60,6 @@ namespace AspxExamples
                     fuPdfUpload.SaveAs(pdfPath);
 
                     // JavaScript'e dosya yolunu gönder
-                    var fileData = new { filePath = pdfPath };
                     var script = String.Format("fileList.push('{0}'); viewFile('{0}'); enableSaveButton();", pdfPath.Replace("\\", "\\\\"));
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadComplete", script, true);
 

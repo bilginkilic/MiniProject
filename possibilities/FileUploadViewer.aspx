@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; font-src 'self' https://cdnjs.cloudflare.com;">
     <title>PDF Dosya Yükleme ve Görüntüleme</title>
     
     <!-- Font Awesome -->
@@ -449,9 +450,10 @@
                 currentFile = filePath;
                 
                 const viewer = document.getElementById('pdfViewer');
-                // PDF'i file:// protokolü ile aç
-                var fileUrl = "file://" + filePath;
-                viewer.innerHTML = `<iframe src="${fileUrl}" onload="hideLoading()"></iframe>`;
+                // PDF'i web URL'i üzerinden aç
+                var fileName = filePath.split('\\').pop();
+                var webUrl = `/cdn/${fileName}`;
+                viewer.innerHTML = `<iframe src="${webUrl}" onload="hideLoading()"></iframe>`;
                 
                 document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
                 updateFileList();
