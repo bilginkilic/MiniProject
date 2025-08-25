@@ -1,4 +1,4 @@
-/* v2 - Created: 2024.01.17 - String format improvements and better comments */
+/* v3 - Created: 2024.01.17 - Changed upload location to network CDN folder */
 
 using System;
 using System.IO;
@@ -12,20 +12,19 @@ namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        // Sabit tanımlamalar
-        private const string UPLOAD_FOLDER = "~/Uploads/PDFs/";
+        // CDN klasör yolu
+        private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
         private const string ALLOWED_EXTENSION = ".pdf";
-        private const string UPLOAD_PATH_PREFIX = "/Uploads/PDFs/";
+        private const string CDN_WEB_PATH = "/cdn";  // Web'den erişim için relative path
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                // Upload klasörünün varlığını kontrol et ve oluştur
-                string uploadPath = Server.MapPath(UPLOAD_FOLDER);
-                if (!Directory.Exists(uploadPath))
+                // CDN klasörünün varlığını kontrol et
+                if (!Directory.Exists(CDN_PATH))
                 {
-                    Directory.CreateDirectory(uploadPath);
+                    throw new DirectoryNotFoundException(string.Format("CDN klasörü bulunamadı: {0}", CDN_PATH));
                 }
 
                 // URL'den dosya yolu parametresini kontrol et ve hidden field'a ata
@@ -56,17 +55,15 @@ namespace AspxExamples
                         DateTime.Now.Ticks.ToString(), 
                         fileName);
 
-                    // Tam dosya yolu oluştur
-                    string filePath = Path.Combine(
-                        Server.MapPath(UPLOAD_FOLDER), 
-                        uniqueFileName);
+                    // CDN klasöründe tam dosya yolu oluştur
+                    string cdnFilePath = Path.Combine(CDN_PATH, uniqueFileName);
                     
-                    // Dosyayı kaydet
-                    fuPdfUpload.SaveAs(filePath);
+                    // Dosyayı CDN klasörüne kaydet
+                    fuPdfUpload.SaveAs(cdnFilePath);
 
-                    // Web uygulaması için relative path oluştur
-                    string relativePath = string.Format("{0}{1}", 
-                        UPLOAD_FOLDER.TrimStart('~'), 
+                    // Web erişimi için relative path oluştur
+                    string webPath = string.Format("{0}/{1}", 
+                        CDN_WEB_PATH, 
                         uniqueFileName);
                     
                     // Client-side script ile dosya listesini güncelle
@@ -75,7 +72,7 @@ namespace AspxExamples
                         updateFileList();
                         viewFile('{0}');
                         showNotification('Dosya başarıyla yüklendi', 'success');
-                    ", relativePath);
+                    ", webPath);
                     
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
                 }
@@ -97,17 +94,15 @@ namespace AspxExamples
         {
             try
             {
-                // Güvenlik kontrolü - sadece izin verilen klasördeki dosyaların silinmesine izin ver
-                string normalizedPath = filePath.Replace('/', Path.DirectorySeparatorChar);
-                if (!normalizedPath.StartsWith(UPLOAD_PATH_PREFIX, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception("Geçersiz dosya yolu. Sadece upload klasöründeki dosyalar silinebilir.");
-                }
+                // Web path'i dosya sistemindeki path'e çevir
+                string fileName = Path.GetFileName(filePath);
+                string fullPath = Path.Combine(CDN_PATH, fileName);
 
-                // Dosya yolunu server path'e çevir
-                string fullPath = HttpContext.Current.Server.MapPath(
-                    string.Format("~{0}", filePath)
-                );
+                // Güvenlik kontrolü - sadece CDN klasöründeki dosyaların silinmesine izin ver
+                if (!fullPath.StartsWith(CDN_PATH, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception("Geçersiz dosya yolu. Sadece CDN klasöründeki dosyalar silinebilir.");
+                }
 
                 // Dosyayı sil ve sonucu döndür
                 if (File.Exists(fullPath))
