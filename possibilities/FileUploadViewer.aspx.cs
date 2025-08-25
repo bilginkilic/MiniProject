@@ -1,4 +1,4 @@
-/* v9 - Created: 2024.01.17 - Simplified to show PDF directly */
+/* v10 - Created: 2024.01.17 - Fixed file viewing */
 
 using System;
 using System.IO;
@@ -12,19 +12,18 @@ namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        private const string CDN_PATH = @"\\trrgap3027\files\circular\cdn";
-        private const string ALLOWED_EXTENSION = ".pdf";
-        private const string CDN_WEB_PATH = "http://trrgap3027/circular/cdn";
+        private string _cdn = @"\\trrgap3027\files\circular\cdn";
+        private string _cdnVirtualPath = "/cdn";
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                if (!Directory.Exists(CDN_PATH))
+                if (!Directory.Exists(_cdn))
                 {
                     try 
                     {
-                        Directory.CreateDirectory(CDN_PATH);
+                        Directory.CreateDirectory(_cdn);
                     }
                     catch (Exception ex)
                     {
@@ -51,20 +50,20 @@ namespace AspxExamples
                 {
                     string fileName = Path.GetFileName(fuPdfUpload.FileName);
                     
-                    if (!fileName.EndsWith(ALLOWED_EXTENSION, StringComparison.OrdinalIgnoreCase))
+                    if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
-                        throw new Exception(string.Format("Sadece {0} dosyaları yüklenebilir.", ALLOWED_EXTENSION));
+                        throw new Exception("Sadece PDF dosyaları yüklenebilir.");
                     }
 
                     string uniqueFileName = string.Format("{0}_{1}", 
                         DateTime.Now.Ticks.ToString(), 
                         fileName);
 
-                    string cdnFilePath = Path.Combine(CDN_PATH, uniqueFileName);
-                    fuPdfUpload.SaveAs(cdnFilePath);
+                    string pdfPath = Path.Combine(_cdn, uniqueFileName);
+                    fuPdfUpload.SaveAs(pdfPath);
 
-                    string webUrl = string.Format("{0}/{1}", 
-                        CDN_WEB_PATH.TrimEnd('/'), 
+                    string webPath = string.Format("{0}/{1}", 
+                        _cdnVirtualPath.TrimStart('/'), 
                         uniqueFileName);
                     
                     string script = string.Format(@"
@@ -73,7 +72,7 @@ namespace AspxExamples
                         viewFile('{0}');
                         enableSaveButton();
                         showNotification('Dosya başarıyla yüklendi', 'success');
-                    ", webUrl);
+                    ", webPath);
                     
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadSuccess", script, true);
                 }
@@ -99,14 +98,6 @@ namespace AspxExamples
                     throw new Exception("Dosya yolu belirtilmedi.");
                 }
 
-                string fileName = Path.GetFileName(filePath);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
-
-                if (!File.Exists(fullPath))
-                {
-                    throw new Exception("Dosya bulunamadı.");
-                }
-
                 return new { 
                     success = true, 
                     filePath = filePath 
@@ -127,8 +118,8 @@ namespace AspxExamples
         {
             try
             {
-                string fileName = Path.GetFileName(filePath);
-                string fullPath = Path.Combine(CDN_PATH, fileName);
+                string fileName = filePath.Substring(filePath.LastIndexOf('/') + 1);
+                string fullPath = Path.Combine(HttpContext.Current.Server.MapPath("~/cdn"), fileName);
 
                 if (File.Exists(fullPath))
                 {
