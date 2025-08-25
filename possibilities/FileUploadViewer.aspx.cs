@@ -1,3 +1,5 @@
+/* v1 - FileUploadViewer.aspx.cs - PDF Dosya Yükleme ve Görüntüleme */
+
 using System;
 using System.IO;
 using System.Web;
@@ -25,11 +27,11 @@ namespace AspxExamples
                     try
                     {
                         Directory.CreateDirectory(_cdn);
-                        System.Diagnostics.Debug.WriteLine($"CDN klasörü oluşturuldu: {_cdn}");
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturuldu: {0}", _cdn));
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"CDN klasörü oluşturma hatası: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
                         ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
                         return;
                     }
@@ -58,7 +60,7 @@ namespace AspxExamples
 
                     // JavaScript'e dosya yolunu gönder
                     var fileData = new { filePath = pdfPath };
-                    var script = $"fileList.push('{pdfPath.Replace("\\", "\\\\")}'); viewFile('{pdfPath.Replace("\\", "\\\\")}'); enableSaveButton();";
+                    var script = String.Format("fileList.push('{0}'); viewFile('{0}'); enableSaveButton();", pdfPath.Replace("\\", "\\\\"));
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadComplete", script, true);
 
                     ShowMessage("Dosya başarıyla yüklendi.", "success");
@@ -70,7 +72,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                ShowError($"Dosya yüklenirken bir hata oluştu: {ex.Message}");
+                ShowError(String.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -88,7 +90,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Dosya temizleme hatası: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(String.Format("Dosya temizleme hatası: {0}", ex.Message));
             }
         }
 
@@ -133,7 +135,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', 'error');",
+                String.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)),
                 true);
         }
 
@@ -141,7 +143,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', '{type}');",
+                String.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type),
                 true);
         }
     }
