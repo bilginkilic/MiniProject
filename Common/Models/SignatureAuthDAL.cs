@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
-// v2 - ExecuteEntity yerine ExecuteObject kullanımına geçildi
+// v4 - SP isimleri veritabanındaki SP'lerle uyumlu hale getirildi
 namespace AspxExamples.Common.Models
 {
     public class SignatureAuthDAL
@@ -187,6 +187,23 @@ namespace AspxExamples.Common.Models
         }
 
         #region Circular Operations
+        public static List<CircularData> GetAllActiveCircularsWithSignatures()
+        {
+            using (APPDb db = new APPDb())
+            {
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_GET_WITH_SIGNATURES", SCHEMA))
+                    .ExecuteList<CircularData>();
+            }
+        }
+
+        public static List<CircularData> GetAllActiveCircularsWithDetails()
+        {
+            using (APPDb db = new APPDb())
+            {
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_GET_ALL_ACTIVE", SCHEMA))
+                    .ExecuteList<CircularData>();
+            }
+        }
         public static List<CircularData> GetAllActiveCirculars()
         {
             using (APPDb db = new APPDb())
@@ -199,9 +216,9 @@ namespace AspxExamples.Common.Models
         {
             using (APPDb db = new APPDb())
             {
-                return db.SetSpCommand("SGN.SelectCircularById",
+                return db.SetSpCommand(string.Format("{0}CIRCULAR_SEL_SP", SCHEMA),
                     db.Parameter("ID", id)
-                ).ExecuteEntity<CircularData>();
+                ).ExecuteObject<CircularData>();
             }
         }
 
@@ -216,7 +233,7 @@ namespace AspxExamples.Common.Models
                     db.Parameter("CircularStatus", status)
                 });
 
-                return db.SetSpCommand("SGN.SelectCircularByCustomer",
+                return db.SetSpCommand(string.Format("{0}CIRCULAR_SELECT_BY_CUSTOMER", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteList<CircularData>();
             }
@@ -251,7 +268,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("EndDate", endDate.Value));
                 }
 
-                return db.SetSpCommand("SGN.SearchCircular",
+                return db.SetSpCommand(string.Format("{0}CIRCULAR_SEARCH", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteList<CircularData>();
             }
@@ -281,7 +298,7 @@ namespace AspxExamples.Common.Models
                     db.Parameter("Channel", circular.Channel)
                 });
 
-                return db.SetSpCommand("SGN.InsertCircular",
+                return db.SetSpCommand(string.Format("{0}CIRCULAR_INS_SP", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteScalar<int>();
             }
@@ -312,7 +329,7 @@ namespace AspxExamples.Common.Models
                     db.Parameter("Channel", circular.Channel)
                 });
 
-                db.SetSpCommand("SGN.UpdateCircular",
+                db.SetSpCommand(string.Format("{0}CIRCULAR_UPD_SP", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteNonQuery();
             }
