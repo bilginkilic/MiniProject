@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
+// v2 - ExecuteEntity yerine ExecuteObject kullanımına geçildi
 namespace AspxExamples.Common.Models
 {
     public class SignatureAuthDAL
     {
+        private const string SCHEMA = "dbo.SGN_";
+
         public static List<YetkiliData> SelectYetkiliByCircular(int circularId, string yetkiDurumu = null)
         {
             using (APPDb db = new APPDb())
@@ -18,7 +21,7 @@ namespace AspxExamples.Common.Models
                     db.Parameter("yetkiDurumu", yetkiDurumu)
                 });
 
-                return db.SetSpCommand("SGN.SelectYetkiliByCircular",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SELECT_BY_CIRCULAR", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteList<YetkiliData>();
             }
@@ -28,9 +31,9 @@ namespace AspxExamples.Common.Models
         {
             using (APPDb db = new APPDb())
             {
-                return db.SetSpCommand("SGN.SelectYetkiliById",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SELECT_BY_ID", SCHEMA),
                     db.Parameter("ID", id)
-                ).ExecuteEntity<YetkiliData>();
+                ).ExecuteObject<YetkiliData>();
             }
         }
 
@@ -57,7 +60,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("bitisTarihi", bitisTarihi.Value));
                 }
 
-                return db.SetSpCommand("SGN.SearchYetkili",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SEARCH", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteList<YetkiliData>();
             }
@@ -88,7 +91,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("SinirliYetkiDetaylari", yetkili.SinirliYetkiDetaylari));
                 }
 
-                return db.SetSpCommand("SGN.InsertYetkili",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_INSERT", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteScalar<int>();
             }
@@ -120,7 +123,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("SinirliYetkiDetaylari", yetkili.SinirliYetkiDetaylari));
                 }
 
-                db.SetSpCommand("SGN.UpdateYetkili",
+                db.SetSpCommand(string.Format("{0}AUTHDETAIL_UPDATE", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteNonQuery();
             }
@@ -130,7 +133,7 @@ namespace AspxExamples.Common.Models
         {
             using (APPDb db = new APPDb())
             {
-                return db.SetSpCommand("SGN.SelectSignaturesByAuthDetail",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SIGNATURES_SELECT_BY_AUTHDETAIL", SCHEMA),
                     db.Parameter("AuthDetailID", authDetailId)
                 ).ExecuteList<SignatureImage>();
             }
@@ -153,7 +156,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("SourcePdfPath", signature.SourcePdfPath));
                 }
 
-                return db.SetSpCommand("SGN.InsertSignature",
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SIGNATURES_INSERT", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteScalar<int>();
             }
@@ -177,7 +180,7 @@ namespace AspxExamples.Common.Models
                     appParam.Add(db.Parameter("SourcePdfPath", signature.SourcePdfPath));
                 }
 
-                db.SetSpCommand("SGN.UpdateSignature",
+                db.SetSpCommand(string.Format("{0}AUTHDETAIL_SIGNATURES_UPDATE", SCHEMA),
                     appParam.ToArray()
                 ).ExecuteNonQuery();
             }
@@ -311,9 +314,9 @@ namespace AspxExamples.Common.Models
         {
             using (APPDb db = new APPDb())
             {
-                var circular = db.SetSpCommand("SGN.SelectCircularById",
+                var circular = db.SetSpCommand(string.Format("{0}AUTHDETAIL_SELECT_BY_ID", SCHEMA),
                     db.Parameter("ID", id)
-                ).ExecuteEntity<CircularData>();
+                ).ExecuteObject<CircularData>();
 
                 if (circular != null)
                 {

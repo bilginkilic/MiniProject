@@ -5,6 +5,8 @@ namespace AspxExamples
 {
     public class YetkiliData
     {
+        public int ID { get; set; }
+        public int CircularID { get; set; }
         public string YetkiliKontakt { get; set; }
         public string YetkiliAdi { get; set; }
         public string YetkiSekli { get; set; }
