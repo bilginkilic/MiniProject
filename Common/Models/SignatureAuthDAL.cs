@@ -187,6 +187,14 @@ namespace AspxExamples.Common.Models
         }
 
         #region Circular Operations
+        public static List<CircularData> GetAllActiveCirculars()
+        {
+            using (APPDb db = new APPDb())
+            {
+                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_GET_ALL_ACTIVE", SCHEMA))
+                    .ExecuteList<CircularData>();
+            }
+        }
         public static CircularData SelectCircularById(int id)
         {
             using (APPDb db = new APPDb())

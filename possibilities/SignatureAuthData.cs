@@ -65,6 +65,7 @@ namespace AspxExamples
         public DateTime? CreateDate { get; set; }
         public DateTime? LastUpdate { get; set; }
         public string Channel { get; set; }
+        public int YetkiliCount { get; set; }
 
         public List<YetkiliData> Yetkililer { get; set; }
 
