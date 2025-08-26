@@ -182,5 +182,153 @@ namespace AspxExamples.Common.Models
                 ).ExecuteNonQuery();
             }
         }
+
+        #region Circular Operations
+        public static CircularData SelectCircularById(int id)
+        {
+            using (APPDb db = new APPDb())
+            {
+                return db.SetSpCommand("SGN.SelectCircularById",
+                    db.Parameter("ID", id)
+                ).ExecuteEntity<CircularData>();
+            }
+        }
+
+        public static List<CircularData> SelectCircularByCustomer(string customerNo, string status = null)
+        {
+            using (APPDb db = new APPDb())
+            {
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("CustomerNo", customerNo),
+                    db.Parameter("CircularStatus", status)
+                });
+
+                return db.SetSpCommand("SGN.SelectCircularByCustomer",
+                    appParam.ToArray()
+                ).ExecuteList<CircularData>();
+            }
+        }
+
+        public static List<CircularData> SearchCircular(
+            string customerNo = null, 
+            string companyTitle = null,
+            string circularType = null,
+            string circularStatus = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            using (APPDb db = new APPDb())
+            {
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("CustomerNo", customerNo),
+                    db.Parameter("CompanyTitle", companyTitle),
+                    db.Parameter("CircularType", circularType),
+                    db.Parameter("CircularStatus", circularStatus)
+                });
+
+                if (startDate.HasValue)
+                {
+                    appParam.Add(db.Parameter("StartDate", startDate.Value));
+                }
+
+                if (endDate.HasValue)
+                {
+                    appParam.Add(db.Parameter("EndDate", endDate.Value));
+                }
+
+                return db.SetSpCommand("SGN.SearchCircular",
+                    appParam.ToArray()
+                ).ExecuteList<CircularData>();
+            }
+        }
+
+        public static int InsertCircular(CircularData circular)
+        {
+            using (APPDb db = new APPDb())
+            {
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("CustomerNo", circular.CustomerNo),
+                    db.Parameter("CompanyTitle", circular.CompanyTitle),
+                    db.Parameter("IssuedDate", circular.IssuedDate),
+                    db.Parameter("ValidityDate", circular.ValidityDate),
+                    db.Parameter("InternalBylawsTsgDate", circular.InternalBylawsTsgDate),
+                    db.Parameter("SpecialCases", circular.SpecialCases),
+                    db.Parameter("CircularType", circular.CircularType),
+                    db.Parameter("CircularNotaryNo", circular.CircularNotaryNo),
+                    db.Parameter("Description", circular.Description),
+                    db.Parameter("CircularStatus", circular.CircularStatus),
+                    db.Parameter("IsABoardOfDirectorsDecisionRequired", circular.IsABoardOfDirectorsDecisionRequired),
+                    db.Parameter("MainCircularDate", circular.MainCircularDate),
+                    db.Parameter("MainCircularRef", circular.MainCircularRef),
+                    db.Parameter("AdditionalDocuments", circular.AdditionalDocuments),
+                    db.Parameter("Channel", circular.Channel)
+                });
+
+                return db.SetSpCommand("SGN.InsertCircular",
+                    appParam.ToArray()
+                ).ExecuteScalar<int>();
+            }
+        }
+
+        public static void UpdateCircular(CircularData circular)
+        {
+            using (APPDb db = new APPDb())
+            {
+                List<IDbDataParameter> appParam = new List<IDbDataParameter>();
+                appParam.AddRange(new IDbDataParameter[]
+                {
+                    db.Parameter("ID", circular.ID),
+                    db.Parameter("CustomerNo", circular.CustomerNo),
+                    db.Parameter("CompanyTitle", circular.CompanyTitle),
+                    db.Parameter("IssuedDate", circular.IssuedDate),
+                    db.Parameter("ValidityDate", circular.ValidityDate),
+                    db.Parameter("InternalBylawsTsgDate", circular.InternalBylawsTsgDate),
+                    db.Parameter("SpecialCases", circular.SpecialCases),
+                    db.Parameter("CircularType", circular.CircularType),
+                    db.Parameter("CircularNotaryNo", circular.CircularNotaryNo),
+                    db.Parameter("Description", circular.Description),
+                    db.Parameter("CircularStatus", circular.CircularStatus),
+                    db.Parameter("IsABoardOfDirectorsDecisionRequired", circular.IsABoardOfDirectorsDecisionRequired),
+                    db.Parameter("MainCircularDate", circular.MainCircularDate),
+                    db.Parameter("MainCircularRef", circular.MainCircularRef),
+                    db.Parameter("AdditionalDocuments", circular.AdditionalDocuments),
+                    db.Parameter("Channel", circular.Channel)
+                });
+
+                db.SetSpCommand("SGN.UpdateCircular",
+                    appParam.ToArray()
+                ).ExecuteNonQuery();
+            }
+        }
+
+        public static CircularData GetCircularWithYetkililer(int id)
+        {
+            using (APPDb db = new APPDb())
+            {
+                var circular = db.SetSpCommand("SGN.SelectCircularById",
+                    db.Parameter("ID", id)
+                ).ExecuteEntity<CircularData>();
+
+                if (circular != null)
+                {
+                    circular.Yetkililer = SelectYetkiliByCircular(id);
+                    
+                    // İmzaları yükle
+                    foreach (var yetkili in circular.Yetkililer)
+                    {
+                        yetkili.Imzalar = SelectSignaturesByAuthDetail(yetkili.ID);
+                    }
+                }
+
+                return circular;
+            }
+        }
+        #endregion
     }
 }
