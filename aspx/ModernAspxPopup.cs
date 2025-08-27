@@ -112,21 +112,12 @@ namespace AspxExamples
             statusStrip.Items.Add(statusLabel);
         }
 
-        private Timer checkSessionTimer;
-
         private void LoadAspxContent(string aspxFileName)
         {
             try
             {
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
                 htmlBox.Url = aspxUrl;
-                
-                // Timer oluştur ve başlat
-                checkSessionTimer = new Timer();
-                checkSessionTimer.Interval = 500; // Her yarım saniyede bir kontrol et
-                checkSessionTimer.Tick += CheckSessionData;
-                checkSessionTimer.Start();
-                
                 UpdateStatus("Sayfa yüklendi");
             }
             catch (Exception ex)
@@ -150,36 +141,26 @@ namespace AspxExamples
                 LoadAspxContent(aspxFileName);
             }
 
-            private void CheckSessionData(object sender, EventArgs e)
-            {
-                try
-                {
-                    // ASMX web servis çağrısı
-                    var service = new SignatureService();
-                    var response = service.GetSignature(referenceId);
-                        
-                        if (response != null)
-                        {
-                            checkSessionTimer.Stop();
-                            this.ResultData = response;
-                            this.DialogResult = DialogResult.OK;
-                            this.Close();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Web servis kontrol hatası: " + ex.Message);
-                }
-        }
+
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            if (checkSessionTimer != null)
+            try
             {
-                checkSessionTimer.Stop();
-                checkSessionTimer.Dispose();
+                // Session'dan veriyi al
+                var sessionData = SessionHelper.GetSignatureAuthData();
+                if (sessionData != null)
+                {
+                    this.ResultData = sessionData;
+                    // Session'ı temizle
+                    SessionHelper.ClearSignatureAuthData();
+                }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Session okuma hatası: " + ex.Message);
+            }
+
             base.OnClosing(e);
         }
         }

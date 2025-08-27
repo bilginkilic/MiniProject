@@ -484,7 +484,52 @@ namespace AspxExamples
                     throw;
                 }
 
-                // Test amaçlı hemen başarılı yanıt dön
+                // SignatureAuthData nesnesini oluştur
+                var signatureAuthData = new SignatureAuthData
+                {
+                    KaynakPdfAdi = signatures.FirstOrDefault()?.SourcePdfPath,
+                    Yetkililer = new List<YetkiliData>()
+                };
+
+                // Yetkili kayıtlarını dönüştür
+                foreach (var kayit in yetkiliKayitlar)
+                {
+                    var yetkiliData = new YetkiliData
+                    {
+                        YetkiliKontakt = kayit.YetkiliKontakt,
+                        YetkiliAdi = kayit.YetkiliAdi,
+                        YetkiSekli = kayit.YetkiSekli,
+                        YetkiTarihi = kayit.YetkiTarihi,
+                        YetkiBitisTarihi = kayit.AksiKararaKadar ? "Aksi Karara Kadar" : kayit.YetkiTarihi,
+                        YetkiGrubu = kayit.YetkiSekli,
+                        SinirliYetkiDetaylari = kayit.SinirliYetkiDetaylari,
+                        YetkiTurleri = kayit.YetkiTurleri,
+                        YetkiTutari = decimal.Parse(kayit.YetkiTutari ?? "0"),
+                        YetkiDovizCinsi = kayit.YetkiDovizCinsi,
+                        YetkiDurumu = kayit.YetkiDurumu,
+                        Imzalar = new List<SignatureImage>()
+                    };
+
+                    // İmzaları ekle
+                    if (kayit.Imzalar != null)
+                    {
+                        foreach (var imza in kayit.Imzalar)
+                        {
+                            yetkiliData.Imzalar.Add(new SignatureImage
+                            {
+                                ImageData = imza.Base64Image,
+                                SiraNo = imza.SlotIndex,
+                                SourcePdfPath = signatures.FirstOrDefault()?.SourcePdfPath
+                            });
+                        }
+                    }
+
+                    signatureAuthData.Yetkililer.Add(yetkiliData);
+                }
+
+                // Session'a kaydet
+                SessionHelper.SetSignatureAuthData(signatureAuthData);
+
                 return new { success = true, message = "Veriler başarıyla kaydedildi" };
             }
             catch (Exception ex)
@@ -687,26 +732,18 @@ namespace AspxExamples
 
                 try
                 {
-                    // Web servise gönderilecek veriyi hazırla
-                    var requestData = new
-                    {
-                        referenceId = Request.QueryString["ref"], // URL'den ref parametresini al
-                        authData = authData
-                    };
-
-                    // ASMX web servis çağrısı
-                    var service = new SignatureService();
-                    var response = service.SaveSignature(requestData.referenceId, authData);
+                    // Session'a kaydet
+                    SessionHelper.SetSignatureAuthData(authData);
                         
-                        // Başarılı yanıt döndür
-                        var successResponse = new { success = true, message = "Veriler başarıyla kaydedildi", referenceId = requestData.referenceId };
-                        var jsonResponse = JsonConvert.SerializeObject(successResponse, jsonSettings);
-                        
-                        Response.Clear();
-                        Response.ContentType = "application/json";
-                        Response.Write(jsonResponse);
-                        Response.Flush();
-                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    // Başarılı yanıt döndür
+                    var successResponse = new { success = true, message = "Veriler başarıyla kaydedildi" };
+                    var jsonResponse = JsonConvert.SerializeObject(successResponse, jsonSettings);
+                    
+                    Response.Clear();
+                    Response.ContentType = "application/json";
+                    Response.Write(jsonResponse);
+                    Response.Flush();
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                     }
                 catch (Exception ex)
                 {

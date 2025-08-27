@@ -115,6 +115,34 @@ namespace AspxExamples
 
         [System.Web.Services.WebMethod]
         [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
+        public static object SaveSignatureWithAjax(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    // SignatureAuthData nesnesini oluştur
+                    var signatureData = new SignatureAuthData
+                    {
+                        KaynakPdfAdi = Path.GetFileName(filePath),
+                        Yetkililer = new List<YetkiliData>()
+                    };
+
+                    // Session'a kaydet
+                    SessionHelper.SetSignatureAuthData(signatureData);
+
+                    return new { success = true, message = "İmza bilgileri kaydedildi" };
+                }
+                return new { success = false, error = "Dosya bulunamadı." };
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, error = ex.Message };
+            }
+        }
+
+        [System.Web.Services.WebMethod]
+        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
         public static object SaveAndReturn(string filePath)
         {
             try
