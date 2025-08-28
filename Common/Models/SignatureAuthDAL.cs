@@ -147,8 +147,7 @@ namespace AspxExamples.Common.Models
                 appParam.AddRange(new IDbDataParameter[]
                 {
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", string.IsNullOrEmpty(signature.ImageData) ? null : 
-                        Convert.FromBase64String(signature.ImageData.Trim().Replace(" ", "+"))),
+                    db.Parameter("ImageData", ConvertBase64ToBytes(signature.ImageData)),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
@@ -172,8 +171,7 @@ namespace AspxExamples.Common.Models
                 {
                     db.Parameter("ID", signature.ID),
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", string.IsNullOrEmpty(signature.ImageData) ? null : 
-                        Convert.FromBase64String(signature.ImageData.Trim().Replace(" ", "+"))),
+                    db.Parameter("ImageData", ConvertBase64ToBytes(signature.ImageData)),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
@@ -360,5 +358,41 @@ namespace AspxExamples.Common.Models
             }
         }
         #endregion
+    }
+
+    private static byte[] ConvertBase64ToBytes(string base64String)
+    {
+        if (string.IsNullOrEmpty(base64String))
+            return null;
+
+        // Remove data URI prefix if exists
+        string cleanBase64 = base64String;
+        if (base64String.Contains(","))
+        {
+            cleanBase64 = base64String.Split(',')[1];
+        }
+
+        // Clean the string
+        cleanBase64 = cleanBase64.Trim()
+            .Replace(" ", "")
+            .Replace("\r", "")
+            .Replace("\n", "")
+            .Replace("\t", "");
+
+        // Ensure proper padding
+        int mod4 = cleanBase64.Length % 4;
+        if (mod4 > 0)
+        {
+            cleanBase64 = cleanBase64.PadRight(cleanBase64.Length + (4 - mod4), '=');
+        }
+
+        try
+        {
+            return Convert.FromBase64String(cleanBase64);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Base64 string dönüşümü sırasında hata oluştu: " + ex.Message);
+        }
     }
 }
