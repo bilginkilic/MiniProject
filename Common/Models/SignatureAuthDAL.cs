@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
-// v4 - SP isimleri veritabanındaki SP'lerle uyumlu hale getirildi
+// v TELETEL - SP isimleri veritabanındaki SP'lerle uyumlu hale getirildi
 namespace AspxExamples.Common.Models
 {
     public class SignatureAuthDAL
