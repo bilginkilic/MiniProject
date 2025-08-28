@@ -147,7 +147,8 @@ namespace AspxExamples.Common.Models
                 appParam.AddRange(new IDbDataParameter[]
                 {
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", Convert.FromBase64String(signature.ImageData)),
+                    db.Parameter("ImageData", string.IsNullOrEmpty(signature.ImageData) ? null : 
+                        Convert.FromBase64String(signature.ImageData.Trim().Replace(" ", "+"))),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
@@ -171,7 +172,8 @@ namespace AspxExamples.Common.Models
                 {
                     db.Parameter("ID", signature.ID),
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", Convert.FromBase64String(signature.ImageData)),
+                    db.Parameter("ImageData", string.IsNullOrEmpty(signature.ImageData) ? null : 
+                        Convert.FromBase64String(signature.ImageData.Trim().Replace(" ", "+"))),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
