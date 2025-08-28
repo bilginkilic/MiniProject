@@ -29,9 +29,9 @@ IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'SP_SGN_CIRCULA
     DROP PROCEDURE [dbo].[SP_SGN_CIRCULAR_SEL_SP]
 GO
 
--- Create new procedures
+-- Create new procedures with SGN_ prefix
 CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_INSERT]
-    @CustomerNo INT NULL,
+    @CircularID INT,
     @YetkiliKontakt NVARCHAR(100),
     @YetkiliAdi NVARCHAR(200),
     @YetkiSekli NVARCHAR(50),
@@ -49,14 +49,14 @@ BEGIN
     
     INSERT INTO [dbo].[SGN_AUTHDETAIL]
     (
-        [CustomerNo], [YetkiliKontakt], [YetkiliAdi], [YetkiSekli],
+        [CircularID], [YetkiliKontakt], [YetkiliAdi], [YetkiSekli],
         [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu], [SinirliYetkiDetaylari],
         [YetkiTurleri], [YetkiTutari], [YetkiDovizCinsi], [YetkiDurumu],
         [CreateDate], [LastUpdate], [RecordStatus]
     )
     VALUES
     (
-        @CustomerNo, @YetkiliKontakt, @YetkiliAdi, @YetkiSekli,
+        @CircularID, @YetkiliKontakt, @YetkiliAdi, @YetkiSekli,
         @YetkiTarihi, @YetkiBitisTarihi, @YetkiGrubu, @SinirliYetkiDetaylari,
         @YetkiTurleri, @YetkiTutari, @YetkiDovizCinsi, @YetkiDurumu,
         GETDATE(), GETDATE(), 'A'
@@ -68,7 +68,7 @@ GO
 
 CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_UPDATE]
     @ID INT,
-    @CustomerNo INT,
+    @CircularID INT,
     @YetkiliKontakt NVARCHAR(100),
     @YetkiliAdi NVARCHAR(200),
     @YetkiSekli NVARCHAR(50),
@@ -86,7 +86,7 @@ BEGIN
     
     UPDATE [dbo].[SGN_AUTHDETAIL]
     SET 
-        [CustomerNo] = @CustomerNo,
+        [CircularID] = @CircularID,
         [YetkiliKontakt] = @YetkiliKontakt,
         [YetkiliAdi] = @YetkiliAdi,
         [YetkiSekli] = @YetkiSekli,
@@ -103,103 +103,22 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SELECT_BY_ID]
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_DELETE]
     @ID INT
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT 
-        [ID], [CustomerNo], [YetkiliKontakt], [YetkiliAdi],
-        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
-        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
-        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
-    FROM [dbo].[SGN_AUTHDETAIL]
-    WHERE [ID] = @ID AND [RecordStatus] = 'A';
-END;
-GO
-
-CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SELECT_BY_CIRCULAR]
-    @CircularID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    SELECT 
-        [ID], [CustomerNo], [YetkiliKontakt], [YetkiliAdi],
-        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
-        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
-        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
-    FROM [dbo].[SGN_AUTHDETAIL]
-    WHERE [CircularID] = @CircularID AND [RecordStatus] = 'A'
-    ORDER BY [YetkiliAdi];
-END;
-GO
-
-CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SEARCH]
-    @YetkiliAdi NVARCHAR(200) = NULL,
-    @YetkiGrubu NVARCHAR(100) = NULL,
-    @YetkiDurumu NVARCHAR(50) = NULL,
-    @BaslangicTarihi DATE = NULL,
-    @BitisTarihi DATE = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    SELECT 
-        [ID], [CustomerNo], [YetkiliKontakt], [YetkiliAdi],
-        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
-        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
-        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
-    FROM [dbo].[SGN_AUTHDETAIL]
-    WHERE [RecordStatus] = 'A'
-        AND (@YetkiliAdi IS NULL OR [YetkiliAdi] LIKE '%' + @YetkiliAdi + '%')
-        AND (@YetkiGrubu IS NULL OR [YetkiGrubu] = @YetkiGrubu)
-        AND (@YetkiDurumu IS NULL OR [YetkiDurumu] = @YetkiDurumu)
-        AND (@BaslangicTarihi IS NULL OR [YetkiTarihi] >= @BaslangicTarihi)
-        AND (@BitisTarihi IS NULL OR [YetkiTarihi] <= @BitisTarihi)
-    ORDER BY [YetkiliAdi];
-END;
-GO
-
-CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_GET_ALL_ACTIVE]
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    SELECT 
-        [ID], [CustomerNo], [YetkiliKontakt], [YetkiliAdi],
-        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
-        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
-        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
-    FROM [dbo].[SGN_AUTHDETAIL]
-    WHERE [RecordStatus] = 'A'
-    ORDER BY [YetkiliAdi];
-END;
-GO
-
-CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_GET_WITH_SIGNATURES]
-    @ID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    -- Get yetkili details
-    SELECT 
-        [ID], [CustomerNo], [YetkiliKontakt], [YetkiliAdi],
-        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
-        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
-        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
-    FROM [dbo].[SGN_AUTHDETAIL]
+    -- Soft delete for SGN_AUTHDETAIL
+    UPDATE [dbo].[SGN_AUTHDETAIL]
+    SET [RecordStatus] = 'D',
+        [LastUpdate] = GETDATE()
     WHERE [ID] = @ID AND [RecordStatus] = 'A';
     
-    -- Get associated signatures
-    SELECT 
-        [ID], [AuthDetailID], [ImageData], [SiraNo],
-        [SourcePdfPath], [CreateDate], [LastUpdate]
-    FROM [dbo].[SGN_AUTHDETAIL_SIGNATURES]
-    WHERE [AuthDetailID] = @ID
-    ORDER BY [SiraNo];
+    -- Soft delete related signatures
+    UPDATE [dbo].[SGN_AUTHDETAIL_SIGNATURES]
+    SET [LastUpdate] = GETDATE()
+    WHERE [AuthDetailID] = @ID;
 END;
 GO
 
@@ -248,6 +167,76 @@ BEGIN
 END;
 GO
 
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SIGNATURES_DELETE]
+    @ID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DELETE FROM [dbo].[SGN_AUTHDETAIL_SIGNATURES]
+    WHERE [ID] = @ID;
+END;
+GO
+
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SELECT_BY_ID]
+    @ID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        [ID], [CircularID], [YetkiliKontakt], [YetkiliAdi],
+        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
+        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
+        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
+    FROM [dbo].[SGN_AUTHDETAIL]
+    WHERE [ID] = @ID AND [RecordStatus] = 'A';
+END;
+GO
+
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SELECT_BY_CIRCULAR]
+    @CircularID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        [ID], [CircularID], [YetkiliKontakt], [YetkiliAdi],
+        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
+        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
+        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
+    FROM [dbo].[SGN_AUTHDETAIL]
+    WHERE [CircularID] = @CircularID AND [RecordStatus] = 'A'
+    ORDER BY [YetkiliAdi];
+END;
+GO
+
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SEARCH]
+    @YetkiliAdi NVARCHAR(200) = NULL,
+    @YetkiGrubu NVARCHAR(100) = NULL,
+    @YetkiDurumu NVARCHAR(50) = NULL,
+    @BaslangicTarihi DATE = NULL,
+    @BitisTarihi DATE = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        [ID], [CircularID], [YetkiliKontakt], [YetkiliAdi],
+        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
+        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
+        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
+    FROM [dbo].[SGN_AUTHDETAIL]
+    WHERE [RecordStatus] = 'A'
+        AND (@YetkiliAdi IS NULL OR [YetkiliAdi] LIKE '%' + @YetkiliAdi + '%')
+        AND (@YetkiGrubu IS NULL OR [YetkiGrubu] = @YetkiGrubu)
+        AND (@YetkiDurumu IS NULL OR [YetkiDurumu] = @YetkiDurumu)
+        AND (@BaslangicTarihi IS NULL OR [YetkiTarihi] >= @BaslangicTarihi)
+        AND (@BitisTarihi IS NULL OR [YetkiTarihi] <= @BitisTarihi)
+    ORDER BY [YetkiliAdi];
+END;
+GO
+
 CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_SIGNATURES_SELECT_BY_ID]
     @ID INT
 AS
@@ -277,7 +266,34 @@ BEGIN
 END;
 GO
 
+CREATE PROCEDURE [dbo].[SGN_AUTHDETAIL_GET_WITH_SIGNATURES]
+    @ID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Get yetkili details
+    SELECT 
+        [ID], [CircularID], [YetkiliKontakt], [YetkiliAdi],
+        [YetkiSekli], [YetkiTarihi], [YetkiBitisTarihi], [YetkiGrubu],
+        [SinirliYetkiDetaylari], [YetkiTurleri], [YetkiTutari],
+        [YetkiDovizCinsi], [YetkiDurumu], [CreateDate], [LastUpdate], [RecordStatus]
+    FROM [dbo].[SGN_AUTHDETAIL]
+    WHERE [ID] = @ID AND [RecordStatus] = 'A';
+    
+    -- Get associated signatures
+    SELECT 
+        [ID], [AuthDetailID], [ImageData], [SiraNo],
+        [SourcePdfPath], [CreateDate], [LastUpdate]
+    FROM [dbo].[SGN_AUTHDETAIL_SIGNATURES]
+    WHERE [AuthDetailID] = @ID
+    ORDER BY [SiraNo];
+END;
+GO
+
+-- Circular procedures
 CREATE PROCEDURE [dbo].[SGN_CIRCULAR_INS]
+    @CircularID INT,
     @CustomerNo INT NULL,
     @CompanyTitle nvarchar(max) NULL,
     @IssuedDate date NULL,
@@ -300,7 +316,7 @@ BEGIN
 
     INSERT INTO [dbo].[SGN_CIRCULAR]
     (
-        [CustomerNo], [CompanyTitle], [IssuedDate], [ValidityDate],
+        [CircularID], [CustomerNo], [CompanyTitle], [IssuedDate], [ValidityDate],
         [InternalBylawsTsgDate], [SpecialCases], [CircularType], [CircularNotaryNo],
         [Description], [CircularStatus], [IsABoardOfDirectorsDecisionRequired],
         [MainCircularDate], [MainCircularRef], [AdditionalDocuments],
@@ -308,7 +324,7 @@ BEGIN
     )
     VALUES
     (
-        @CustomerNo, @CompanyTitle, @IssuedDate, @ValidityDate,
+        @CircularID, @CustomerNo, @CompanyTitle, @IssuedDate, @ValidityDate,
         @InternalBylawsTsgDate, @SpecialCases, @CircularType, @CircularNotaryNo,
         @Description, @CircularStatus, @IsABoardOfDirectorsDecisionRequired,
         @MainCircularDate, @MainCircularRef, @AdditionalDocuments,
@@ -321,6 +337,7 @@ GO
 
 CREATE PROCEDURE [dbo].[SGN_CIRCULAR_UPD]
     @ID int,
+    @CircularID INT,
     @CustomerNo INT NULL,
     @CompanyTitle nvarchar(max) NULL,
     @IssuedDate date NULL,
@@ -343,6 +360,7 @@ BEGIN
 
     UPDATE [dbo].[SGN_CIRCULAR]
     SET
+        [CircularID] = @CircularID,
         [CustomerNo] = @CustomerNo,
         [CompanyTitle] = @CompanyTitle,
         [IssuedDate] = @IssuedDate,
@@ -371,7 +389,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     SELECT 
-        [ID], [CustomerNo], [CompanyTitle], [IssuedDate], [ValidityDate],
+        [ID], [CircularID], [CustomerNo], [CompanyTitle], [IssuedDate], [ValidityDate],
         [InternalBylawsTsgDate], [SpecialCases], [CircularType], [CircularNotaryNo],
         [Description], [CircularStatus], [IsABoardOfDirectorsDecisionRequired],
         [MainCircularDate], [MainCircularRef], [AdditionalDocuments],
