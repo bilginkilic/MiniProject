@@ -112,8 +112,103 @@ namespace AspxExamples
                     }
                 }
 
-                // Başlangıç mesajını göster
-                ShowMessage("PDF formatında imza sirkülerinizi yükleyerek başlayabilirsiniz.", "info");
+                // URL'den veri parametrelerini kontrol et
+                string initialData = Request.QueryString["data"];
+                if (!string.IsNullOrEmpty(initialData))
+                {
+                    try
+                    {
+                        // Base64 decode ve JSON parse
+                        byte[] data = Convert.FromBase64String(initialData);
+                        string jsonData = System.Text.Encoding.UTF8.GetString(data);
+                        var serializer = new JavaScriptSerializer();
+                        var yetkiliDataList = serializer.Deserialize<List<YetkiliKayit>>(jsonData);
+
+                        if (yetkiliDataList != null && yetkiliDataList.Any())
+                        {
+                            // Grid'e eklemek için yetkili kayıtlarını hazırla
+                            var gridData = new List<object>();
+                            foreach (var yetkiliData in yetkiliDataList)
+                            {
+                                var rowData = new
+                                {
+                                    YetkiliKontakt = yetkiliData.YetkiliKontakt,
+                                    YetkiliAdi = yetkiliData.YetkiliAdi,
+                                    YetkiSekli = yetkiliData.YetkiSekli,
+                                    YetkiTarihi = yetkiliData.YetkiTarihi,
+                                    YetkiBitisTarihi = yetkiliData.AksiKararaKadar ? "Aksi Karara Kadar" : yetkiliData.YetkiTarihi,
+                                    YetkiGrubu = yetkiliData.YetkiSekli,
+                                    SinirliYetkiDetaylari = yetkiliData.SinirliYetkiDetaylari,
+                                    YetkiTurleri = yetkiliData.YetkiTurleri,
+                                    YetkiTutari = yetkiliData.YetkiTutari,
+                                    YetkiDovizCinsi = yetkiliData.YetkiDovizCinsi,
+                                    YetkiDurumu = yetkiliData.YetkiDurumu,
+                                    Imzalar = yetkiliData.Imzalar?.Select(i => i.Base64Image).ToList() ?? new List<string>()
+                                };
+                                gridData.Add(rowData);
+                            }
+
+                            // Grid verilerini hidden field'a kaydet
+                            hdnYetkiliKayitlar.Value = serializer.Serialize(gridData);
+
+                            // İlk yetkiliyi form alanlarına doldur
+                            var ilkYetkili = yetkiliDataList[0];
+                            txtYetkiliKontakt.Text = ilkYetkili.YetkiliKontakt;
+                            txtYetkiliAdi.Text = ilkYetkili.YetkiliAdi;
+                            selYetkiSekli.SelectedValue = ilkYetkili.YetkiSekli;
+                            txtSinirliYetkiDetaylari.Text = ilkYetkili.SinirliYetkiDetaylari;
+                            selYetkiTurleri.SelectedValue = ilkYetkili.YetkiTurleri;
+                            txtYetkiTutari.Text = ilkYetkili.YetkiTutari;
+                            selYetkiDovizCinsi.SelectedValue = ilkYetkili.YetkiDovizCinsi;
+                            selYetkiDurumu.SelectedValue = ilkYetkili.YetkiDurumu;
+
+                            // Tarih ayarları
+                            if (ilkYetkili.AksiKararaKadar)
+                            {
+                                chkAksiKarar.Checked = true;
+                                yetkiBitisTarihi.Enabled = false;
+                            }
+                            else
+                            {
+                                yetkiBitisTarihi.Text = ilkYetkili.YetkiTarihi;
+                            }
+
+                            // Tüm imzaları topla
+                            var allSignatures = new List<string>();
+                            foreach (var yetkili in yetkiliDataList)
+                            {
+                                if (yetkili.Imzalar != null)
+                                {
+                                    allSignatures.AddRange(yetkili.Imzalar.Select(i => i.Base64Image));
+                                }
+                            }
+                            hdnSignatures.Value = serializer.Serialize(allSignatures);
+
+                            // JavaScript'i çağırarak grid ve imzaları göster
+                            ScriptManager.RegisterStartupScript(this, GetType(),
+                                "initializeData",
+                                @"if(typeof updateSignatureSlots === 'function') { 
+                                    updateSignatureSlots(); 
+                                }
+                                if(typeof initializeGrid === 'function') {
+                                    initializeGrid();
+                                }",
+                                true);
+
+                            ShowMessage("Veriler başarıyla yüklendi.", "success");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Veri yükleme hatası: " + ex.Message);
+                        ShowError("Veriler yüklenirken bir hata oluştu: " + ex.Message);
+                    }
+                }
+                else
+                {
+                    // Başlangıç mesajını göster
+                    ShowMessage("PDF formatında imza sirkülerinizi yükleyerek başlayabilirsiniz.", "info");
+                }
             }
         }
 

@@ -149,6 +149,37 @@ namespace AspxExamples
             {
                 if (File.Exists(filePath))
                 {
+                    string fileName = Path.GetFileName(filePath);
+                    string cdnPath = $"/cdn/{fileName}";
+
+                    // Session'a dosya bilgilerini kaydet
+                    var uploadResult = new UploadedFileResult
+                    {
+                        FilePath = cdnPath,  // CDN yolunu kaydet
+                        FileName = fileName,
+                        UploadDate = DateTime.Now
+                    };
+                    SessionHelper.SetUploadedFile(uploadResult);
+                    return new { success = true };
+                }
+                return new { success = false, error = "Dosya bulunamadı." };
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, error = ex.Message };
+            }
+        }
+
+        [System.Web.Services.WebMethod]
+        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
+        public static object SetSelectedFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    // Session'a dosya yolunu kaydet
+                    HttpContext.Current.Session["SelectedFilePath"] = filePath;
                     return new { success = true };
                 }
                 return new { success = false, error = "Dosya bulunamadı." };

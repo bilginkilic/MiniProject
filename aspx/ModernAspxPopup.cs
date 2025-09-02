@@ -134,26 +134,50 @@ namespace AspxExamples
 
                     private string referenceId;
 
-            public ModernAspxPopup(string aspxFileName, string refId)
-            {
-                this.referenceId = refId;
-                InitializeComponent();
-                LoadAspxContent(aspxFileName);
-            }
+                    public ModernAspxPopup(string aspxFileName, string refId = null)
+        {
+            this.referenceId = refId;
+            this.aspxFileName = aspxFileName;
+            InitializeComponent();
+            LoadAspxContent(aspxFileName);
+        }
 
 
+
+        public object ResultData { get; private set; }
+        private string aspxFileName;
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             try
             {
-                // Session'dan veriyi al
-                var sessionData = SessionHelper.GetSignatureAuthData();
-                if (sessionData != null)
+                // JavaScript'ten gelen kapanma isteğini kontrol et
+                if (htmlBox.Document != null)
                 {
-                    this.ResultData = sessionData;
-                    // Session'ı temizle
-                    SessionHelper.ClearSignatureAuthData();
+                    var closeRequested = htmlBox.Document.GetElementById("hdnIsReturnRequested");
+                    if (closeRequested != null && closeRequested.GetAttribute("value") == "true")
+                    {
+                        // Sayfa tipine göre session'dan veriyi al
+                        if (aspxFileName.Contains("PdfSignatureForm"))
+                        {
+                            var signatureData = SessionHelper.GetSignatureAuthData();
+                            if (signatureData != null)
+                            {
+                                this.ResultData = signatureData;
+                                SessionHelper.ClearSignatureAuthData();
+                            }
+                        }
+                        else if (aspxFileName.Contains("FileUploadViewer"))
+                        {
+                            var uploadedFile = SessionHelper.GetUploadedFile();
+                            if (uploadedFile != null)
+                            {
+                                this.ResultData = uploadedFile;
+                                SessionHelper.ClearUploadedFile();
+                            }
+                        }
+                        e.Cancel = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -228,24 +252,63 @@ namespace AspxExamples
     // Örnek kullanım sınıfı
     public class ModernPopupExample
     {
-        public static SignatureAuthData ShowAuthorizedUserList(string circularRefNumber)
+        public static SignatureAuthData ShowAuthorizedUserList(string circularRefNumber, List<YetkiliKayit> initialDataList = null)
         {
             try
             {
-                string url = string.Format("PdfSignatureForm.aspx?ref={0}", circularRefNumber);
+                string url;
+                if (initialDataList != null && initialDataList.Any())
+                {
+                    // Veriyi JSON'a çevir ve Base64 encode et
+                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+                    string jsonData = serializer.Serialize(initialDataList);
+                    string base64Data = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(jsonData));
+                    url = string.Format("PdfSignatureForm.aspx?ref={0}&data={1}", circularRefNumber, base64Data);
+                }
+                else
+                {
+                    url = string.Format("PdfSignatureForm.aspx?ref={0}", circularRefNumber);
+                }
+
                 using (var popup = new ModernAspxPopup(url, circularRefNumber))
                 {
                     popup.Text = "İmza Sirkülerinden İmza Seçimi";
                     popup.Size = new Size(1280, 900);
                     popup.MinimumSize = new Size(1024, 768);
                     popup.ShowDialog();
-                    return popup.ResultData;
+                    return popup.ResultData as SignatureAuthData;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
                     string.Format("İmza seçimi açılırken hata oluştu: {0}", ex.Message),
+                    "Hata",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+                return null;
+            }
+        }
+
+        public static UploadedFileResult ShowFileUploader()
+        {
+            try
+            {
+                string url = "FileUploadViewer.aspx";
+                using (var popup = new ModernAspxPopup(url))
+                {
+                    popup.Text = "Dosya Yükleme";
+                    popup.Size = new Size(1280, 800);
+                    popup.MinimumSize = new Size(1024, 768);
+                    popup.ShowDialog();
+                    return popup.ResultData as UploadedFileResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    string.Format("Dosya yükleme sırasında hata oluştu: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error

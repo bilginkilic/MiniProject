@@ -507,20 +507,58 @@
 
                 showLoading();
                 
+                // Kapanma isteğini işaretle
+                document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
+                
                 // Web method'u çağır
                 PageMethods.SaveAndReturn(currentFile, function(response) {
                     if (response.success) {
-                        if (window.opener && !window.opener.closed) {
-                            window.opener.postMessage({
-                                type: 'FILE_SELECTED',
-                                filePath: currentFile
-                            }, '*');
-                        }
-                        
-                        showNotification('Dosya başarıyla kaydedildi', 'success');
-                        setTimeout(() => {
-                            window.close();
-                        }, 1000);
+                        // Session'a dosya yolunu kaydet
+                        fetch('FileUploadViewer.aspx/SetSelectedFile', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ filePath: currentFile })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.d.success) {
+                                // Opener window'a bildir
+                                if (window.opener && !window.opener.closed) {
+                                    try {
+                                        // CDN yolunu oluştur
+                                        var fileName = currentFile.split('\\').pop();
+                                        var cdnPath = `/cdn/${fileName}`;
+
+                                        // PostMessage ile bildir
+                                        window.opener.postMessage({
+                                            type: 'FILE_SELECTED',
+                                            filePath: cdnPath,
+                                            success: true
+                                        }, '*');
+                                        
+                                        // Opener'da varsa callback'i çağır
+                                        if (typeof window.opener.onFileSelected === 'function') {
+                                            window.opener.onFileSelected(cdnPath);
+                                        }
+                                    } catch (e) {
+                                        console.warn('Opener window iletişim hatası:', e);
+                                    }
+                                }
+                                
+                                showNotification('Dosya başarıyla kaydedildi', 'success');
+                                setTimeout(() => {
+                                    window.close();
+                                }, 1000);
+                            } else {
+                                showNotification('Dosya yolu kaydedilemedi', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Dosya yolu kaydetme hatası:', error);
+                            showNotification('İşlem sırasında bir hata oluştu', 'error');
+                        });
                     } else {
                         showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
                     }

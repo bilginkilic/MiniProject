@@ -1018,8 +1018,16 @@
                         console.log('Başarılı yanıt:', data);
                         if (data.d && data.d.success) {
                             showNotification('Veriler başarıyla kaydedildi', 'success');
+                            
+                            // Kapanma isteğini işaretle
+                            document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
+                            
                             setTimeout(() => {
-                                window.location.href = document.referrer || '/';
+                                if (window.opener && !window.opener.closed) {
+                                    window.close();
+                                } else {
+                                    window.location.href = document.referrer || '/';
+                                }
                             }, 1000);
                         } else {
                             showNotification(data.d.error || 'Bilinmeyen bir hata oluştu', 'error');
@@ -2530,6 +2538,42 @@
             let pdfList = [];
             const pdfListContainer = document.getElementById('pdfList');
             const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
+
+            function initializeGrid() {
+                try {
+                    const gridDataStr = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>').value;
+                    if (!gridDataStr) {
+                        console.log('Grid verisi bulunamadı');
+                        return;
+                    }
+
+                    const gridData = JSON.parse(gridDataStr);
+                    const tbody = document.querySelector('.auth-details-table tbody');
+                    if (!tbody) {
+                        console.error('Tablo tbody elementi bulunamadı');
+                        return;
+                    }
+
+                    // Mevcut satırları temizle
+                    tbody.innerHTML = '';
+
+                    // Her kayıt için yeni satır ekle
+                    gridData.forEach(data => {
+                        const row = addTableRow(data);
+                        if (row) {
+                            tbody.appendChild(row);
+                        }
+                    });
+
+                    // Grid state'i güncelle
+                    updateGridState();
+                    
+                    console.log('Grid başarıyla initialize edildi');
+                } catch (err) {
+                    console.error('Grid initialize hatası:', err);
+                    showNotification('Grid verilerini yüklerken bir hata oluştu: ' + err.message, 'error');
+                }
+            }
 
             function initializePdfList() {
                 // URL'den PDF listesini al
