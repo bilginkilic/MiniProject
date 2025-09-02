@@ -14,6 +14,7 @@ namespace AspxExamples.Common.Models
     {
         private const string SIGNATURE_AUTH_KEY = "SignatureAuthData";
         private const string UPLOADED_FILE_KEY = "UploadedFileResult";
+        private const string CLOSE_WINDOW_KEY = "CloseWindow";
         
         public static void SetSignatureAuthData(SignatureAuthData data)
         {
@@ -68,6 +69,34 @@ namespace AspxExamples.Common.Models
             if (HttpContext.Current != null && HttpContext.Current.Session != null)
             {
                 HttpContext.Current.Session.Remove(UPLOADED_FILE_KEY);
+            }
+        }
+
+        public static void SetCloseWindow(bool value)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[CLOSE_WINDOW_KEY] = value;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static bool GetCloseWindow()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[CLOSE_WINDOW_KEY] != null)
+            {
+                return (bool)HttpContext.Current.Session[CLOSE_WINDOW_KEY];
+            }
+            return false;
+        }
+
+        public static void ClearCloseWindow()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(CLOSE_WINDOW_KEY);
             }
         }
     }
