@@ -68,6 +68,8 @@ namespace AspxExamples
 
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
+        private List<YetkiliKayit> yetkiliKayitlar;
+        private List<SignatureData> signatures;
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
         private static readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
         {
