@@ -11,6 +11,8 @@ namespace AspxExamples
         private HtmlBox htmlBox;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
+        private Timer closeCheckTimer;
+        private const int CHECK_INTERVAL = 500; // 500ms
 
         public ModernAspxPopup(string aspxFileName)
         {
@@ -20,6 +22,12 @@ namespace AspxExamples
 
         private void InitializeComponent()
         {
+            // Timer ayarları
+            closeCheckTimer = new Timer();
+            closeCheckTimer.Interval = CHECK_INTERVAL;
+            closeCheckTimer.Tick += new EventHandler(CheckCloseWindow);
+            closeCheckTimer.Start();
+
             // Form ayarları
             this.Text = "Modern ASPX Viewer";
             this.Size = new Size(1280, 800);
@@ -123,7 +131,6 @@ namespace AspxExamples
                         e.Cancel = false;
                     }
                 }
-            }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Session okuma hatası: " + ex.Message);
@@ -151,6 +158,58 @@ namespace AspxExamples
                 System.Diagnostics.Debug.WriteLine(string.Format("Hidden field okuma hatası: {0}", ex.Message));
                 return null;
             }
+        }
+
+        private void CheckCloseWindow(object sender, EventArgs e)
+        {
+            try
+            {
+                // Session'dan closeWindow değerini kontrol et
+                var closeWindow = SessionHelper.GetCloseWindow();
+                if (closeWindow)
+                {
+                    // Session'ı temizle
+                    SessionHelper.ClearCloseWindow();
+
+                    // Sayfa tipine göre session'dan veriyi al
+                    if (aspxFileName.Contains("PdfSignatureForm"))
+                    {
+                        var signatureData = SessionHelper.GetSignatureAuthData();
+                        if (signatureData != null)
+                        {
+                            this.ResultData = signatureData;
+                            SessionHelper.ClearSignatureAuthData();
+                        }
+                    }
+                    else if (aspxFileName.Contains("FileUploadViewer"))
+                    {
+                        var uploadedFile = SessionHelper.GetUploadedFile();
+                        if (uploadedFile != null)
+                        {
+                            this.ResultData = uploadedFile;
+                            SessionHelper.ClearUploadedFile();
+                        }
+                    }
+
+                    // Timer'ı durdur ve formu kapat
+                    closeCheckTimer.Stop();
+                    this.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(string.Format("Close window kontrolü hatası: {0}", ex.Message));
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (closeCheckTimer != null)
+            {
+                closeCheckTimer.Stop();
+                closeCheckTimer.Dispose();
+            }
+            base.OnFormClosing(e);
         }
     }
 

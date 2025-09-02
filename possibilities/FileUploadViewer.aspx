@@ -548,9 +548,21 @@
                                 }
                                 
                                 showNotification('Dosya başarıyla kaydedildi', 'success');
-                                setTimeout(() => {
-                                    window.close();
-                                }, 1000);
+                                // Pencereyi kapatmak için timer başlat
+                                var checkCloseTimer = setInterval(function() {
+                                    // Session'dan closeWindow değerini kontrol et
+                                    PageMethods.CheckCloseWindow(function(response) {
+                                        if (response && response.shouldClose) {
+                                            clearInterval(checkCloseTimer);
+                                            window.close();
+                                        }
+                                    });
+                                }, 500); // Her 500ms'de bir kontrol et
+
+                                // 10 saniye sonra timer'ı temizle (güvenlik için)
+                                setTimeout(function() {
+                                    clearInterval(checkCloseTimer);
+                                }, 10000);
                             } else {
                                 showNotification('Dosya yolu kaydedilemedi', 'error');
                             }
