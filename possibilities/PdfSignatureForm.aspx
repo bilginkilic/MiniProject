@@ -1035,12 +1035,13 @@
                         yetkiliKayitlarJson: JSON.stringify(kayitlar),
                         signatureDataJson: JSON.stringify(signatures.map(function(sig) {
                             return {
-                                Page: sig.Page,
-                                X: sig.X,
-                                Y: sig.Y,
-                                Width: sig.Width,
-                                Height: sig.Height,
-                                Image: sig.Image
+                                                            Page: sig.Page,
+                            X: sig.X,
+                            Y: sig.Y,
+                            Width: sig.Width,
+                            Height: sig.Height,
+                            Image: sig.Image,
+                            SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value
                             };
                         }))
                     };
@@ -1560,8 +1561,8 @@
                 // Convert to base64
                 const imageData = canvas.toDataURL('image/png');
 
-                // Get current active PDF path
-                const currentPdfPath = pdfList.length > 0 ? pdfList[0] : ''; // Default to first PDF in list
+                // Get current active PDF path from hidden field
+                const currentPdfPath = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
 
                 // Add to selected signatures
                 const signatureData = {
