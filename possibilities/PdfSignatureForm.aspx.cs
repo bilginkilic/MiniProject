@@ -371,6 +371,62 @@ namespace AspxExamples
             }
         }
 
+        public class CustomerSearchResult
+        {
+            public string No { get; set; }
+            public string Name { get; set; }
+            public string Status { get; set; }
+        }
+
+        public class CustomerSearchResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
+            public List<CustomerSearchResult> Data { get; set; }
+        }
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static CustomerSearchResponse SearchCustomers(string searchTerm)
+        {
+            try
+            {
+                // TODO: Burada gerçek veritabanı sorgusu yapılacak
+                // Şimdilik örnek veri dönüyoruz
+                var customers = new List<CustomerSearchResult>();
+
+                // Eğer arama terimi boş değilse filtreleme yap
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    customers.AddRange(new[]
+                    {
+                        new CustomerSearchResult { No = "1001", Name = "Test Müşteri 1", Status = "Aktif" },
+                        new CustomerSearchResult { No = "1002", Name = "Test Müşteri 2", Status = "Aktif" },
+                        new CustomerSearchResult { No = "1003", Name = "Test Müşteri 3", Status = "Pasif" }
+                    }.Where(c => 
+                        c.No.Contains(searchTerm) || 
+                        c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                    ));
+                }
+
+                return new CustomerSearchResponse
+                {
+                    Success = true,
+                    Message = customers.Any() ? "Müşteriler bulundu" : "Müşteri bulunamadı",
+                    Data = customers
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CustomerSearchResponse
+                {
+                    Success = false,
+                    Message = "Arama sırasında bir hata oluştu: " + ex.Message,
+                    Data = new List<CustomerSearchResult>()
+                };
+            }
+        }
+
         [WebMethod]
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public static YetkiliKayitResponse SearchYetkili(string yetkiliNo)

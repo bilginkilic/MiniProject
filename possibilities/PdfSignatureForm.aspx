@@ -562,6 +562,41 @@
             background: #e3f2fd;
         }
 
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-badge.aktif {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.pasif {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px !important;
+            color: #666;
+        }
+
+        .no-results i {
+            font-size: 24px;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+
+        .no-results p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+
         /* PDF List Panel Styles */
         .pdf-list-panel {
             padding: 15px;
@@ -1892,18 +1927,19 @@
 
                     showLoading('Müşteriler aranıyor...');
 
-                    // TODO: Web servis çağrısı burada yapılacak
-                    // Şimdilik dummy data
-                    setTimeout(() => {
-                        const dummyData = [
-                            { no: '1001', name: 'Test Müşteri 1', status: 'Aktif' },
-                            { no: '1002', name: 'Test Müşteri 2', status: 'Aktif' },
-                            { no: '1003', name: 'Test Müşteri 3', status: 'Pasif' }
-                        ];
-
-                        updateCustomerTable(dummyData);
+                    // Web servis çağrısı
+                    PageMethods.SearchCustomers(searchTerm, function(response) {
+                        if (response.Success) {
+                            updateCustomerTable(response.Data);
+                        } else {
+                            showNotification(response.Message || 'Arama sırasında bir hata oluştu', 'error');
+                        }
                         hideLoading();
-                    }, 500);
+                    }, function(error) {
+                        console.error('Müşteri arama hatası:', error);
+                        showNotification('Arama sırasında bir hata oluştu', 'error');
+                        hideLoading();
+                    });
 
                 } catch (err) {
                     console.error('Müşteri arama hatası:', err);
@@ -1920,16 +1956,28 @@
                     }
 
                     tbody.innerHTML = '';
-                    customers.forEach(customer => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${customer.no}</td>
-                            <td>${customer.name}</td>
-                            <td>${customer.status}</td>
+                    if (customers && customers.length > 0) {
+                        customers.forEach(customer => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${customer.No}</td>
+                                <td>${customer.Name}</td>
+                                <td><span class="status-badge ${customer.Status.toLowerCase()}">${customer.Status}</span></td>
+                            `;
+                            row.onclick = () => selectCustomer(customer);
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        // Sonuç bulunamadığında mesaj göster
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="no-results">
+                                    <i class="fas fa-search"></i>
+                                    <p>Arama kriterlerine uygun müşteri bulunamadı</p>
+                                </td>
+                            </tr>
                         `;
-                        row.onclick = () => selectCustomer(customer);
-                        tbody.appendChild(row);
-                    });
+                    }
 
                 } catch (err) {
                     console.error('Müşteri tablosu güncelleme hatası:', err);
@@ -1940,8 +1988,8 @@
             function selectCustomer(customer) {
                 try {
                     // Yetkili alanlarını doldur
-                    document.getElementById('txtYetkiliKontakt').value = customer.no;
-                    document.getElementById('txtYetkiliAdi').value = customer.name;
+                    document.getElementById('txtYetkiliKontakt').value = customer.No;
+                    document.getElementById('txtYetkiliAdi').value = customer.Name;
 
                     // Modalı kapat
                     closeCustomerModal();
