@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
-// v TELETEL - SP isimleri veritabanındaki SP'lerle uyumlu hale getirildi
+// v1 - SignatureAuthDAL.cs - SP isimleri veritabanındaki SP'lerle uyumlu hale getirildi
 namespace AspxExamples.Common.Models
 {
     public class SignatureAuthDAL
@@ -133,9 +133,30 @@ namespace AspxExamples.Common.Models
         {
             using (APPDb db = new APPDb())
             {
-                return db.SetSpCommand(string.Format("{0}AUTHDETAIL_SIGNATURES_SELECT_BY_AUTHDETAIL", SCHEMA),
+                var signatures = db.SetSpCommand(string.Format("{0}AUTHDETAIL_SIGNATURES_SELECT_BY_AUTHDETAIL", SCHEMA),!=
                     db.Parameter("AuthDetailID", authDetailId)
                 ).ExecuteList<SignatureImage>();
+
+                // Her imza için byte array'i Base64'e dönüştür
+                foreach (var signature in signatures)
+                {
+                    if (signature.ImageData != null)
+                    {
+                        try
+                        {
+                            // ImageData'yı byte array olarak al ve Base64'e dönüştür
+                            byte[] imageBytes = (byte[])signature.ImageData;
+                            signature.ImageData = ConvertBytesToBase64(imageBytes);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(string.Format("İmza dönüşüm hatası (ID: {0}): {1}", signature.ID, ex.Message));
+                            signature.ImageData = null; // Dönüşüm başarısız olursa null yap
+                        }
+                    }
+                }
+
+                return signatures;
             }
         }
 
@@ -393,6 +414,21 @@ namespace AspxExamples.Common.Models
         catch (Exception ex)
         {
             throw new Exception("Base64 string dönüşümü sırasında hata oluştu: " + ex.Message);
+        }
+    }
+
+    private static string ConvertBytesToBase64(byte[] imageData)
+    {
+        if (imageData == null || imageData.Length == 0)
+            return null;
+
+        try
+        {
+            return Convert.ToBase64String(imageData);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Byte array'den Base64'e dönüşüm sırasında hata oluştu: " + ex.Message);
         }
     }
 }
