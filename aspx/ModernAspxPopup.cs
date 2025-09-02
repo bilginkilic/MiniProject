@@ -9,18 +9,8 @@ namespace AspxExamples
     {
         public SignatureAuthData ResultData { get; private set; }
         private HtmlBox htmlBox;
-        private ToolStrip toolStrip;
         private StatusStrip statusStrip;
-        private ToolStripButton btnFullScreen;
-        private ToolStripButton btnZoomIn;
-        private ToolStripButton btnZoomOut;
-        private ToolStripButton btnPrint;
         private ToolStripStatusLabel statusLabel;
-        private float currentZoom = 1.0f;
-        private bool isFullScreen = false;
-        private Size previousSize;
-        private Point previousLocation;
-        private FormWindowState previousState;
 
         public ModernAspxPopup(string aspxFileName)
         {
@@ -39,9 +29,6 @@ namespace AspxExamples
             this.MinimizeBox = true;
             this.MinimumSize = new Size(800, 600);
 
-            // ToolStrip oluşturma
-            CreateToolStrip();
-
             // StatusStrip oluşturma
             CreateStatusStrip();
 
@@ -58,51 +45,10 @@ namespace AspxExamples
             contentPanel.Padding = new Padding(10);
             contentPanel.Controls.Add(htmlBox);
 
-            this.Controls.AddRange(new Control[] { toolStrip, contentPanel, statusStrip });
+            this.Controls.AddRange(new Control[] { contentPanel, statusStrip });
         }
 
-        private void CreateToolStrip()
-        {
-            toolStrip = new ToolStrip();
-            toolStrip.RenderMode = ToolStripRenderMode.System;
-            toolStrip.GripStyle = ToolStripGripStyle.Hidden;
 
-            // Tam Ekran butonu
-            btnFullScreen = new ToolStripButton();
-            btnFullScreen.Text = "⛶";
-            btnFullScreen.ToolTipText = "Tam Ekran";
-            btnFullScreen.Click += ToggleFullScreen;
-
-            // Zoom butonları
-            btnZoomIn = new ToolStripButton();
-            btnZoomIn.Text = "🔍+";
-            btnZoomIn.ToolTipText = "Yakınlaştır";
-            btnZoomIn.Click += (s, e) => AdjustZoom(0.1f);
-
-            btnZoomOut = new ToolStripButton();
-            btnZoomOut.Text = "🔍-";
-            btnZoomOut.ToolTipText = "Uzaklaştır";
-            btnZoomOut.Click += (s, e) => AdjustZoom(-0.1f);
-
-            // Yazdırma butonu
-            btnPrint = new ToolStripButton();
-            btnPrint.Text = "🖨️";
-            btnPrint.ToolTipText = "Yazdır";
-            btnPrint.Click += (s, e) => PrintContent();
-
-            // Ayırıcı
-            ToolStripSeparator separator = new ToolStripSeparator();
-
-            // Butonları ToolStrip'e ekleme
-            toolStrip.Items.AddRange(new ToolStripItem[] {
-                btnFullScreen,
-                separator,
-                btnZoomIn,
-                btnZoomOut,
-                new ToolStripSeparator(),
-                btnPrint
-            });
-        }
 
         private void CreateStatusStrip()
         {
@@ -152,11 +98,9 @@ namespace AspxExamples
             try
             {
                 // JavaScript'ten gelen kapanma isteğini kontrol et
-                if (htmlBox.Document != null)
+                string closeRequested = GetHiddenFieldValue("hdnIsReturnRequested");
+                if (!string.IsNullOrEmpty(closeRequested) && closeRequested == "true")
                 {
-                    var closeRequested = htmlBox.Document.GetElementById("hdnIsReturnRequested");
-                    if (closeRequested != null && closeRequested.GetAttribute("value") == "true")
-                    {
                         // Sayfa tipine göre session'dan veriyi al
                         if (aspxFileName.Contains("PdfSignatureForm"))
                         {
@@ -187,65 +131,26 @@ namespace AspxExamples
 
             base.OnClosing(e);
         }
-        }
 
-        private void ToggleFullScreen(object sender, EventArgs e)
-        {
-            if (!isFullScreen)
-            {
-                // Mevcut durumu kaydet
-                previousSize = this.Size;
-                previousLocation = this.Location;
-                previousState = this.WindowState;
-
-                // Tam ekran yap
-                this.FormBorderStyle = FormBorderStyle.None;
-                this.WindowState = FormWindowState.Maximized;
-                btnFullScreen.Text = "⛶";
-            }
-            else
-            {
-                // Önceki duruma geri dön
-                this.FormBorderStyle = FormBorderStyle.Sizable;
-                this.Size = previousSize;
-                this.Location = previousLocation;
-                this.WindowState = previousState;
-                btnFullScreen.Text = "⛶";
-            }
-
-            isFullScreen = !isFullScreen;
-            UpdateStatus(isFullScreen ? "Tam ekran modu" : "Normal mod");
-        }
-
-        private void AdjustZoom(float delta)
-        {
-            currentZoom = Math.Max(0.5f, Math.Min(2.0f, currentZoom + delta));
-            htmlBox.ZoomFactor = currentZoom;
-            UpdateStatus(String.Format("Zoom: {0:P0}", currentZoom));
-        }
-
-        private void PrintContent()
-        {
-            try
-            {
-                htmlBox.Print();
-                UpdateStatus("Yazdırma işlemi başlatıldı");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    String.Format("Yazdırma sırasında hata: {0}", ex.Message),
-                    "Yazdırma Hatası",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-                UpdateStatus("Hata: Yazdırılamadı");
-            }
-        }
 
         private void UpdateStatus(string message)
         {
             statusLabel.Text = message;
+        }
+
+        private string GetHiddenFieldValue(string fieldId)
+        {
+            try
+            {
+                // Gizmox WebGUI için güvenli değer alma
+                object result = htmlBox.InvokeScript("getHiddenFieldValue", new object[] { fieldId });
+                return result?.ToString();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(string.Format("Hidden field okuma hatası: {0}", ex.Message));
+                return null;
+            }
         }
     }
 

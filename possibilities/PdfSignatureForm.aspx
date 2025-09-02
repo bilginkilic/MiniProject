@@ -992,6 +992,12 @@
         </div>
 
         <script type="text/javascript">
+            // Hidden field değerini almak için yardımcı fonksiyon
+            function getHiddenFieldValue(fieldId) {
+                var element = document.getElementById(fieldId);
+                return element ? element.value : null;
+            }
+
             function saveAndReturn() {
                 try {
                     console.group('Kaydet ve Geri Dön İşlemi');
