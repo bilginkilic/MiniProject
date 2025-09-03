@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: amsdede kulaklık --%>
+<%-- Created: kil kulaklık --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -2616,13 +2616,27 @@
                         return;
                     }
                     
-                    const gridDataStr = hdnYetkiliKayitlar.value;
+                    let gridDataStr = hdnYetkiliKayitlar.value;
                     console.log('Hidden field ID:', hdnYetkiliKayitlar.id);
                     console.log('Grid data string:', gridDataStr);
 
+                    // Eğer grid verisi yoksa varsayılan veri ekle
                     if (!gridDataStr) {
-                        console.log('Grid verisi bulunamadı');
-                        return;
+                        const defaultData = [{
+                            "YetkiliKontakt": "5000711",
+                            "YetkiliAdi": "Ahmet Yılmaz",
+                            "YetkiSekli": "Münferiden",
+                            "YetkiTarihi": new Date().toLocaleDateString('tr-TR'),
+                            "YetkiBitisTarihi": "31.12.2024",
+                            "YetkiGrubu": "A Grubu",
+                            "SinirliYetkiDetaylari": "Test detayları",
+                            "YetkiTurleri": "Kredi İşlemleri",
+                            "YetkiTutari": "1000000",
+                            "YetkiDovizCinsi": "USD",
+                            "YetkiDurumu": "Aktif"
+                        }];
+                        gridDataStr = JSON.stringify(defaultData);
+                        hdnYetkiliKayitlar.value = gridDataStr;
                     }
 
                     console.log('Parsing grid data...');
