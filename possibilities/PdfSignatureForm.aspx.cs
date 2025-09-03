@@ -9,9 +9,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
+using System.Web.Services;
+using System.Web.Script.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* v2 - dede.aspx.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
+/* v2 - dede.aspx7.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
 
 namespace AspxExamples
 {
@@ -74,8 +76,8 @@ namespace AspxExamples
 
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
-        private List<YetkiliKayit> yetkiliKayitlar;
-        private List<SignatureData> signatures;
+        private static List<YetkiliKayit> yetkiliKayitlar;
+        private static List<SignatureData> signatures;
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
         private static readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
         {
@@ -122,13 +124,52 @@ namespace AspxExamples
 
                 // Session'dan veriyi al
                 var yetkiliDataList = SessionHelper.GetInitialYetkiliData();
-                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan alınan yetkili sayısı: {0}", yetkiliDataList?.Count ?? 0));
-                
-                // Session'dan gelen veriyi direkt olarak grid için hazırla
-                if (yetkiliDataList != null && yetkiliDataList.Any())
+                int yetkiliCount = 0;
+                if (yetkiliDataList != null)
                 {
-                    var serializer = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
-                    hdnYetkiliKayitlar.Value = serializer.Serialize(yetkiliDataList);
+                    yetkiliCount = yetkiliDataList.Count;
+                }
+                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan alınan yetkili sayısı: {0}", yetkiliCount));
+                
+                // Session'dan gelen veriyi ve PDF adresini hazırla
+                if (yetkiliDataList != null && yetkiliDataList.Count > 0)
+                {
+                    // PDF adresini al
+                    string pdfPath = string.Empty;
+                    if (Session["CurrentPdfPath"] != null)
+                    {
+                        pdfPath = Session["CurrentPdfPath"].ToString();
+                    }
+                    else if (!string.IsNullOrEmpty(hdnCurrentPdfList.Value))
+                    {
+                        pdfPath = hdnCurrentPdfList.Value;
+                    }
+
+                    // Yetkili kayıtları hazırla
+                    yetkiliKayitlar = yetkiliDataList;
+                    
+                    // Signature verilerini hazırla
+                    signatures = new List<SignatureData>();
+                    foreach (var yetkili in yetkiliKayitlar)
+                    {
+                        if (yetkili.Imzalar != null)
+                        {
+                            foreach (var imza in yetkili.Imzalar)
+                            {
+                                var signatureData = new SignatureData
+                                {
+                                    SourcePdfPath = pdfPath,
+                                    Image = imza.Base64Image
+                                };
+                                signatures.Add(signatureData);
+                            }
+                        }
+                    }
+
+                    // Hidden field'a kaydet
+                    var serializer = new JavaScriptSerializer();
+                    serializer.MaxJsonLength = int.MaxValue;
+                    hdnYetkiliKayitlar.Value = serializer.Serialize(yetkiliKayitlar);
                     System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan grid için hazırlanan veri: {0}", hdnYetkiliKayitlar.Value));
                 }
                 if (yetkiliDataList != null && yetkiliDataList.Any())
