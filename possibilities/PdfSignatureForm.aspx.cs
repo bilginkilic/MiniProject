@@ -13,7 +13,7 @@ using System.Web.Services;
 using System.Web.Script.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* v2 - dede.aspx7.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
+/* v2 - axoi.aspx7.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
 
 namespace AspxExamples
 {
@@ -76,6 +76,24 @@ namespace AspxExamples
 
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
+        protected string GetInitialYetkiliDataJson()
+        {
+            try
+            {
+                var initialData = SessionHelper.GetInitialYetkiliData();
+                if (initialData != null)
+                {
+                    var serializer = new JavaScriptSerializer();
+                    serializer.MaxJsonLength = int.MaxValue;
+                    return serializer.Serialize(initialData);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetInitialYetkiliDataJson error: {ex.Message}");
+            }
+            return "null";
+        }
         private static List<YetkiliKayit> yetkiliKayitlar;
         private static List<SignatureData> signatures;
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
