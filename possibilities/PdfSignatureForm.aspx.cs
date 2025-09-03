@@ -114,17 +114,12 @@ namespace AspxExamples
                     }
                 }
 
-                // URL'den veri parametrelerini kontrol et
-                string initialData = Request.QueryString["data"];
-                if (!string.IsNullOrEmpty(initialData))
+                // Session'dan veriyi al
+                var yetkiliDataList = SessionHelper.GetInitialYetkiliData();
+                if (yetkiliDataList != null && yetkiliDataList.Any())
                 {
                     try
                     {
-                        // Base64 decode ve JSON parse
-                        byte[] data = Convert.FromBase64String(initialData);
-                        string jsonData = System.Text.Encoding.UTF8.GetString(data);
-                        var serializer = new JavaScriptSerializer();
-                        var yetkiliDataList = serializer.Deserialize<List<YetkiliKayit>>(jsonData);
 
                         if (yetkiliDataList != null && yetkiliDataList.Any())
                         {

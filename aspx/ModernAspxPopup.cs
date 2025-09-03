@@ -223,11 +223,9 @@ namespace AspxExamples
                 string url;
                 if (initialDataList != null && initialDataList.Any())
                 {
-                    // Veriyi JSON'a çevir ve Base64 encode et
-                    var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-                    string jsonData = serializer.Serialize(initialDataList);
-                    string base64Data = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(jsonData));
-                    url = string.Format("PdfSignatureForm.aspx?ref={0}&data={1}", circularRefNumber, base64Data);
+                    // Session'a veriyi kaydet
+                    SessionHelper.SetInitialYetkiliData(initialDataList);
+                    url = string.Format("PdfSignatureForm.aspx?ref={0}", circularRefNumber);
                 }
                 else
                 {

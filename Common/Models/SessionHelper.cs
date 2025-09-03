@@ -15,6 +15,7 @@ namespace AspxExamples.Common.Models
         private const string SIGNATURE_AUTH_KEY = "SignatureAuthData";
         private const string UPLOADED_FILE_KEY = "UploadedFileResult";
         private const string CLOSE_WINDOW_KEY = "CloseWindow";
+        private const string INITIAL_YETKILI_DATA_KEY = "InitialYetkiliData";
         
         public static void SetSignatureAuthData(SignatureAuthData data)
         {
@@ -97,6 +98,34 @@ namespace AspxExamples.Common.Models
             if (HttpContext.Current != null && HttpContext.Current.Session != null)
             {
                 HttpContext.Current.Session.Remove(CLOSE_WINDOW_KEY);
+            }
+        }
+
+        public static void SetInitialYetkiliData(List<YetkiliKayit> data)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[INITIAL_YETKILI_DATA_KEY] = data;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static List<YetkiliKayit> GetInitialYetkiliData()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[INITIAL_YETKILI_DATA_KEY] != null)
+            {
+                return (List<YetkiliKayit>)HttpContext.Current.Session[INITIAL_YETKILI_DATA_KEY];
+            }
+            return null;
+        }
+
+        public static void ClearInitialYetkiliData()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(INITIAL_YETKILI_DATA_KEY);
             }
         }
     }
