@@ -303,8 +303,8 @@ namespace AspxExamples
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine("Veri yükleme hatası: " + ex.Message);
-                        ShowError("Veriler yüklenirken bir hata oluştu: " + ex.Message);
+                        System.Diagnostics.Debug.WriteLine(String.Format("Veri yükleme hatası: {0}", ex.Message));
+                        ShowError(String.Format("Veriler yüklenirken bir hata oluştu: {0}", ex.Message));
                     }
                 }
                 else
@@ -458,9 +458,9 @@ namespace AspxExamples
                 return new YetkiliKayitResponse
                 {
                     Success = true,
-                    Message = "Kayıt başarıyla " + 
-                        (kayit.IslemTipi == "Sil" ? "silindi" : 
-                         kayit.IslemTipi == "Guncelle" ? "güncellendi" : "eklendi"),
+                    Message = String.Format("Kayıt başarıyla {0}",
+                        kayit.IslemTipi == "Sil" ? "silindi" : 
+                        kayit.IslemTipi == "Guncelle" ? "güncellendi" : "eklendi"),
                     Data = kayit
                 };
             }
@@ -524,7 +524,7 @@ namespace AspxExamples
                 return new CustomerSearchResponse
                 {
                     Success = false,
-                    Message = "Arama sırasında bir hata oluştu: " + ex.Message,
+                    Message = String.Format("Arama sırasında bir hata oluştu: {0}", ex.Message),
                     Data = new List<CustomerSearchResult>()
                 };
             }
@@ -578,10 +578,10 @@ namespace AspxExamples
             {
                 // Debug için gelen verileri logla
                 System.Diagnostics.Debug.WriteLine("SaveSignatureWithAjax başladı");
-                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson uzunluğu: " + (yetkiliKayitlarJson?.Length ?? 0));
-                System.Diagnostics.Debug.WriteLine("Gelen yetkiliKayitlarJson içeriği: " + yetkiliKayitlarJson);
-                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson içeriği: " + signatureDataJson);
-                System.Diagnostics.Debug.WriteLine("Gelen signatureDataJson uzunluğu: " + (signatureDataJson?.Length ?? 0));
+                System.Diagnostics.Debug.WriteLine(String.Format("Gelen yetkiliKayitlarJson uzunluğu: {0}", yetkiliKayitlarJson?.Length ?? 0));
+                System.Diagnostics.Debug.WriteLine(String.Format("Gelen yetkiliKayitlarJson içeriği: {0}", yetkiliKayitlarJson));
+                System.Diagnostics.Debug.WriteLine(String.Format("Gelen signatureDataJson içeriği: {0}", signatureDataJson));
+                System.Diagnostics.Debug.WriteLine(String.Format("Gelen signatureDataJson uzunluğu: {0}", signatureDataJson?.Length ?? 0));
                 
                 // Gelen verileri parse etmeyi dene
                 try {
@@ -722,19 +722,19 @@ namespace AspxExamples
                     }
                     catch (JsonReaderException ex)
                     {
-                        System.Diagnostics.Debug.WriteLine("JSON parse hatası: " + ex.Message);
-                        throw new Exception("JSON verisi geçerli değil: " + ex.Message);
+                        System.Diagnostics.Debug.WriteLine(String.Format("JSON parse hatası: {0}", ex.Message));
+                        throw new Exception(String.Format("JSON verisi geçerli değil: {0}", ex.Message));
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine("Beklenmeyen hata: " + ex.Message);
+                        System.Diagnostics.Debug.WriteLine(String.Format("Beklenmeyen hata: {0}", ex.Message));
                         throw;
                     }
                     
-                    System.Diagnostics.Debug.WriteLine("Yetkili kayıt sayısı: " + yetkiliKayitlar?.Count);
-                    System.Diagnostics.Debug.WriteLine("İmza sayısı: " + signatures?.Count);
+                    System.Diagnostics.Debug.WriteLine(String.Format("Yetkili kayıt sayısı: {0}", yetkiliKayitlar?.Count));
+                    System.Diagnostics.Debug.WriteLine(String.Format("İmza sayısı: {0}", signatures?.Count));
                 } catch (Exception parseEx) {
-                    System.Diagnostics.Debug.WriteLine("JSON parse hatası: " + parseEx.Message);
+                    System.Diagnostics.Debug.WriteLine(String.Format("JSON parse hatası: {0}", parseEx.Message));
                     throw;
                 }
 
@@ -788,8 +788,8 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("SaveSignatureWithAjax hatası: " + ex.Message);
-                System.Diagnostics.Debug.WriteLine("Stack trace: " + ex.StackTrace);
+                System.Diagnostics.Debug.WriteLine(String.Format("SaveSignatureWithAjax hatası: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine(String.Format("Stack trace: {0}", ex.StackTrace));
                 return new { success = false, error = ex.Message };
             }
         }
@@ -1013,7 +1013,8 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}\nStack Trace: {1}", ex.Message, ex.StackTrace));
+                System.Diagnostics.Debug.WriteLine(String.Format("İmza kaydetme hatası: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine(String.Format("Stack Trace: {0}", ex.StackTrace));
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
