@@ -153,9 +153,31 @@ namespace AspxExamples
                             }
 
                             // Grid verilerini hidden field'a kaydet
+                            // Serialization öncesi veriyi kontrol et
+                            System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Serialize edilecek veri sayısı: {0}", gridData.Count));
+                            foreach (var item in gridData)
+                            {
+                                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Grid item: {0}", JsonConvert.SerializeObject(item)));
+                            }
+                            
                             var serializedData = serializer.Serialize(gridData);
+                            
+                            // Serialize edilen veriyi parse ederek kontrol et
+                            try
+                            {
+                                var deserializedData = serializer.Deserialize<List<object>>(serializedData);
+                                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Deserialize kontrol başarılı, eleman sayısı: {0}", deserializedData.Count));
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Deserialize kontrol hatası: {0}", ex.Message));
+                            }
                             System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Hidden field'a kaydedilen veri: {0}", serializedData));
+                            System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Hidden field ID: {0}", hdnYetkiliKayitlar.ClientID));
                             hdnYetkiliKayitlar.Value = serializedData;
+                            
+                            // Değer atandıktan sonra kontrol et
+                            System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Hidden field değeri atandıktan sonra: {0}", hdnYetkiliKayitlar.Value));
 
                             // İlk yetkiliyi form alanlarına doldur
                             var ilkYetkili = yetkiliDataList[0];
