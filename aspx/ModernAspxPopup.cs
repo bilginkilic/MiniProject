@@ -1,13 +1,13 @@
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using Gizmox.WebGUI.Forms;
 using Gizmox.WebGUI.Common;
-
+// v1 - ModernAspxPopup.cs - Gizmox WebGUI için ModernAspxPopup sınıfı eklendi
 namespace AspxExamples
 {
     public class ModernAspxPopup : Form
     {
-        public SignatureAuthData ResultData { get; private set; }
         private HtmlBox htmlBox;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
@@ -101,42 +101,45 @@ namespace AspxExamples
         public object ResultData { get; private set; }
         private string aspxFileName;
 
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        protected override void OnClose(EventArgs e)
         {
             try
             {
-                // JavaScript'ten gelen kapanma isteğini kontrol et
-                string closeRequested = GetHiddenFieldValue("hdnIsReturnRequested");
-                if (!string.IsNullOrEmpty(closeRequested) && closeRequested == "true")
+                if (htmlBox?.Url != null)
                 {
-                        // Sayfa tipine göre session'dan veriyi al
-                        if (aspxFileName.Contains("PdfSignatureForm"))
+                    // URL'e göre session'dan veriyi al
+                    if (htmlBox.Url.Contains("PdfSignatureForm"))
+                    {
+                        var signatureData = SessionHelper.GetSignatureAuthData();
+                        if (signatureData != null)
                         {
-                            var signatureData = SessionHelper.GetSignatureAuthData();
-                            if (signatureData != null)
-                            {
-                                this.ResultData = signatureData;
-                                SessionHelper.ClearSignatureAuthData();
-                            }
+                            this.ResultData = signatureData;
+                            SessionHelper.ClearSignatureAuthData();
                         }
-                        else if (aspxFileName.Contains("FileUploadViewer"))
+                    }
+                    else if (htmlBox.Url.Contains("FileUploadViewer"))
+                    {
+                        var uploadedFile = SessionHelper.GetUploadedFile();
+                        if (uploadedFile != null)
                         {
-                            var uploadedFile = SessionHelper.GetUploadedFile();
-                            if (uploadedFile != null)
-                            {
-                                this.ResultData = uploadedFile;
-                                SessionHelper.ClearUploadedFile();
-                            }
+                            this.ResultData = uploadedFile;
+                            SessionHelper.ClearUploadedFile();
                         }
-                        e.Cancel = false;
                     }
                 }
+            }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Session okuma hatası: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine(string.Format("Session okuma hatası: {0}", ex.Message));
+            }
+            finally
+            {
+                // Tüm session değerlerini temizle
+                SessionHelper.ClearCloseWindow();
+                SessionHelper.ClearInitialYetkiliData();
             }
 
-            base.OnClosing(e);
+            base.OnClose(e);
         }
 
 
@@ -145,20 +148,6 @@ namespace AspxExamples
             statusLabel.Text = message;
         }
 
-        private string GetHiddenFieldValue(string fieldId)
-        {
-            try
-            {
-                // Gizmox WebGUI için güvenli değer alma
-                object result = htmlBox.InvokeScript("getHiddenFieldValue", new object[] { fieldId });
-                return result?.ToString();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(string.Format("Hidden field okuma hatası: {0}", ex.Message));
-                return null;
-            }
-        }
 
         private void CheckCloseWindow(object sender, EventArgs e)
         {
