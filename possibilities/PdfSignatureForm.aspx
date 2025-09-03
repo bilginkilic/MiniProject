@@ -2753,7 +2753,14 @@
                     
                     // Hidden field değerini kontrol et
                     const hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                    console.log('Hidden field elementi:', hdnYetkiliKayitlar);
+                    console.log('Hidden field ID:', '<%= hdnYetkiliKayitlar.ClientID %>');
                     console.log('Hidden field değeri:', hdnYetkiliKayitlar?.value);
+                    
+                    // Tüm hidden fieldları kontrol et
+                    document.querySelectorAll('input[type="hidden"]').forEach(hf => {
+                        console.log('Hidden field bulundu:', hf.id, 'değer:', hf.value);
+                    });
                     
                     initializeImageEvents();
                     initializePdfList();
