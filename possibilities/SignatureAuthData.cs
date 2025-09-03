@@ -39,7 +39,44 @@ namespace AspxExamples
 
     public class SignatureImage
     {
-        public string ImageData { get; set; }  // Base64 formatında imza verisi
+        private string _base64ImageData;
+        private byte[] _rawImageData;
+
+        public string Base64ImageData 
+        { 
+            get { return _base64ImageData; }
+            set 
+            { 
+                _base64ImageData = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _rawImageData = SignatureAuthDAL.ConvertBase64ToBytes(value);
+                }
+            }
+        }
+
+        public byte[] RawImageData
+        {
+            get { return _rawImageData; }
+            set
+            {
+                _rawImageData = value;
+                if (value != null && value.Length > 0)
+                {
+                    _base64ImageData = SignatureAuthDAL.ConvertBytesToBase64(value);
+                }
+            }
+        }
+
+        // Geriye dönük uyumluluk için
+        public string ImageData
+        {
+            get { return Base64ImageData; }
+            set { Base64ImageData = value; }
+        }
+
+        public int ID { get; set; }
+        public int AuthDetailID { get; set; }
         public int SiraNo { get; set; }        // İmzanın sıra numarası
         public string SourcePdfPath { get; set; } // İmzanın alındığı PDF dosyası
     }

@@ -144,9 +144,9 @@ namespace AspxExamples.Common.Models
                     {
                         try
                         {
-                            // ImageData'yı byte array olarak al ve Base64'e dönüştür
+                            // ImageData'yı byte array olarak al ve RawImageData'ya ata
                             byte[] imageBytes = (byte[])signature.ImageData;
-                            signature.ImageData = ConvertBytesToBase64(imageBytes);
+                            signature.RawImageData = imageBytes;
                         }
                         catch (Exception ex)
                         {
@@ -168,7 +168,7 @@ namespace AspxExamples.Common.Models
                 appParam.AddRange(new IDbDataParameter[]
                 {
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", ConvertBase64ToBytes(signature.ImageData)),
+                    db.Parameter("ImageData", signature.RawImageData),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
@@ -192,7 +192,7 @@ namespace AspxExamples.Common.Models
                 {
                     db.Parameter("ID", signature.ID),
                     db.Parameter("AuthDetailID", signature.AuthDetailID),
-                    db.Parameter("ImageData", ConvertBase64ToBytes(signature.ImageData)),
+                    db.Parameter("ImageData", signature.RawImageData),
                     db.Parameter("SiraNo", signature.SiraNo)
                 });
 
@@ -381,7 +381,7 @@ namespace AspxExamples.Common.Models
         #endregion
     }
 
-    private static byte[] ConvertBase64ToBytes(string base64String)
+    public static byte[] ConvertBase64ToBytes(string base64String)
     {
         if (string.IsNullOrEmpty(base64String))
             return null;
@@ -417,7 +417,7 @@ namespace AspxExamples.Common.Models
         }
     }
 
-    private static string ConvertBytesToBase64(byte[] imageData)
+    public static string ConvertBytesToBase64(byte[] imageData)
     {
         if (imageData == null || imageData.Length == 0)
             return null;
