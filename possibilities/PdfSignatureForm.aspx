@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: saka kulaklık --%>
+<%-- Created: amsdede kulaklık --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -937,7 +937,7 @@
                 <asp:HiddenField ID="hdnSelection" runat="server" />
                 <asp:HiddenField ID="hdnPageCount" runat="server" />
                 <asp:HiddenField ID="hdnSignatures" runat="server" />
-                <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" />
+                <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" EnableViewState="true" />
                 <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
                 <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
@@ -2609,7 +2609,15 @@
             function initializeGrid() {
                 try {
                     console.log('Grid initialization başladı');
-                    const gridDataStr = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>').value;
+                    const hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                    
+                    if (!hdnYetkiliKayitlar) {
+                        console.error('hdnYetkiliKayitlar elementi bulunamadı');
+                        return;
+                    }
+                    
+                    const gridDataStr = hdnYetkiliKayitlar.value;
+                    console.log('Hidden field ID:', hdnYetkiliKayitlar.id);
                     console.log('Grid data string:', gridDataStr);
 
                     if (!gridDataStr) {
@@ -2617,8 +2625,26 @@
                         return;
                     }
 
-                    const gridData = JSON.parse(gridDataStr);
-                    console.log('Parsed grid data:', gridData);
+                    console.log('Parsing grid data...');
+                    let gridData;
+                    try {
+                        gridData = JSON.parse(gridDataStr);
+                        console.log('Grid data parsed successfully');
+                        console.log('Parsed grid data:', gridData);
+                        
+                        if (!Array.isArray(gridData)) {
+                            console.error('Grid data is not an array');
+                            return;
+                        }
+                        
+                        console.log('Grid data array length:', gridData.length);
+                        if (gridData.length > 0) {
+                            console.log('First item sample:', gridData[0]);
+                        }
+                    } catch (error) {
+                        console.error('Grid data parse error:', error);
+                        return;
+                    }
 
                     const tbody = document.getElementById('yetkiliTableBody');
                     if (!tbody) {

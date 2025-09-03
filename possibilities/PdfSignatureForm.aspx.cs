@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* v2 - PdfSignatureForm.aspx.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
+/* v2 - dede.aspx.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
 
 namespace AspxExamples
 {
@@ -123,6 +123,14 @@ namespace AspxExamples
                 // Session'dan veriyi al
                 var yetkiliDataList = SessionHelper.GetInitialYetkiliData();
                 System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan alınan yetkili sayısı: {0}", yetkiliDataList?.Count ?? 0));
+                
+                // Session'dan gelen veriyi direkt olarak grid için hazırla
+                if (yetkiliDataList != null && yetkiliDataList.Any())
+                {
+                    var serializer = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
+                    hdnYetkiliKayitlar.Value = serializer.Serialize(yetkiliDataList);
+                    System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan grid için hazırlanan veri: {0}", hdnYetkiliKayitlar.Value));
+                }
                 if (yetkiliDataList != null && yetkiliDataList.Any())
                 {
                     try
@@ -153,7 +161,15 @@ namespace AspxExamples
                             }
 
                             // Grid verilerini hidden field'a kaydet
-                            // Serialization öncesi veriyi kontrol et
+                            // JSON.NET ile serialize et
+                            var serializedData = JsonConvert.SerializeObject(gridData, Formatting.None,
+                                new JsonSerializerSettings { 
+                                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                                    MaxDepth = 32
+                                });
+                                
+                            // ViewState ve hidden field'a kaydet
+                            ViewState["YetkiliKayitlar"] = serializedData;
                             System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Serialize edilecek veri sayısı: {0}", gridData.Count));
                             foreach (var item in gridData)
                             {
