@@ -927,8 +927,8 @@
                             <th>Durum</th>
                         </tr>
                     </thead>
-                    <tbody>
-                       
+                    <tbody id="yetkiliTableBody">
+                        <!-- Yetkili kayıtları buraya dinamik olarak eklenecek -->
                     </tbody>
                 </table>
             </div>
@@ -2608,34 +2608,91 @@
 
             function initializeGrid() {
                 try {
+                    console.log('Grid initialization başladı');
                     const gridDataStr = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>').value;
+                    console.log('Grid data string:', gridDataStr);
+
                     if (!gridDataStr) {
                         console.log('Grid verisi bulunamadı');
                         return;
                     }
 
                     const gridData = JSON.parse(gridDataStr);
-                    const tbody = document.querySelector('.auth-details-table tbody');
+                    console.log('Parsed grid data:', gridData);
+
+                    const tbody = document.getElementById('yetkiliTableBody');
                     if (!tbody) {
-                        console.error('Tablo tbody elementi bulunamadı');
+                        console.error('yetkiliTableBody elementi bulunamadı');
                         return;
                     }
 
                     // Mevcut satırları temizle
                     tbody.innerHTML = '';
+                    console.log('Tablo temizlendi');
 
                     // Her kayıt için yeni satır ekle
-                    gridData.forEach(data => {
-                        const row = addTableRow(data);
-                        if (row) {
-                            tbody.appendChild(row);
+                    gridData.forEach((data, index) => {
+                        console.log(`${index}. kayıt işleniyor:`, data);
+                        const row = document.createElement('tr');
+                        
+                        // Temel hücreler
+                        const cells = [
+                            data.YetkiliKontakt || '',
+                            data.YetkiliAdi || '',
+                            data.YetkiSekli || '',
+                            data.YetkiTarihi || '',
+                            data.YetkiBitisTarihi || '',
+                            data.YetkiGrubu || '',
+                            data.SinirliYetkiDetaylari || '',
+                            data.YetkiTurleri || ''
+                        ];
+
+                        // Temel hücreleri ekle
+                        cells.forEach(cellData => {
+                            const cell = document.createElement('td');
+                            cell.textContent = cellData;
+                            row.appendChild(cell);
+                        });
+
+                        // İmza hücreleri
+                        for (let i = 0; i < 3; i++) {
+                            const cell = document.createElement('td');
+                            const signaturePreview = document.createElement('div');
+                            signaturePreview.className = 'signature-preview';
+                            
+                            if (data.Imzalar && data.Imzalar[i]) {
+                                signaturePreview.style.backgroundImage = `url('${data.Imzalar[i].Base64Image}')`;
+                            }
+                            
+                            cell.appendChild(signaturePreview);
+                            row.appendChild(cell);
                         }
+
+                        // Son hücreler
+                        [
+                            data.YetkiTutari || '',
+                            data.YetkiDovizCinsi || '',
+                            data.YetkiDurumu || ''
+                        ].forEach(text => {
+                            const cell = document.createElement('td');
+                            cell.textContent = text;
+                            row.appendChild(cell);
+                        });
+
+                        // Event listener'ları ekle
+                        row.addEventListener('dblclick', () => handleRowDoubleClick(row));
+                        row.addEventListener('click', () => selectRow(row));
+
+                        tbody.appendChild(row);
+                        console.log(`${index}. kayıt tabloya eklendi`);
                     });
 
                     // Grid state'i güncelle
                     updateGridState();
+                    console.log('Grid state güncellendi');
                     
                     console.log('Grid başarıyla initialize edildi');
+                    showNotification('Yetkili kayıtları başarıyla yüklendi', 'success');
                 } catch (err) {
                     console.error('Grid initialize hatası:', err);
                     showNotification('Grid verilerini yüklerken bir hata oluştu: ' + err.message, 'error');
@@ -2692,9 +2749,16 @@
 
             if (window.addEventListener) {
                 window.addEventListener('load', function() {
+                    console.log('Window load event fired');
+                    
+                    // Hidden field değerini kontrol et
+                    const hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                    console.log('Hidden field değeri:', hdnYetkiliKayitlar?.value);
+                    
                     initializeImageEvents();
                     initializePdfList();
                     initializeDatePicker();
+                    initializeGrid(); // Grid initialization added here
                     
                     // Initialize signature slots
                     const slots = document.querySelectorAll('.signature-slot');

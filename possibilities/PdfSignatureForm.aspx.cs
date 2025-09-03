@@ -11,7 +11,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* net x kunyt */
+/* v2 - PdfSignatureForm.aspx.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
 
 namespace AspxExamples
 {
@@ -38,17 +38,23 @@ namespace AspxExamples
 
     public class YetkiliImza
     {
+        public int ID { get; set; }
+        public int AuthDetailID { get; set; }
         public string Base64Image { get; set; }
         public int SlotIndex { get; set; }
     }
 
     public class YetkiliKayit
     {
+        public int ID { get; set; }
+        public int CircularID { get; set; }
         public string YetkiliKontakt { get; set; }
         public string YetkiliAdi { get; set; }
         public string YetkiSekli { get; set; }
         public string YetkiTarihi { get; set; }
+        public string YetkiBitisTarihi { get; set; }
         public bool AksiKararaKadar { get; set; }
+        public string YetkiGrubu { get; set; }
         public string SinirliYetkiDetaylari { get; set; }
         public string YetkiTurleri { get; set; }
         public List<YetkiliImza> Imzalar { get; set; }
@@ -116,6 +122,7 @@ namespace AspxExamples
 
                 // Session'dan veriyi al
                 var yetkiliDataList = SessionHelper.GetInitialYetkiliData();
+                System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm Page_Load: Session'dan alınan yetkili sayısı: {0}", yetkiliDataList?.Count ?? 0));
                 if (yetkiliDataList != null && yetkiliDataList.Any())
                 {
                     try
@@ -146,7 +153,9 @@ namespace AspxExamples
                             }
 
                             // Grid verilerini hidden field'a kaydet
-                            hdnYetkiliKayitlar.Value = serializer.Serialize(gridData);
+                            var serializedData = serializer.Serialize(gridData);
+                            System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Hidden field'a kaydedilen veri: {0}", serializedData));
+                            hdnYetkiliKayitlar.Value = serializedData;
 
                             // İlk yetkiliyi form alanlarına doldur
                             var ilkYetkili = yetkiliDataList[0];
