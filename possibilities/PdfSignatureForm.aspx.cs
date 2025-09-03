@@ -92,7 +92,7 @@ namespace AspxExamples
             {
                 System.Diagnostics.Debug.WriteLine(String.Format("GetInitialYetkiliDataJson error: {0}", ex.Message));
             }
-            return "null";
+            return "[]";
         }
         private static List<YetkiliKayit> yetkiliKayitlar;
         private static List<SignatureData> signatures;

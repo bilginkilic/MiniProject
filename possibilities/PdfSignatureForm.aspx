@@ -2621,10 +2621,17 @@
                     console.log('Grid data string:', gridDataStr);
 
                     // Session'dan initial veriyi al
-                    const initialData = <%= GetInitialYetkiliDataJson() %>;
+                    let initialData;
+                    try {
+                        initialData = JSON.parse('<%= GetInitialYetkiliDataJson() %>');
+                        console.log('Initial data parsed:', initialData);
+                    } catch (error) {
+                        console.error('Initial data parse error:', error);
+                        initialData = [];
+                    }
                     
                     // Eğer grid verisi yoksa session'dan gelen veriyi kullan
-                    if (!gridDataStr && initialData) {
+                    if (!gridDataStr && initialData && initialData.length > 0) {
                         gridDataStr = JSON.stringify(initialData);
                         hdnYetkiliKayitlar.value = gridDataStr;
                     }
