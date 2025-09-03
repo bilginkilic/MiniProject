@@ -90,7 +90,7 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GetInitialYetkiliDataJson error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(String.Format("GetInitialYetkiliDataJson error: {0}", ex.Message));
             }
             return "null";
         }
