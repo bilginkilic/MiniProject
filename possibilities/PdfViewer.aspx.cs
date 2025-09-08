@@ -153,9 +153,9 @@ namespace AspxExamples
             pdfItem.Attributes["class"] = "pdf-item";
 
             // PDF adı ve link
-            var nameLink = new System.Web.UI.HtmlControls.HtmlAnchorElement();
+            var nameLink = new System.Web.UI.HtmlControls.HtmlAnchor();
             nameLink.Attributes["class"] = "pdf-item-name";
-            nameLink.Attributes["href"] = "javascript:void(0);";
+            nameLink.HRef = "javascript:void(0);";
             nameLink.Attributes["onclick"] = string.Format("openPdfInNewTab('{0}');", HttpUtility.JavaScriptStringEncode(fileName));
             nameLink.InnerText = fileName;
             pdfItem.Controls.Add(nameLink);
