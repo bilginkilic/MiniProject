@@ -111,16 +111,7 @@
         .button.secondary:hover {
             background-color: #5a6268;
         }
-        .pdf-viewer {
-            height: 600px;
-            overflow: hidden;
-        }
-        .pdf-frame {
-            width: 100%;
-            height: 600px;
-            border: none;
-            background: white;
-        }
+        /* PDF görüntüleme için CSS'e gerek yok - Response ile gönderiliyor */
         /* Loading Animation */
         .loading-overlay {
             display: none;
@@ -207,10 +198,7 @@
                             CssClass="button secondary" OnClick="BtnCancel_Click" Visible="false" />
                     </div>
                 </div>
-                <div class="pdf-viewer">
-                    <embed id="pdfViewer" runat="server" class="pdf-frame" 
-                        type="application/pdf" />
-                </div>
+                <!-- PDF direkt olarak Response ile gönderiliyor -->
             </div>
         </div>
         

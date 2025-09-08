@@ -67,16 +67,17 @@ namespace AspxExamples
                     // Session'a kaydet
                     SessionHelper.SetUploadedPdfPath(pdfPath);
 
-                    // PDF'i iframe'de göster ve butonları aktifleştir
-                    string fileUrl = string.Format("file://{0}", pdfPath.Replace("\\", "/").TrimStart('/'));
-                    pdfViewer.Attributes["src"] = fileUrl;
+                    // Session'a PDF bilgilerini kaydet
+                    SessionHelper.SetUploadedPdfPath(pdfPath);
+                    
+                    // PDF görüntüleme sayfasına yönlendir
+                    string viewerUrl = string.Format("ViewPdf.ashx?file={0}", HttpUtility.UrlEncode(fileName));
+                    ScriptManager.RegisterStartupScript(this, GetType(), "openPdf",
+                        string.Format("window.open('{0}', '_blank', 'height=600,width=800,status=yes,toolbar=no,menubar=no,location=no');", viewerUrl),
+                        true);
+
                     btnSave.Visible = true;
                     btnCancel.Visible = true;
-                    
-                    // Debug logları
-                    Debug.WriteLine(string.Format("PDF fiziksel yol: {0}", pdfPath));
-                    Debug.WriteLine(string.Format("PDF file URL: {0}", fileUrl));
-
                     ShowMessage("PDF dosyası yüklendi. Kaydetmek için 'Kaydet' butonuna basın.", "info");
                 }
                 else
