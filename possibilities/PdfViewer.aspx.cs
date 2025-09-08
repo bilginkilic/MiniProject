@@ -1,3 +1,5 @@
+/* v1 - Created: 2024.01.17 - String.Format kullanımına geçiş */
+
 using System;
 using System.IO;
 using System.Web;
@@ -22,11 +24,11 @@ namespace AspxExamples
                     try
                     {
                         Directory.CreateDirectory(_cdn);
-                        Debug.WriteLine($"CDN klasörü oluşturuldu: {_cdn}");
+                        Debug.WriteLine(string.Format("CDN klasörü oluşturuldu: {0}", _cdn));
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"CDN klasörü oluşturma hatası: {ex.Message}");
+                        Debug.WriteLine(string.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
                         ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
                         return;
                     }
@@ -55,20 +57,20 @@ namespace AspxExamples
 
                     // Yeni dosya adı oluştur (timestamp ekleyerek)
                     string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    string uniqueFileName = $"{Path.GetFileNameWithoutExtension(fileName)}_{timestamp}.pdf";
+                    string uniqueFileName = string.Format("{0}_{1}.pdf", Path.GetFileNameWithoutExtension(fileName), timestamp);
                     string pdfPath = Path.Combine(_cdn, uniqueFileName);
                     
                     // Dosyayı kaydet
                     fuPdf.SaveAs(pdfPath);
-                    Debug.WriteLine($"PDF dosyası kaydedildi: {pdfPath}");
+                    Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", pdfPath));
 
                     // Session'a kaydet
                     Session["LastUploadedPdf"] = pdfPath;
 
                     // PDF'i görüntüle
-                    string virtualPath = $"{_cdnVirtualPath}/{uniqueFileName}";
+                    string virtualPath = string.Format("{0}/{1}", _cdnVirtualPath, uniqueFileName);
                     pdfViewer.Attributes["src"] = virtualPath;
-                    Debug.WriteLine($"PDF görüntüleme için virtual path: {virtualPath}");
+                    Debug.WriteLine(string.Format("PDF görüntüleme için virtual path: {0}", virtualPath));
 
                     ShowMessage("PDF dosyası başarıyla yüklendi.", "success");
                 }
@@ -79,8 +81,8 @@ namespace AspxExamples
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Dosya yükleme hatası: {ex.Message}");
-                ShowError($"Dosya yüklenirken bir hata oluştu: {ex.Message}");
+                Debug.WriteLine(string.Format("Dosya yükleme hatası: {0}", ex.Message));
+                ShowError(string.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
             }
         }
 
@@ -98,17 +100,17 @@ namespace AspxExamples
                     try 
                     { 
                         file.Delete();
-                        Debug.WriteLine($"Eski dosya silindi: {file.Name}");
+                        Debug.WriteLine(string.Format("Eski dosya silindi: {0}", file.Name));
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Dosya silme hatası: {file.Name} - {ex.Message}");
+                        Debug.WriteLine(string.Format("Dosya silme hatası: {0} - {1}", file.Name, ex.Message));
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Dosya temizleme hatası: {ex.Message}");
+                Debug.WriteLine(string.Format("Dosya temizleme hatası: {0}", ex.Message));
             }
         }
 
@@ -116,7 +118,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', 'error');",
+                string.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)),
                 true);
         }
 
@@ -124,7 +126,7 @@ namespace AspxExamples
         {
             ScriptManager.RegisterStartupScript(this, GetType(),
                 "showNotification",
-                $"showNotification('{HttpUtility.JavaScriptStringEncode(message)}', '{type}');",
+                string.Format("showNotification('{0}', '{1}');", HttpUtility.JavaScriptStringEncode(message), type),
                 true);
         }
     }
