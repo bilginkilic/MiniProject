@@ -308,7 +308,7 @@
             gap: 5px;
         }
 
-        /* Loading Overlay */
+        /* Loading Overlay dedıke */
         .loading-overlay {
             display: none;
             position: fixed;
