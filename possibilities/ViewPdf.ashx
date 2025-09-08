@@ -25,17 +25,36 @@ namespace AspxExamples
                 }
 
                 context.Response.Clear();
+                context.Response.ClearContent();
+                context.Response.ClearHeaders();
+                context.Response.Buffer = true;
+                
                 context.Response.ContentType = "application/pdf";
                 context.Response.AppendHeader("Content-Disposition", "inline; filename=" + fileName);
-                context.Response.TransmitFile(pdfPath);
-                context.Response.End();
+                
+                // Dosya boyutunu al ve header'a ekle
+                var fileInfo = new System.IO.FileInfo(pdfPath);
+                context.Response.AppendHeader("Content-Length", fileInfo.Length.ToString());
+                
+                // Dosyayı gönder
+                context.Response.WriteFile(pdfPath);
+                context.Response.Flush();
+                
+                // HttpContext.Current.ApplicationInstance.CompleteRequest() kullan
+                HttpContext.Current.ApplicationInstance.CompleteRequest();
             }
             catch (Exception ex)
             {
                 context.Response.Clear();
+                context.Response.ClearContent();
+                context.Response.ClearHeaders();
+                context.Response.Buffer = true;
+                
                 context.Response.ContentType = "text/plain";
                 context.Response.Write("Hata: " + ex.Message);
-                context.Response.End();
+                context.Response.Flush();
+                
+                HttpContext.Current.ApplicationInstance.CompleteRequest();
             }
         }
 
