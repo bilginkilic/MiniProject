@@ -213,7 +213,9 @@
                 </div>
                 <div class="pdf-viewer">
                     <iframe id="pdfViewer" runat="server" class="pdf-frame" 
-                        type="application/pdf" frameborder="0"></iframe>
+                        type="application/pdf" frameborder="0"
+                        sandbox="allow-same-origin allow-scripts allow-forms"
+                        allow="fullscreen"></iframe>
                 </div>
             </div>
         </div>

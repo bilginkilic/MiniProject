@@ -53,8 +53,7 @@ namespace AspxExamples
                         return;
                     }
 
-                    // Önceki dosyaları temizle
-                    CleanupOldFiles();
+                    // Önceki bir dosya yüklenmişse ve iptal edilmemişse silinmeyecek
 
                     // Yeni dosya adı oluştur (timestamp ekleyerek)
                     string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -92,33 +91,6 @@ namespace AspxExamples
             }
         }
 
-        private void CleanupOldFiles()
-        {
-            try
-            {
-                // 24 saatten eski PDF dosyalarını temizle
-                var directory = new DirectoryInfo(_cdn);
-                var oldFiles = directory.GetFiles("*.pdf")
-                    .Where(f => f.CreationTime < DateTime.Now.AddHours(-24));
-
-                foreach (var file in oldFiles)
-                {
-                    try 
-                    { 
-                        file.Delete();
-                        Debug.WriteLine(string.Format("Eski dosya silindi: {0}", file.Name));
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(string.Format("Dosya silme hatası: {0} - {1}", file.Name, ex.Message));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(string.Format("Dosya temizleme hatası: {0}", ex.Message));
-            }
-        }
 
         private void ShowError(string message)
         {
