@@ -370,11 +370,31 @@
 </head>
 <body>
     <form id="form1" runat="server" enctype="multipart/form-data">
-        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true">
+        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" ScriptMode="Release">
             <Services>
                 <asp:ServiceReference Path="~/FileUploadViewer.aspx" />
             </Services>
+            <Scripts>
+                <asp:ScriptReference Path="~/Scripts/WebForms/MsAjax/MicrosoftAjax.js" />
+                <asp:ScriptReference Path="~/Scripts/WebForms/MsAjax/MicrosoftAjaxWebForms.js" />
+            </Scripts>
         </asp:ScriptManager>
+        
+        <script type="text/javascript">
+            // Authentication token'ı AJAX isteklerine ekle
+            if (typeof(Sys) !== 'undefined') {
+                Sys.WebForms.PageRequestManager.getInstance().add_initializeRequest(
+                    function(sender, args) {
+                        if (args.get_postBackElement()) {
+                            args.get_request().set_headers({
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-MicrosoftAjax': 'Delta=true'
+                            });
+                        }
+                    }
+                );
+            }
+        </script>
         
         <div class="container">
             <div class="header">
@@ -583,18 +603,13 @@
                 if (confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
                     showLoading();
                     
-                    const data = { filePath: sanitizeInput(filePath) };
-                    
-                    fetch('FileUploadViewer.aspx/DeleteFile', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.d.success) {
+                    // AJAX çağrısını WebForm standardına göre yap
+                    Sys.Net.WebServiceProxy.invoke(
+                        'FileUploadViewer.aspx/DeleteFile',
+                        'POST',
+                        { filePath: sanitizeInput(filePath) },
+                        function(response) {
+                        if (response.success) {
                             fileList.splice(index, 1);
                             if (currentFile === filePath) {
                                 currentFile = null;
@@ -608,14 +623,12 @@
                             updateFileList();
                             showNotification('Dosya başarıyla silindi', 'success');
                         } else {
-                            showNotification(data.d.message || 'Dosya silinirken bir hata oluştu', 'error');
+                            showNotification(response.message || 'Dosya silinirken bir hata oluştu', 'error');
                         }
-                    })
-                    .catch(error => {
+                        hideLoading();
+                    }, function(error) {
                         console.error('Delete error:', error);
                         showNotification('Dosya silinirken bir hata oluştu', 'error');
-                    })
-                    .finally(() => {
                         hideLoading();
                     });
                 }
@@ -631,20 +644,20 @@
                     showLoading();
                     document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
                     
-                    PageMethods.SaveAndReturn(currentFile, function(response) {
+                    // AJAX çağrısını WebForm standardına göre yap
+                    Sys.Net.WebServiceProxy.invoke(
+                        'FileUploadViewer.aspx/SaveAndReturn',
+                        'POST',
+                        { filePath: currentFile },
+                        function(response) {
                         if (response.success) {
-                            const data = { filePath: sanitizeInput(currentFile) };
-                            
-                            fetch('FileUploadViewer.aspx/SetSelectedFile', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(data)
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.d.success) {
+                            // AJAX çağrısını WebForm standardına göre yap
+                            Sys.Net.WebServiceProxy.invoke(
+                                'FileUploadViewer.aspx/SetSelectedFile',
+                                'POST',
+                                { filePath: sanitizeInput(currentFile) },
+                                function(response) {
+                                if (response.success) {
                                     if (window.opener && !window.opener.closed) {
                                         try {
                                             const fileName = sanitizeInput(currentFile.split('\\').pop());
@@ -665,10 +678,11 @@
                                 } else {
                                     showNotification('Dosya yolu kaydedilemedi', 'error');
                                 }
-                            })
-                            .catch(error => {
+                                hideLoading();
+                            }, function(error) {
                                 console.error('Dosya yolu kaydetme hatası:', error);
                                 showNotification('İşlem sırasında bir hata oluştu', 'error');
+                                hideLoading();
                             });
                         } else {
                             showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
