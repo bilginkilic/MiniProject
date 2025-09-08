@@ -6,27 +6,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
-    <base target="_self">
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-    <meta http-equiv="Window-Target" content="_self">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://trrgap3027; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <title>PDF Dosya Yükleme ve Görüntüleme v1</title>
-    
-    <!-- Font Awesome - Local fr tr f-->
-    <style>
-        /* Font Awesome temel ikonlar için minimal CSS */
-        .fas {
-            display: inline-block;
-            font-style: normal;
-            font-variant: normal;
-            text-rendering: auto;
-            line-height: 1;
-        }
-        .fa-file-pdf:before { content: "📄"; }
-        .fa-eye:before { content: "👁"; }
-        .fa-trash:before { content: "🗑"; }
-    </style>
-    
     <style type="text/css">
         html, body { 
             margin: 0; 
@@ -35,89 +16,71 @@
             height: 100%;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
+            overflow: auto;
         }
-        
         form {
             width: 100%;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: visible;
             padding: 20px;
             box-sizing: border-box;
         }
-
         .container {
             flex: 1;
             display: grid;
-            grid-template-columns: 300px 1fr;
             grid-template-rows: auto 1fr auto;
             grid-template-areas: 
-                "header header"
-                "sidebar main"
-                "footer footer";
-            gap: 20px;
-            max-width: 1600px;
+                "header"
+                "main"
+                "footer";
+            box-sizing: border-box;
+            min-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             width: 100%;
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
+            min-height: 100%;
+            height: auto;
+            position: relative;
+            gap: 20px;
             padding: 20px;
-            box-sizing: border-box;
+            overflow: visible;
         }
-
         .header {
             grid-area: header;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 20px;
+            padding: 15px 0;
+            margin-bottom: 0;
             border-bottom: 2px solid #eee;
-            background: #dc3545;
-            margin: -20px -20px 20px -20px;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-            color: white;
         }
-
-        .header h1 {
+        .header h2 {
             margin: 0;
+            color: #333;
             font-size: 24px;
         }
-
-        .sidebar {
-            grid-area: sidebar;
-            background: #fff;
-            border-right: 2px solid #eee;
-            padding-right: 20px;
+        .main-content {
+            grid-area: main;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            padding: 20px 0;
         }
-
         .upload-panel {
             background: #f8f9fa;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
             border: 1px solid #dee2e6;
-        }
-
-        .upload-container {
             display: flex;
-            flex-direction: column;
             gap: 10px;
+            align-items: center;
         }
-
-        .file-upload-wrapper {
-            width: 100%;
-        }
-
-        .file-upload-wrapper input[type="file"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            background: white;
-        }
-
         .button {
             padding: 10px 20px;
             border: none;
@@ -126,192 +89,53 @@
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-width: 120px;
-        }
-
-        .button.primary {
             background: #dc3545;
             color: white;
-            width: 100%;
         }
-
-        .button.primary:hover {
+        .button:hover {
             background: #c82333;
         }
-
-        .button.primary:disabled {
-            background: #e9ecef;
-            color: #6c757d;
-            cursor: not-allowed;
+        .button.save {
+            background: #28a745;
         }
-
-        .button.secondary {
-            background: #6c757d;
-            color: white;
-            min-width: auto;
-            padding: 8px;
+        .button.save:hover {
+            background: #218838;
         }
-
-        .button.secondary:hover {
-            background: #5a6268;
-        }
-
-        .button.danger {
-            background: #dc3545;
-            color: white;
-            min-width: auto;
-            padding: 8px;
-        }
-
-        .button.danger:hover {
-            background: #c82333;
-        }
-
-        .main-content {
-            grid-area: main;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-
-        .pdf-viewer {
+        .image-container {
             flex: 1;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #eee;
             border-radius: 8px;
+            background: #fff;
             overflow: hidden;
-            position: relative;
-            background: white;
         }
-
-        .pdf-viewer iframe {
+        .page-contents {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            background: #f5f5f5;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-contents iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #6c757d;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 10px;
-            color: #dc3545;
-        }
-
-        .instructions {
-            background: #fff;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            border: 1px solid #dee2e6;
-        }
-
-        .instructions h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .instructions ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 8px;
-            color: #666;
-            font-size: 14px;
-        }
-
         .footer {
             grid-area: footer;
             display: flex;
             justify-content: flex-end;
-            padding: 20px 0 0 0;
-            border-top: 1px solid #dee2e6;
-            margin-top: 20px;
+            padding: 15px 0;
+            border-top: 2px solid #eee;
             gap: 10px;
         }
-
-        .button.save {
-            background: #28a745;
-            color: white;
-        }
-
-        .button.save:hover {
-            background: #218838;
-        }
-
-        .button.cancel {
-            background: #6c757d;
-            color: white;
-        }
-
-        .button.cancel:hover {
-            background: #5a6268;
-        }
-
-        .file-list {
-            margin-top: 20px;
-        }
-
-        .file-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .file-item:hover {
-            background: #f8f9fa;
-            border-color: #ced4da;
-        }
-
-        .file-item.active {
-            background: #e3f2fd;
-            border-color: #2196f3;
-        }
-
-        .file-name {
-            flex: 1;
-            margin-right: 10px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: #495057;
-        }
-
-        .file-name i {
-            margin-right: 8px;
-            color: #dc3545;
-        }
-
-        .file-actions {
-            display: flex;
-            gap: 5px;
-        }
-
-        /* Loading Overlay dedıke */
+        /* Loading Overlay */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -319,12 +143,23 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(220, 53, 69, 0.1);
             z-index: 9999;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(3px);
         }
-
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.1);
+        }
         .loading-spinner {
             width: 50px;
             height: 50px;
@@ -333,168 +168,114 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
+        .loading-message {
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+            max-width: 300px;
+        }
         /* Notification */
         .notification {
-            display: none;
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 25px;
-            border-radius: 4px;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            min-width: 300px;
         }
-
+        .notification.show {
+            transform: translateX(0);
+        }
         .notification.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            border-left: 4px solid #28a745;
+            background-color: #f0fff4;
         }
-
         .notification.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-left: 4px solid #dc3545;
+            background-color: #fff5f5;
         }
-
         .notification.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            border-left: 4px solid #ffc107;
+            background-color: #fffbeb;
+        }
+        .notification .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 18px;
+            color: #666;
+            background: none;
+            border: none;
+            opacity: 0.7;
+        }
+        .notification .close-btn:hover {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
     <form id="form1" runat="server" enctype="multipart/form-data">
-        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" ScriptMode="Release">
-            <Services>
-                <asp:ServiceReference Path="~/FileUploadViewer.aspx" />
-            </Services>
-            <Scripts>
-                <asp:ScriptReference Path="~/Scripts/WebForms/MsAjax/MicrosoftAjax.js" />
-                <asp:ScriptReference Path="~/Scripts/WebForms/MsAjax/MicrosoftAjaxWebForms.js" />
-            </Scripts>
-        </asp:ScriptManager>
-        
-        <script type="text/javascript">
-            // Authentication token'ı AJAX isteklerine ekle
-            if (typeof(Sys) !== 'undefined') {
-                Sys.WebForms.PageRequestManager.getInstance().add_initializeRequest(
-                    function(sender, args) {
-                        if (args.get_postBackElement()) {
-                            args.get_request().set_headers({
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-MicrosoftAjax': 'Delta=true'
-                            });
-                        }
-                    }
-                );
-            }
-        </script>
+        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
         
         <div class="container">
             <div class="header">
-                <h1>PDF Dosya Yükleme ve Görüntüleme</h1>
-            </div>
-
-            <div class="sidebar">
-                <div class="instructions">
-                    <h3>Nasıl Kullanılır?</h3>
-                    <ul>
-                        <li>PDF dosyası seçmek için "Dosya Seç" butonunu kullanın</li>
-                        <li>Seçilen dosyayı yüklemek için "Yükle" butonuna tıklayın</li>
-                        <li>Yüklenen dosyayı görüntüleyebilirsiniz</li>
-                        <li>İşlemi tamamlamak için "Kaydet ve Kapat" butonuna tıklayın</li>
-                    </ul>
-                </div>
-
-                <div class="upload-panel">
-                    <div class="upload-container">
-                        <div class="file-upload-wrapper">
-                            <asp:FileUpload ID="fuPdfUpload" runat="server" accept=".pdf" />
-                        </div>
-                        <asp:Button ID="btnUpload" runat="server" 
-                            Text="Yükle" 
-                            CssClass="button primary" 
-                            OnClick="BtnUpload_Click"
-                            OnClientClick="return validateFileUpload();" />
-                    </div>
-                </div>
-
-                <div class="file-list" id="fileList">
-                    <!-- Dosya listesi buraya dinamik olarak eklenecek -->
-                </div>
+                <h2>PDF Dosya Yükleme ve Görüntüleme</h2>
             </div>
 
             <div class="main-content">
-                <div class="pdf-viewer" id="pdfViewer">
-                    <div class="empty-state">
-                        <i class="fas fa-file-pdf"></i>
-                        <p>Görüntülenecek PDF dosyası seçilmedi</p>
+                <div id="imageContainer" runat="server" class="image-container">
+                    <div class="upload-panel">
+                        <asp:FileUpload ID="fuPdfUpload" runat="server" accept=".pdf" />
+                        <asp:Button ID="btnUpload" runat="server" Text="PDF Dosyasını Yükle ve Göster" 
+                            CssClass="button" OnClick="BtnUpload_Click" />
+                    </div>
+                    <div id="pageContents" class="page-contents">
+                        <!-- PDF içeriği buraya gelecek -->
                     </div>
                 </div>
             </div>
 
             <div class="footer">
-                <asp:Button ID="btnCancel" runat="server" 
-                    Text="İptal" 
-                    CssClass="button cancel" 
-                    OnClientClick="window.close(); return false;" />
-                <asp:Button ID="btnSaveAndClose" runat="server" 
-                    Text="Kaydet ve Kapat" 
-                    CssClass="button save" 
-                    Enabled="false" />
+                <asp:HiddenField ID="hdnSelectedFile" runat="server" />
+                <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
+                <asp:Button ID="btnSaveAndClose" runat="server" Text="Kaydet ve Kapat" 
+                    CssClass="button save" OnClientClick="return saveAndReturn();" />
             </div>
         </div>
-
+        
         <!-- Loading Overlay -->
         <div id="loadingOverlay" class="loading-overlay">
-            <div class="loading-spinner"></div>
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div id="loadingMessage" class="loading-message">İşlem yapılıyor...</div>
+            </div>
         </div>
-
+        
         <!-- Notification -->
         <div id="notification" class="notification">
+            <button type="button" class="close-btn" onclick="hideNotification()">&times;</button>
             <span id="notificationMessage"></span>
         </div>
 
-        <!-- Hidden Fields -->
-        <asp:HiddenField ID="hdnSelectedFile" runat="server" />
-        <asp:HiddenField ID="hdnFileList" runat="server" />
-        <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
-
         <script type="text/javascript">
-            // Güvenlik ayarları ve yeni pencere engelleme
-                    // Sayfanın iframe içinde olup olmadığını kontrol et
-                    if (window.top !== window.self) {
-                        // Eğer iframe içindeyse, aynı sayfada kal
-                        return;
-                    }
-
-            // Yeni pencerede açılmayı engelle
-            window.onbeforeunload = function(e) {
-                if (!document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value === 'true') {
-                    e.preventDefault();
-                    return false;
-                }
-            };
-
-            // XSS koruması için
-            function sanitizeInput(input) {
-                return input.replace(/[<>]/g, '');
-            }
-
-            let currentFile = null;
-            const fileList = [];
-
-            function showLoading() {
+            function showLoading(message) {
                 document.getElementById('loadingOverlay').style.display = 'flex';
+                document.getElementById('loadingMessage').textContent = message || 'İşlem yapılıyor...';
             }
 
             function hideLoading() {
@@ -507,240 +288,48 @@
                 
                 notification.className = 'notification ' + (type || 'info');
                 messageElement.textContent = message;
-                notification.style.display = 'block';
+                notification.classList.add('show');
                 
                 setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
+                    notification.classList.remove('show');
+                }, type === 'error' ? 8000 : 3000);
             }
 
-            function updateFileList() {
-                const fileListElement = document.getElementById('fileList');
-                fileListElement.innerHTML = '';
-
-                // Duplicate kontrolü için Set kullan
-                const uniqueFiles = new Set(fileList);
-
-                Array.from(uniqueFiles).forEach((file, index) => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item' + (file === currentFile ? ' active' : '');
-                    
-                    const fileName = sanitizeInput(file.split('/').pop());
-                    fileItem.innerHTML = `
-                        <span class="file-name">
-                            <i class="fas fa-file-pdf"></i>
-                            ${fileName}
-                        </span>
-                        <div class="file-actions">
-                            <button type="button" class="button secondary" onclick="viewFile('${file}')" title="Görüntüle">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button type="button" class="button danger" onclick="deleteFile('${file}', ${index})" title="Sil">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                    
-                    fileListElement.appendChild(fileItem);
-                });
-
-                document.getElementById('<%= hdnFileList.ClientID %>').value = JSON.stringify(Array.from(uniqueFiles));
-            }
-
-            function validateFileUpload() {
-                try {
-                    const fileUpload = document.getElementById('<%= fuPdfUpload.ClientID %>');
-                    if (!fileUpload.value) {
-                        showNotification('Lütfen bir PDF dosyası seçin', 'warning');
-                        return false;
-                    }
-
-                    // Dosya uzantısı kontrolü
-                    const fileName = sanitizeInput(fileUpload.value.toLowerCase());
-                    if (!fileName.endsWith('.pdf')) {
-                        showNotification('Lütfen sadece PDF dosyası seçin', 'warning');
-                        return false;
-                    }
-
-                    // Dosya adı güvenlik kontrolü
-                    const sanitizedFileName = fileName.split('\\').pop();
-                    if (/[<>:"/\\|?*]/.test(sanitizedFileName)) {
-                        showNotification('Dosya adı geçersiz karakterler içeriyor', 'warning');
-                        return false;
-                    }
-
-                    // Dosya boyutu kontrolü (maksimum 10MB)
-                    const maxSize = 10 * 1024 * 1024;
-                    if (fileUpload.files[0].size > maxSize) {
-                        showNotification('Dosya boyutu 10MB\'dan büyük olamaz', 'warning');
-                        return false;
-                    }
-
-                    return true;
-                } catch (error) {
-                    console.error('Validasyon hatası:', error);
-                    showNotification('Dosya kontrolü sırasında bir hata oluştu', 'error');
-                    return false;
-                }
-            }
-
-            function viewFile(filePath) {
-                try {
-                    showLoading();
-                    currentFile = filePath;
-                    
-                    const viewer = document.getElementById('pdfViewer');
-                    if (!viewer) {
-                        throw new Error('PDF viewer elementi bulunamadı');
-                    }
-
-                    const fileName = sanitizeInput(filePath.split('\\').pop());
-                    const webUrl = encodeURI(`/cdn/${fileName}`);
-                    
-                    // Önce mevcut içeriği temizle
-                    viewer.innerHTML = '';
-                    
-                    // iframe oluştur
-                    const iframe = document.createElement('iframe');
-                    iframe.style.width = '100%';
-                    iframe.style.height = '100%';
-                    iframe.style.border = 'none';
-                    iframe.src = webUrl;
-                    
-                    // iframe yüklendiğinde loading'i gizle
-                    iframe.onload = function() {
-                        hideLoading();
-                        console.log('PDF iframe yüklendi:', webUrl);
-                    };
-                    
-                    // iframe yüklenemezse hata göster
-                    iframe.onerror = function() {
-                        console.error('PDF iframe yüklenemedi:', webUrl);
-                        showNotification('PDF görüntülenirken bir hata oluştu', 'error');
-                        hideLoading();
-                    };
-                    
-                    viewer.appendChild(iframe);
-                    
-                    // Hidden field'ı güncelle
-                    const hdnSelectedFile = document.getElementById('<%= hdnSelectedFile.ClientID %>');
-                    if (hdnSelectedFile) {
-                        hdnSelectedFile.value = filePath;
-                    }
-                    
-                    updateFileList();
-                    enableSaveButton();
-                    
-                    console.log('PDF görüntüleme başarılı:', filePath);
-                } catch (error) {
-                    console.error('PDF görüntüleme hatası:', error);
-                    showNotification('PDF görüntülenirken bir hata oluştu: ' + error.message, 'error');
-                    hideLoading();
-                }
-            }
-
-            function deleteFile(filePath, index) {
-                if (confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
-                    showLoading();
-                    
-                    // AJAX çağrısını WebForm standardına göre yap
-                    Sys.Net.WebServiceProxy.invoke(
-                        'FileUploadViewer.aspx/DeleteFile',
-                        'POST',
-                        { filePath: sanitizeInput(filePath) },
-                        function(response) {
-                        if (response.success) {
-                            fileList.splice(index, 1);
-                            if (currentFile === filePath) {
-                                currentFile = null;
-                                document.getElementById('pdfViewer').innerHTML = `
-                                    <div class="empty-state">
-                                        <i class="fas fa-file-pdf"></i>
-                                        <p>Görüntülenecek PDF dosyası seçilmedi</p>
-                                    </div>
-                                `;
-                            }
-                            updateFileList();
-                            showNotification('Dosya başarıyla silindi', 'success');
-                        } else {
-                            showNotification(response.message || 'Dosya silinirken bir hata oluştu', 'error');
-                        }
-                        hideLoading();
-                    }, function(error) {
-                        console.error('Delete error:', error);
-                        showNotification('Dosya silinirken bir hata oluştu', 'error');
-                        hideLoading();
-                    });
-                }
+            function hideNotification() {
+                document.getElementById('notification').classList.remove('show');
             }
 
             function saveAndReturn() {
                 try {
-                    if (!currentFile) {
+                    const selectedFile = document.getElementById('<%= hdnSelectedFile.ClientID %>').value;
+                    if (!selectedFile) {
                         showNotification('Lütfen bir dosya seçin', 'warning');
                         return false;
                     }
 
-                    showLoading();
+                    showLoading('Dosya kaydediliyor...');
                     document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
                     
-                    // AJAX çağrısını WebForm standardına göre yap
-                    Sys.Net.WebServiceProxy.invoke(
-                        'FileUploadViewer.aspx/SaveAndReturn',
-                        'POST',
-                        { filePath: currentFile },
-                        function(response) {
+                    PageMethods.SaveAndReturn(selectedFile, function(response) {
                         if (response.success) {
-                            // AJAX çağrısını WebForm standardına göre yap
-                            Sys.Net.WebServiceProxy.invoke(
-                                'FileUploadViewer.aspx/SetSelectedFile',
-                                'POST',
-                                { filePath: sanitizeInput(currentFile) },
-                                function(response) {
+                            PageMethods.SetSelectedFile(selectedFile, function(response) {
                                 if (response.success) {
-                                    try {
-                                        const fileName = sanitizeInput(currentFile.split('\\').pop());
-                                        const cdnPath = `/cdn/${fileName}`;
-
-                                        // Parent window'a mesaj gönder
-                                        if (window.parent && window.parent !== window) {
-                                            window.parent.postMessage({
-                                                type: 'FILE_SELECTED',
-                                                filePath: cdnPath,
-                                                success: true
-                                            }, '*');
-                                        }
-                                        // Eğer popup olarak açıldıysa
-                                        else if (window.opener && !window.opener.closed) {
-                                            window.opener.postMessage({
-                                                type: 'FILE_SELECTED',
-                                                filePath: cdnPath,
-                                                success: true
-                                            }, '*');
-                                        }
-                                    } catch (e) {
-                                        console.warn('Parent/Opener window iletişim hatası:', e);
-                                    }
-                                    
                                     showNotification('Dosya başarıyla kaydedildi', 'success');
-                                    setTimeout(() => window.close(), 1500);
+                                    setTimeout(() => {
+                                        if (window.parent && window.parent !== window) {
+                                            window.parent.postMessage({ type: 'FILE_SELECTED', success: true }, '*');
+                                        }
+                                        window.close();
+                                    }, 1500);
                                 } else {
                                     showNotification('Dosya yolu kaydedilemedi', 'error');
                                 }
                                 hideLoading();
-                            }, function(error) {
-                                console.error('Dosya yolu kaydetme hatası:', error);
-                                showNotification('İşlem sırasında bir hata oluştu', 'error');
-                                hideLoading();
                             });
                         } else {
                             showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
+                            hideLoading();
                         }
-                        hideLoading();
-                    }, function(error) {
-                        console.error('Kaydetme hatası:', error);
-                        showNotification('İşlem sırasında bir hata oluştu', 'error');
-                        hideLoading();
                     });
 
                     return false;
@@ -751,40 +340,6 @@
                     return false;
                 }
             }
-
-            function enableSaveButton() {
-                document.getElementById('<%= btnSaveAndClose.ClientID %>').disabled = false;
-            }
-
-            window.addEventListener('load', function() {
-                document.getElementById('<%= btnSaveAndClose.ClientID %>').onclick = saveAndReturn;
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const filePath = urlParams.get('file');
-                
-                if (filePath) {
-                    const decodedPath = decodeURIComponent(filePath);
-                    if (!fileList.includes(decodedPath)) {
-                        fileList.push(decodedPath);
-                    }
-                    viewFile(decodedPath);
-                }
-                
-                const savedList = document.getElementById('<%= hdnFileList.ClientID %>').value;
-                if (savedList) {
-                    try {
-                        const parsed = JSON.parse(savedList);
-                        parsed.forEach(file => {
-                            if (!fileList.includes(file)) {
-                                fileList.push(file);
-                            }
-                        });
-                        updateFileList();
-                    } catch (e) {
-                        console.error('File list parse error:', e);
-                    }
-                }
-            });
         </script>
     </form>
 </body>
