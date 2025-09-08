@@ -16,6 +16,8 @@ namespace AspxExamples.Common.Models
         private const string UPLOADED_FILE_KEY = "UploadedFileResult";
         private const string CLOSE_WINDOW_KEY = "CloseWindow";
         private const string INITIAL_YETKILI_DATA_KEY = "InitialYetkiliData";
+        private const string SELECTED_PDF_KEY = "SelectedPdfFileName";
+        private const string UPLOADED_PDF_PATH_KEY = "LastUploadedPdf";
         
         public static void SetSignatureAuthData(SignatureAuthData data)
         {
@@ -126,6 +128,56 @@ namespace AspxExamples.Common.Models
             if (HttpContext.Current != null && HttpContext.Current.Session != null)
             {
                 HttpContext.Current.Session.Remove(INITIAL_YETKILI_DATA_KEY);
+            }
+        }
+
+        // PDF işlemleri için metodlar
+        public static void SetSelectedPdfFileName(string fileName)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[SELECTED_PDF_KEY] = fileName;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static string GetSelectedPdfFileName()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[SELECTED_PDF_KEY] != null)
+            {
+                return HttpContext.Current.Session[SELECTED_PDF_KEY].ToString();
+            }
+            return null;
+        }
+
+        public static void SetUploadedPdfPath(string path)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[UPLOADED_PDF_PATH_KEY] = path;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static string GetUploadedPdfPath()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[UPLOADED_PDF_PATH_KEY] != null)
+            {
+                return HttpContext.Current.Session[UPLOADED_PDF_PATH_KEY].ToString();
+            }
+            return null;
+        }
+
+        public static void ClearPdfData()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(SELECTED_PDF_KEY);
+                HttpContext.Current.Session.Remove(UPLOADED_PDF_PATH_KEY);
             }
         }
     }

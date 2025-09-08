@@ -81,7 +81,45 @@
             cursor: not-allowed;
             transform: none;
         }
-        /* PDF direkt olarak açılacağı için container stillerine gerek yok */
+        .pdf-preview-container {
+            margin-top: 20px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .pdf-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        .pdf-toolbar h3 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .button.secondary {
+            background-color: #6c757d;
+        }
+        .button.secondary:hover {
+            background-color: #5a6268;
+        }
+        .pdf-viewer {
+            height: 600px;
+            overflow: hidden;
+        }
+        .pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
         /* Loading Animation */
         .loading-overlay {
             display: none;
@@ -158,7 +196,20 @@
                     CssClass="button" OnClick="BtnUpload_Click" />
             </div>
 
-            <!-- PDF direkt olarak açılacağı için container'a gerek yok -->
+            <div class="pdf-preview-container">
+                <div class="pdf-toolbar">
+                    <h3>PDF Önizleme</h3>
+                    <div class="button-group">
+                        <asp:Button ID="btnSave" runat="server" Text="Kaydet" 
+                            CssClass="button" OnClick="BtnSave_Click" Visible="false" />
+                        <asp:Button ID="btnCancel" runat="server" Text="İptal" 
+                            CssClass="button secondary" OnClick="BtnCancel_Click" Visible="false" />
+                    </div>
+                </div>
+                <div class="pdf-viewer">
+                    <iframe id="pdfViewer" runat="server" class="pdf-frame"></iframe>
+                </div>
+            </div>
         </div>
         
         <!-- Loading Overlay -->

@@ -1,4 +1,4 @@
-/* v2 - Created: 2024.01.17 - PDF dosyasını direkt açma özelliği eklendi */
+/* v4 - Created: 2024.01.17 - Kaydet/İptal mantığı eklendi */
 
 using System;
 using System.IO;
@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Diagnostics;
+using AspxExamples.Common.Models;
 
 namespace AspxExamples
 {
@@ -65,16 +66,16 @@ namespace AspxExamples
                     Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", pdfPath));
 
                     // Session'a kaydet
-                    Session["LastUploadedPdf"] = pdfPath;
+                    SessionHelper.SetUploadedPdfPath(pdfPath);
 
-                    // PDF'i direkt olarak aç
-                    Response.Clear();
-                    Response.ContentType = "application/pdf";
-                    Response.AppendHeader("Content-Disposition", string.Format("inline; filename={0}", uniqueFileName));
-                    Response.TransmitFile(pdfPath);
-                    Response.End();
+                    // PDF'i iframe'de göster ve butonları aktifleştir
+                    string virtualPath = string.Format("{0}/{1}", _cdnVirtualPath, uniqueFileName);
+                    pdfViewer.Attributes["src"] = virtualPath;
+                    btnSave.Visible = true;
+                    btnCancel.Visible = true;
+                    Debug.WriteLine(string.Format("PDF önizleme için yüklendi: {0}", pdfPath));
 
-                    Debug.WriteLine(string.Format("PDF dosyası açılıyor: {0}", pdfPath));
+                    ShowMessage("PDF dosyası yüklendi. Kaydetmek için 'Kaydet' butonuna basın.", "info");
                 }
                 else
                 {
@@ -122,6 +123,57 @@ namespace AspxExamples
                 "showNotification",
                 string.Format("showNotification('{0}', 'error');", HttpUtility.JavaScriptStringEncode(message)),
                 true);
+        }
+
+        protected void BtnSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string lastPdfPath = SessionHelper.GetUploadedPdfPath();
+                if (string.IsNullOrEmpty(lastPdfPath) || !File.Exists(lastPdfPath))
+                {
+                    ShowError("PDF dosyası bulunamadı.");
+                    return;
+                }
+
+                // Session'a filename'i kaydet
+                SessionHelper.SetSelectedPdfFileName(Path.GetFileName(lastPdfPath));
+                Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", lastPdfPath));
+
+                // Sayfayı kapat/geri dön
+                ScriptManager.RegisterStartupScript(this, GetType(), "closeScript", 
+                    "if (window.opener && !window.opener.closed) { window.close(); } else { window.location.href = document.referrer; }", true);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(string.Format("PDF kaydetme hatası: {0}", ex.Message));
+                ShowError(string.Format("PDF kaydedilirken bir hata oluştu: {0}", ex.Message));
+            }
+        }
+
+        protected void BtnCancel_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string lastPdfPath = SessionHelper.GetUploadedPdfPath();
+                if (!string.IsNullOrEmpty(lastPdfPath) && File.Exists(lastPdfPath))
+                {
+                    File.Delete(lastPdfPath);
+                    Debug.WriteLine(string.Format("PDF dosyası silindi: {0}", lastPdfPath));
+                }
+
+                // Session'daki değerleri temizle
+                SessionHelper.ClearPdfData();
+
+                // Sayfayı kapat/geri dön
+                ScriptManager.RegisterStartupScript(this, GetType(), "closeScript", 
+                    "if (window.opener && !window.opener.closed) { window.close(); } else { window.location.href = document.referrer; }", true);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(string.Format("PDF silme hatası: {0}", ex.Message));
+                ShowError(string.Format("PDF silinirken bir hata oluştu: {0}", ex.Message));
+            }
         }
 
         private void ShowMessage(string message, string type = "info")
