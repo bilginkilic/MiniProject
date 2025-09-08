@@ -69,7 +69,7 @@ namespace AspxExamples
 
                     // PDF'i iframe'de göster ve butonları aktifleştir
                     string fileUrl = string.Format("file://{0}", pdfPath.Replace("\\", "/").TrimStart('/'));
-                    pdfViewer.Attributes["data"] = fileUrl;
+                    pdfViewer.Attributes["src"] = fileUrl;
                     btnSave.Visible = true;
                     btnCancel.Visible = true;
                     

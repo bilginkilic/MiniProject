@@ -115,16 +115,11 @@
             height: 600px;
             overflow: hidden;
         }
-        object.pdf-frame {
+        .pdf-frame {
             width: 100%;
-            height: 100%;
-            min-height: 500px;
+            height: 600px;
             border: none;
             background: white;
-            display: block;
-        }
-        object.pdf-frame:not([data]) {
-            display: none;
         }
         /* Loading Animation */
         .loading-overlay {
@@ -213,10 +208,8 @@
                     </div>
                 </div>
                 <div class="pdf-viewer">
-                    <object id="pdfViewer" runat="server" class="pdf-frame" 
-                        type="application/pdf">
-                        <div>PDF görüntüleyici tarayıcınızda desteklenmiyor.</div>
-                    </object>
+                    <embed id="pdfViewer" runat="server" class="pdf-frame" 
+                        type="application/pdf" />
                 </div>
             </div>
         </div>
