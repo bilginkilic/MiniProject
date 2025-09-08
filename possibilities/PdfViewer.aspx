@@ -212,10 +212,10 @@
                     </div>
                 </div>
                 <div class="pdf-viewer">
-                    <iframe id="pdfViewer" runat="server" class="pdf-frame" 
-                        type="application/pdf" frameborder="0"
-                        sandbox="allow-same-origin allow-scripts allow-forms"
-                        allow="fullscreen"></iframe>
+                    <object id="pdfViewer" runat="server" class="pdf-frame" 
+                        type="application/pdf" data="">
+                        <p>PDF görüntüleyici tarayıcınızda desteklenmiyor.</p>
+                    </object>
                 </div>
             </div>
         </div>
@@ -235,6 +235,8 @@
     </form>
 
     <script type="text/javascript">
+        var notificationTimeout;
+
         function showLoading(message) {
             document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('loadingMessage').textContent = message || 'Yükleniyor...';
@@ -244,17 +246,37 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function showNotification(message, type) {
+        window.showNotification = function(message, type) {
+            clearTimeout(notificationTimeout);
+            
             var notification = document.getElementById('notification');
             var notificationMessage = document.getElementById('notificationMessage');
             
-            notification.className = 'notification ' + (type || 'info');
-            notificationMessage.textContent = message;
+            if (!notification || !notificationMessage) {
+                console.error('Notification elements not found');
+                return;
+            }
+            
+            // Reset classes
+            notification.className = 'notification';
+            notification.classList.add(type || 'info');
+            notificationMessage.textContent = message || '';
+            
+            // Show notification
             notification.classList.add('show');
             
-            setTimeout(function() {
+            // Auto hide after delay
+            notificationTimeout = setTimeout(function() {
                 notification.classList.remove('show');
-            }, type === 'error' ? 5000 : 3000);
+            }, type === 'error' ? 8000 : 5000);
+        }
+
+        function hideNotification() {
+            var notification = document.getElementById('notification');
+            if (notification) {
+                notification.classList.remove('show');
+            }
+            clearTimeout(notificationTimeout);
         }
 
         // Dosya seçildiğinde yükleme butonunu aktifleştir
