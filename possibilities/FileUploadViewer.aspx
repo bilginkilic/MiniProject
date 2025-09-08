@@ -307,10 +307,69 @@
             display: flex;
             gap: 5px;
         }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #dc3545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notification */
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 9999;
+        }
+
+        .notification.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .notification.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .notification.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
     </style>
 </head>
 <body>
-    <form id="form1" runat="server">
+    <form id="form1" runat="server" enctype="multipart/form-data">
         <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true">
             <Services>
                 <asp:ServiceReference Path="~/FileUploadViewer.aspx" />
@@ -388,6 +447,16 @@
         <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
 
         <script type="text/javascript">
+            // Güvenlik ayarları
+            if (window.top !== window.self) {
+                window.top.location.href = window.self.location.href;
+            }
+
+            // XSS koruması için
+            function sanitizeInput(input) {
+                return input.replace(/[<>]/g, '');
+            }
+
             let currentFile = null;
             const fileList = [];
 
@@ -423,10 +492,11 @@
                     const fileItem = document.createElement('div');
                     fileItem.className = 'file-item' + (file === currentFile ? ' active' : '');
                     
+                    const fileName = sanitizeInput(file.split('/').pop());
                     fileItem.innerHTML = `
                         <span class="file-name">
                             <i class="fas fa-file-pdf"></i>
-                            ${file.split('/').pop()}
+                            ${fileName}
                         </span>
                         <div class="file-actions">
                             <button type="button" class="button secondary" onclick="viewFile('${file}')" title="Görüntüle">
@@ -445,68 +515,82 @@
             }
 
             function validateFileUpload() {
-                const fileUpload = document.getElementById('<%= fuPdfUpload.ClientID %>');
-                if (!fileUpload.value) {
-                    showNotification('Lütfen bir PDF dosyası seçin', 'warning');
+                try {
+                    const fileUpload = document.getElementById('<%= fuPdfUpload.ClientID %>');
+                    if (!fileUpload.value) {
+                        showNotification('Lütfen bir PDF dosyası seçin', 'warning');
+                        return false;
+                    }
+
+                    // Dosya uzantısı kontrolü
+                    const fileName = sanitizeInput(fileUpload.value.toLowerCase());
+                    if (!fileName.endsWith('.pdf')) {
+                        showNotification('Lütfen sadece PDF dosyası seçin', 'warning');
+                        return false;
+                    }
+
+                    // Dosya adı güvenlik kontrolü
+                    const sanitizedFileName = fileName.split('\\').pop();
+                    if (/[<>:"/\\|?*]/.test(sanitizedFileName)) {
+                        showNotification('Dosya adı geçersiz karakterler içeriyor', 'warning');
+                        return false;
+                    }
+
+                    // Dosya boyutu kontrolü (maksimum 10MB)
+                    const maxSize = 10 * 1024 * 1024;
+                    if (fileUpload.files[0].size > maxSize) {
+                        showNotification('Dosya boyutu 10MB\'dan büyük olamaz', 'warning');
+                        return false;
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Validasyon hatası:', error);
+                    showNotification('Dosya kontrolü sırasında bir hata oluştu', 'error');
                     return false;
                 }
-
-                // Dosya uzantısı kontrolü
-                const fileName = fileUpload.value.toLowerCase();
-                if (!fileName.endsWith('.pdf')) {
-                    showNotification('Lütfen sadece PDF dosyası seçin', 'warning');
-                    return false;
-                }
-
-                // Dosya adı güvenlik kontrolü
-                const sanitizedFileName = fileName.split('\\').pop();
-                if (/[<>:"/\\|?*]/.test(sanitizedFileName)) {
-                    showNotification('Dosya adı geçersiz karakterler içeriyor', 'warning');
-                    return false;
-                }
-
-                // Dosya boyutu kontrolü (maksimum 10MB)
-                const maxSize = 10 * 1024 * 1024; // 10MB
-                if (fileUpload.files[0].size > maxSize) {
-                    showNotification('Dosya boyutu 10MB\'dan büyük olamaz', 'warning');
-                    return false;
-                }
-
-                return true;
             }
 
             function viewFile(filePath) {
-                showLoading();
-                currentFile = filePath;
-                
-                const viewer = document.getElementById('pdfViewer');
-                    // PDF'i güvenli bir şekilde web URL'i üzerinden aç
-                var fileName = filePath.split('\\').pop();
-                // XSS koruması için fileName'i sanitize et
-                fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '');
-                var webUrl = encodeURI(`/cdn/${fileName}`);
-                // iframe'i güvenli bir şekilde oluştur
-                var iframe = document.createElement('iframe');
-                iframe.setAttribute('src', webUrl);
-                iframe.setAttribute('onload', 'hideLoading()');
-                iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
-                viewer.innerHTML = '';
-                viewer.appendChild(iframe);
-                
-                document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
-                updateFileList();
+                try {
+                    showLoading();
+                    currentFile = filePath;
+                    
+                    const viewer = document.getElementById('pdfViewer');
+                    const fileName = sanitizeInput(filePath.split('\\').pop());
+                    const webUrl = encodeURI(`/cdn/${fileName}`);
+                    
+                    const iframe = document.createElement('iframe');
+                    iframe.setAttribute('src', webUrl);
+                    iframe.setAttribute('onload', 'hideLoading()');
+                    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+                    iframe.setAttribute('security', 'restricted');
+                    
+                    viewer.innerHTML = '';
+                    viewer.appendChild(iframe);
+                    
+                    document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
+                    updateFileList();
+                    enableSaveButton();
+                } catch (error) {
+                    console.error('PDF görüntüleme hatası:', error);
+                    showNotification('PDF görüntülenirken bir hata oluştu', 'error');
+                    hideLoading();
+                }
             }
 
             function deleteFile(filePath, index) {
                 if (confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) {
                     showLoading();
                     
+                    const data = { filePath: sanitizeInput(filePath) };
+                    
                     fetch('FileUploadViewer.aspx/DeleteFile', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ filePath: filePath })
+                        body: JSON.stringify(data)
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -538,95 +622,77 @@
             }
 
             function saveAndReturn() {
-                if (!currentFile) {
-                    showNotification('Lütfen bir dosya seçin', 'warning');
-                    return false;
-                }
-
-                showLoading();
-                
-                // Kapanma isteğini işaretle
-                document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
-                
-                // Web method'u çağır
-                PageMethods.SaveAndReturn(currentFile, function(response) {
-                    if (response.success) {
-                        // Session'a dosya yolunu kaydet
-                        fetch('FileUploadViewer.aspx/SetSelectedFile', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ filePath: currentFile })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.d.success) {
-                                // Opener window'a bildir
-                                if (window.opener && !window.opener.closed) {
-                                    try {
-                                        // CDN yolunu oluştur
-                                        var fileName = currentFile.split('\\').pop();
-                                        var cdnPath = `/cdn/${fileName}`;
-
-                                        // PostMessage ile bildir
-                                        window.opener.postMessage({
-                                            type: 'FILE_SELECTED',
-                                            filePath: cdnPath,
-                                            success: true
-                                        }, '*');
-                                        
-                                        // Opener'da varsa callback'i çağır
-                                        if (typeof window.opener.onFileSelected === 'function') {
-                                            window.opener.onFileSelected(cdnPath);
-                                        }
-                                    } catch (e) {
-                                        console.warn('Opener window iletişim hatası:', e);
-                                    }
-                                }
-                                
-                                showNotification('Dosya başarıyla kaydedildi', 'success');
-                                // Pencereyi kapatmak için timer başlat
-                                var checkCloseTimer = setInterval(function() {
-                                    // Session'dan closeWindow değerini kontrol et
-                                    PageMethods.CheckCloseWindow(function(response) {
-                                        if (response && response.shouldClose) {
-                                            clearInterval(checkCloseTimer);
-                                            window.close();
-                                        }
-                                    });
-                                }, 500); // Her 500ms'de bir kontrol et
-
-                                // 10 saniye sonra timer'ı temizle (güvenlik için)
-                                setTimeout(function() {
-                                    clearInterval(checkCloseTimer);
-                                }, 10000);
-                            } else {
-                                showNotification('Dosya yolu kaydedilemedi', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Dosya yolu kaydetme hatası:', error);
-                            showNotification('İşlem sırasında bir hata oluştu', 'error');
-                        });
-                    } else {
-                        showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
+                try {
+                    if (!currentFile) {
+                        showNotification('Lütfen bir dosya seçin', 'warning');
+                        return false;
                     }
-                    hideLoading();
-                }, function(error) {
-                    console.error('Kaydetme hatası:', error);
+
+                    showLoading();
+                    document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
+                    
+                    PageMethods.SaveAndReturn(currentFile, function(response) {
+                        if (response.success) {
+                            const data = { filePath: sanitizeInput(currentFile) };
+                            
+                            fetch('FileUploadViewer.aspx/SetSelectedFile', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.d.success) {
+                                    if (window.opener && !window.opener.closed) {
+                                        try {
+                                            const fileName = sanitizeInput(currentFile.split('\\').pop());
+                                            const cdnPath = `/cdn/${fileName}`;
+
+                                            window.opener.postMessage({
+                                                type: 'FILE_SELECTED',
+                                                filePath: cdnPath,
+                                                success: true
+                                            }, '*');
+                                        } catch (e) {
+                                            console.warn('Opener window iletişim hatası:', e);
+                                        }
+                                    }
+                                    
+                                    showNotification('Dosya başarıyla kaydedildi', 'success');
+                                    setTimeout(() => window.close(), 1500);
+                                } else {
+                                    showNotification('Dosya yolu kaydedilemedi', 'error');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Dosya yolu kaydetme hatası:', error);
+                                showNotification('İşlem sırasında bir hata oluştu', 'error');
+                            });
+                        } else {
+                            showNotification(response.error || 'Kaydetme işlemi başarısız oldu', 'error');
+                        }
+                        hideLoading();
+                    }, function(error) {
+                        console.error('Kaydetme hatası:', error);
+                        showNotification('İşlem sırasında bir hata oluştu', 'error');
+                        hideLoading();
+                    });
+
+                    return false;
+                } catch (error) {
+                    console.error('saveAndReturn hatası:', error);
                     showNotification('İşlem sırasında bir hata oluştu', 'error');
                     hideLoading();
-                });
-
-                return false;
+                    return false;
+                }
             }
 
             function enableSaveButton() {
                 document.getElementById('<%= btnSaveAndClose.ClientID %>').disabled = false;
             }
 
-            // Sayfa yüklendiğinde
             window.addEventListener('load', function() {
                 document.getElementById('<%= btnSaveAndClose.ClientID %>').onclick = saveAndReturn;
 
