@@ -115,14 +115,15 @@
             height: 600px;
             overflow: hidden;
         }
-        .pdf-frame {
+        object.pdf-frame {
             width: 100%;
             height: 100%;
+            min-height: 500px;
             border: none;
             background: white;
             display: block;
         }
-        .pdf-frame[src=""] {
+        object.pdf-frame:not([data]) {
             display: none;
         }
         /* Loading Animation */
@@ -213,8 +214,8 @@
                 </div>
                 <div class="pdf-viewer">
                     <object id="pdfViewer" runat="server" class="pdf-frame" 
-                        type="application/pdf" data="">
-                        <p>PDF görüntüleyici tarayıcınızda desteklenmiyor.</p>
+                        type="application/pdf">
+                        <div>PDF görüntüleyici tarayıcınızda desteklenmiyor.</div>
                     </object>
                 </div>
             </div>
