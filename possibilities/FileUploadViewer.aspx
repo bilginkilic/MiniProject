@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
-    <title>PDF Dosya Yükleme ve Görüntüleme</title>
+    <title>PDF Dosya Yükleme ve Görüntüleme v1</title>
     
     <!-- Font Awesome - Local -->
     <style>
