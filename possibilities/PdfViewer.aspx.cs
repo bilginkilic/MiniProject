@@ -67,15 +67,9 @@ namespace AspxExamples
                     // Session'a kaydet
                     SessionHelper.SetUploadedPdfPath(pdfPath);
 
-                    // Session'a PDF bilgilerini kaydet
-                    SessionHelper.SetUploadedPdfPath(pdfPath);
+                    // PDF listesine ekle
+                    AddPdfToList(uniqueFileName, pdfPath);
                     
-                    // PDF görüntüleme sayfasına yönlendir
-                    string viewerUrl = string.Format("ViewPdf.ashx?file={0}", HttpUtility.UrlEncode(fileName));
-                    ScriptManager.RegisterStartupScript(this, GetType(), "openPdf",
-                        string.Format("window.open('{0}', '_blank', 'height=600,width=800,status=yes,toolbar=no,menubar=no,location=no');", viewerUrl),
-                        true);
-
                     btnSave.Visible = true;
                     btnCancel.Visible = true;
                     ShowMessage("PDF dosyası yüklendi. Kaydetmek için 'Kaydet' butonuna basın.", "info");
@@ -149,6 +143,63 @@ namespace AspxExamples
             {
                 Debug.WriteLine(string.Format("PDF silme hatası: {0}", ex.Message));
                 ShowError(string.Format("PDF silinirken bir hata oluştu: {0}", ex.Message));
+            }
+        }
+
+        private void AddPdfToList(string fileName, string filePath)
+        {
+            // PDF listesi öğesi oluştur
+            var pdfItem = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
+            pdfItem.Attributes["class"] = "pdf-item";
+
+            // PDF adı ve link
+            var nameLink = new System.Web.UI.HtmlControls.HtmlAnchorElement();
+            nameLink.Attributes["class"] = "pdf-item-name";
+            nameLink.Attributes["href"] = "javascript:void(0);";
+            nameLink.Attributes["onclick"] = string.Format("openPdfInNewTab('{0}');", HttpUtility.JavaScriptStringEncode(fileName));
+            nameLink.InnerText = fileName;
+            pdfItem.Controls.Add(nameLink);
+
+            // Butonlar için container
+            var actions = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
+            actions.Attributes["class"] = "pdf-item-actions";
+
+            // Önizleme butonu
+            var previewButton = new System.Web.UI.HtmlControls.HtmlButton();
+            previewButton.Attributes["type"] = "button";
+            previewButton.Attributes["class"] = "pdf-item-button preview";
+            previewButton.Attributes["onclick"] = string.Format("previewPdf('{0}');", HttpUtility.JavaScriptStringEncode(fileName));
+            previewButton.InnerText = "Önizle";
+            actions.Controls.Add(previewButton);
+
+            // Silme butonu
+            var deleteButton = new System.Web.UI.HtmlControls.HtmlButton();
+            deleteButton.Attributes["type"] = "button";
+            deleteButton.Attributes["class"] = "pdf-item-button delete";
+            deleteButton.Attributes["onclick"] = string.Format("deletePdf('{0}', this);", HttpUtility.JavaScriptStringEncode(fileName));
+            deleteButton.InnerText = "Sil";
+            actions.Controls.Add(deleteButton);
+
+            pdfItem.Controls.Add(actions);
+            pdfList.Controls.Add(pdfItem);
+        }
+
+        [System.Web.Services.WebMethod]
+        public static object DeletePdf(string fileName)
+        {
+            try
+            {
+                string pdfPath = Path.Combine(@"\\trrgap3027\files\circular\cdn", fileName);
+                if (File.Exists(pdfPath))
+                {
+                    File.Delete(pdfPath);
+                    return new { success = true };
+                }
+                return new { success = false, error = "Dosya bulunamadı." };
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, error = ex.Message };
             }
         }
 

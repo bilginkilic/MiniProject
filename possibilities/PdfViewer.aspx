@@ -136,7 +136,132 @@
         .button.secondary:hover {
             background-color: #5a6268;
         }
-        /* PDF görüntüleme için CSS'e gerek yok - Response ile gönderiliyor */
+        /* PDF Liste Stilleri */
+        .pdf-list-container {
+            margin-top: 20px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .pdf-list {
+            padding: 15px;
+        }
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+        .pdf-item:hover {
+            background: #f8f9fa;
+            border-color: #ddd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .pdf-item:last-child {
+            margin-bottom: 0;
+        }
+        .pdf-item-name {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .pdf-item-name:hover {
+            color: #dc3545;
+            text-decoration: underline;
+        }
+        .pdf-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .pdf-item-button {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .pdf-item-button:hover {
+            background: #e9ecef;
+        }
+        .pdf-item-button.preview {
+            background: #28a745;
+            color: white;
+        }
+        .pdf-item-button.preview:hover {
+            background: #218838;
+        }
+        .pdf-item-button.delete {
+            background: #dc3545;
+            color: white;
+        }
+        .pdf-item-button.delete:hover {
+            background: #c82333;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .modal-body {
+            flex: 1;
+            min-height: 0;
+            padding: 20px;
+        }
+        .pdf-preview-frame {
+            width: 100%;
+            height: 70vh;
+            border: none;
+        }
         /* Loading Animation */
         .loading-overlay {
             display: none;
@@ -213,9 +338,9 @@
                     CssClass="button" OnClick="BtnUpload_Click" />
             </div>
 
-            <div class="pdf-preview-container">
+            <div class="pdf-list-container">
                 <div class="pdf-toolbar">
-                    <h3>PDF Önizleme</h3>
+                    <h3>Yüklenen PDF'ler</h3>
                     <div class="button-group">
                         <asp:Button ID="btnSave" runat="server" Text="Kaydet" 
                             CssClass="button" OnClick="BtnSave_Click" Visible="false" />
@@ -223,7 +348,22 @@
                             CssClass="button secondary" OnClick="BtnCancel_Click" Visible="false" />
                     </div>
                 </div>
-                <!-- PDF direkt olarak Response ile gönderiliyor -->
+                <div class="pdf-list" id="pdfList" runat="server">
+                    <!-- PDF listesi buraya dinamik olarak eklenecek -->
+                </div>
+            </div>
+
+            <!-- PDF Önizleme Modal -->
+            <div id="pdfPreviewModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>PDF Önizleme</h3>
+                        <button type="button" class="modal-close" onclick="closePreviewModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <iframe id="pdfPreviewFrame" class="pdf-preview-frame"></iframe>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -268,10 +408,64 @@
             document.getElementById('<%= btnUpload.ClientID %>').disabled = !this.files.length;
         });
 
+        function openPdfInNewTab(fileName) {
+            window.open('ViewPdf.ashx?file=' + encodeURIComponent(fileName), '_blank');
+        }
+
+        function previewPdf(fileName) {
+            var modal = document.getElementById('pdfPreviewModal');
+            var previewFrame = document.getElementById('pdfPreviewFrame');
+            
+            previewFrame.src = 'ViewPdf.ashx?file=' + encodeURIComponent(fileName);
+            modal.classList.add('show');
+        }
+
+        function closePreviewModal() {
+            var modal = document.getElementById('pdfPreviewModal');
+            var previewFrame = document.getElementById('pdfPreviewFrame');
+            
+            modal.classList.remove('show');
+            previewFrame.src = '';
+        }
+
+        function deletePdf(fileName, element) {
+            if (confirm('Bu PDF dosyasını silmek istediğinize emin misiniz?')) {
+                // AJAX ile silme işlemi
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', 'PdfViewer.aspx/DeletePdf', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.d && response.d.success) {
+                            // Başarılı silme işlemi
+                            element.closest('.pdf-item').remove();
+                            showNotification('PDF dosyası silindi.', 'success');
+                        } else {
+                            showNotification(response.d.error || 'Silme işlemi başarısız.', 'error');
+                        }
+                    } else {
+                        showNotification('Silme işlemi sırasında bir hata oluştu.', 'error');
+                    }
+                };
+                
+                xhr.send(JSON.stringify({ fileName: fileName }));
+            }
+        }
+
         // Sayfa yüklendiğinde
         window.addEventListener('load', function() {
             // Yükleme butonu başlangıçta disabled
             document.getElementById('<%= btnUpload.ClientID %>').disabled = true;
+
+            // Modal dışına tıklandığında kapatma
+            window.onclick = function(event) {
+                var modal = document.getElementById('pdfPreviewModal');
+                if (event.target === modal) {
+                    closePreviewModal();
+                }
+            };
         });
     </script>
 </body>
