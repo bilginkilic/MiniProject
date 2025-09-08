@@ -81,18 +81,7 @@
             cursor: not-allowed;
             transform: none;
         }
-        .pdf-container {
-            flex: 1;
-            min-height: 500px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .pdf-viewer {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        /* PDF direkt olarak açılacağı için container stillerine gerek yok */
         /* Loading Animation */
         .loading-overlay {
             display: none;
@@ -169,9 +158,7 @@
                     CssClass="button" OnClick="BtnUpload_Click" />
             </div>
 
-            <div class="pdf-container">
-                <iframe id="pdfViewer" runat="server" class="pdf-viewer"></iframe>
-            </div>
+            <!-- PDF direkt olarak açılacağı için container'a gerek yok -->
         </div>
         
         <!-- Loading Overlay -->

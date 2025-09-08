@@ -1,4 +1,4 @@
-/* v1 - Created: 2024.01.17 - String.Format kullanımına geçiş */
+/* v2 - Created: 2024.01.17 - PDF dosyasını direkt açma özelliği eklendi */
 
 using System;
 using System.IO;
@@ -67,12 +67,14 @@ namespace AspxExamples
                     // Session'a kaydet
                     Session["LastUploadedPdf"] = pdfPath;
 
-                    // PDF'i görüntüle
-                    string virtualPath = string.Format("{0}/{1}", _cdnVirtualPath, uniqueFileName);
-                    pdfViewer.Attributes["src"] = virtualPath;
-                    Debug.WriteLine(string.Format("PDF görüntüleme için virtual path: {0}", virtualPath));
+                    // PDF'i direkt olarak aç
+                    Response.Clear();
+                    Response.ContentType = "application/pdf";
+                    Response.AppendHeader("Content-Disposition", string.Format("inline; filename={0}", uniqueFileName));
+                    Response.TransmitFile(pdfPath);
+                    Response.End();
 
-                    ShowMessage("PDF dosyası başarıyla yüklendi.", "success");
+                    Debug.WriteLine(string.Format("PDF dosyası açılıyor: {0}", pdfPath));
                 }
                 else
                 {
