@@ -1,5 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfViewer.aspx.cs" Inherits="AspxExamples.PdfViewer" %>
-<%-- Created: 2024.01.17 14:30 - v1 - PDF Görüntüleyici --%>
+<%-- Created: 2024.01.17 14:f30 - v1 - PDF Görüntüleyici --%>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
 <head runat="server">
@@ -7,6 +7,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Görüntüleyici">
     <title>PDF Görüntüleyici</title>
+    <script type="text/javascript">
+        // Global notification function - ScriptManager için en üstte tanımlanmalı
+        function showNotification(message, type) {
+            if (window.notificationTimeout) {
+                clearTimeout(window.notificationTimeout);
+            }
+            
+            var notification = document.getElementById('notification');
+            var notificationMessage = document.getElementById('notificationMessage');
+            
+            if (!notification || !notificationMessage) {
+                console.error('Notification elements not found');
+                return;
+            }
+            
+            notification.className = 'notification';
+            notification.classList.add(type || 'info');
+            notificationMessage.textContent = message || '';
+            notification.classList.add('show');
+            
+            window.notificationTimeout = setTimeout(function() {
+                notification.classList.remove('show');
+            }, type === 'error' ? 8000 : 5000);
+        }
+    </script>
     <style type="text/css">
         html, body { 
             margin: 0; 
@@ -228,30 +253,7 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        window.showNotification = function(message, type) {
-            clearTimeout(notificationTimeout);
-            
-            var notification = document.getElementById('notification');
-            var notificationMessage = document.getElementById('notificationMessage');
-            
-            if (!notification || !notificationMessage) {
-                console.error('Notification elements not found');
-                return;
-            }
-            
-            // Reset classes
-            notification.className = 'notification';
-            notification.classList.add(type || 'info');
-            notificationMessage.textContent = message || '';
-            
-            // Show notification
-            notification.classList.add('show');
-            
-            // Auto hide after delay
-            notificationTimeout = setTimeout(function() {
-                notification.classList.remove('show');
-            }, type === 'error' ? 8000 : 5000);
-        }
+        // showNotification artık sayfa başında tanımlı
 
         function hideNotification() {
             var notification = document.getElementById('notification');
