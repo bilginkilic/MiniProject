@@ -13,7 +13,7 @@ namespace AspxExamples
     public partial class PdfViewer : System.Web.UI.Page
     {
         private readonly string _cdn = @"\\trrgap3027\files\circular\cdn";
-        private readonly string _cdnVirtualPath = "/cdn";
+        // Intranet ortamında fiziksel adres kullanıyoruz
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -69,11 +69,14 @@ namespace AspxExamples
                     SessionHelper.SetUploadedPdfPath(pdfPath);
 
                     // PDF'i iframe'de göster ve butonları aktifleştir
-                    string virtualPath = string.Format("{0}/{1}", _cdnVirtualPath, uniqueFileName);
-                    pdfViewer.Attributes["src"] = virtualPath;
+                    string fileUrl = string.Format("file:///{0}", pdfPath.Replace("\\", "/"));
+                    pdfViewer.Attributes["src"] = fileUrl;
                     btnSave.Visible = true;
                     btnCancel.Visible = true;
-                    Debug.WriteLine(string.Format("PDF önizleme için yüklendi: {0}", pdfPath));
+                    
+                    // Debug logları
+                    Debug.WriteLine(string.Format("PDF fiziksel yol: {0}", pdfPath));
+                    Debug.WriteLine(string.Format("PDF file URL: {0}", fileUrl));
 
                     ShowMessage("PDF dosyası yüklendi. Kaydetmek için 'Kaydet' butonuna basın.", "info");
                 }

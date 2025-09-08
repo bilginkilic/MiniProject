@@ -119,6 +119,11 @@
             width: 100%;
             height: 100%;
             border: none;
+            background: white;
+            display: block;
+        }
+        .pdf-frame[src=""] {
+            display: none;
         }
         /* Loading Animation */
         .loading-overlay {
@@ -207,7 +212,8 @@
                     </div>
                 </div>
                 <div class="pdf-viewer">
-                    <iframe id="pdfViewer" runat="server" class="pdf-frame"></iframe>
+                    <iframe id="pdfViewer" runat="server" class="pdf-frame" 
+                        type="application/pdf" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
