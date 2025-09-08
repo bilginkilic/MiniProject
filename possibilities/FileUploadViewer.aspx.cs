@@ -9,7 +9,7 @@ using System.Web.Services;
 using System.Web.Script.Services;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-
+////v1 - 2025.09.08
 
 namespace AspxExamples
 {
@@ -60,7 +60,16 @@ namespace AspxExamples
                     fuPdfUpload.SaveAs(pdfPath);
 
                     // JavaScript'e dosya yolunu gönder
-                    var script = String.Format("fileList.push('{0}'); viewFile('{0}'); enableSaveButton();", pdfPath.Replace("\\", "\\\\"));
+                    var script = String.Format(@"
+                        if (typeof fileList !== 'undefined') {{
+                            fileList.push('{0}');
+                            viewFile('{0}');
+                            enableSaveButton();
+                            showNotification('Dosya başarıyla yüklendi', 'success');
+                        }} else {{
+                            console.error('fileList is not defined');
+                            showNotification('Dosya yüklendi ancak görüntülenemiyor', 'warning');
+                        }}", pdfPath.Replace("\\", "\\\\"));
                     ScriptManager.RegisterStartupScript(this, GetType(), "uploadComplete", script, true);
 
                     ShowMessage("Dosya başarıyla yüklendi.", "success");

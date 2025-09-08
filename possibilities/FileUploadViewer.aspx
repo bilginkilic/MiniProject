@@ -12,7 +12,7 @@
     <meta http-equiv="Window-Target" content="_self">
     <title>PDF Dosya Yükleme ve Görüntüleme v1</title>
     
-    <!-- Font Awesome - Local fr tr-->
+    <!-- Font Awesome - Local fr tr f-->
     <style>
         /* Font Awesome temel ikonlar için minimal CSS */
         .fas {
@@ -590,24 +590,51 @@
                     currentFile = filePath;
                     
                     const viewer = document.getElementById('pdfViewer');
+                    if (!viewer) {
+                        throw new Error('PDF viewer elementi bulunamadı');
+                    }
+
                     const fileName = sanitizeInput(filePath.split('\\').pop());
                     const webUrl = encodeURI(`/cdn/${fileName}`);
                     
-                    const iframe = document.createElement('iframe');
-                    iframe.setAttribute('src', webUrl);
-                    iframe.setAttribute('onload', 'hideLoading()');
-                    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
-                    iframe.setAttribute('security', 'restricted');
-                    
+                    // Önce mevcut içeriği temizle
                     viewer.innerHTML = '';
+                    
+                    // iframe oluştur
+                    const iframe = document.createElement('iframe');
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                    iframe.src = webUrl;
+                    
+                    // iframe yüklendiğinde loading'i gizle
+                    iframe.onload = function() {
+                        hideLoading();
+                        console.log('PDF iframe yüklendi:', webUrl);
+                    };
+                    
+                    // iframe yüklenemezse hata göster
+                    iframe.onerror = function() {
+                        console.error('PDF iframe yüklenemedi:', webUrl);
+                        showNotification('PDF görüntülenirken bir hata oluştu', 'error');
+                        hideLoading();
+                    };
+                    
                     viewer.appendChild(iframe);
                     
-                    document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
+                    // Hidden field'ı güncelle
+                    const hdnSelectedFile = document.getElementById('<%= hdnSelectedFile.ClientID %>');
+                    if (hdnSelectedFile) {
+                        hdnSelectedFile.value = filePath;
+                    }
+                    
                     updateFileList();
                     enableSaveButton();
+                    
+                    console.log('PDF görüntüleme başarılı:', filePath);
                 } catch (error) {
                     console.error('PDF görüntüleme hatası:', error);
-                    showNotification('PDF görüntülenirken bir hata oluştu', 'error');
+                    showNotification('PDF görüntülenirken bir hata oluştu: ' + error.message, 'error');
                     hideLoading();
                 }
             }
