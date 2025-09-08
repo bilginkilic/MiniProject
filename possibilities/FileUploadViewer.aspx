@@ -6,11 +6,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <title>PDF Dosya Yükleme ve Görüntüleme</title>
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Font Awesome - Local -->
+    <style>
+        /* Font Awesome temel ikonlar için minimal CSS */
+        .fas {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+        }
+        .fa-file-pdf:before { content: "📄"; }
+        .fa-eye:before { content: "👁"; }
+        .fa-trash:before { content: "🗑"; }
+    </style>
     
     <style type="text/css">
         html, body { 
@@ -438,10 +450,28 @@
                     showNotification('Lütfen bir PDF dosyası seçin', 'warning');
                     return false;
                 }
-                if (!fileUpload.value.toLowerCase().endsWith('.pdf')) {
+
+                // Dosya uzantısı kontrolü
+                const fileName = fileUpload.value.toLowerCase();
+                if (!fileName.endsWith('.pdf')) {
                     showNotification('Lütfen sadece PDF dosyası seçin', 'warning');
                     return false;
                 }
+
+                // Dosya adı güvenlik kontrolü
+                const sanitizedFileName = fileName.split('\\').pop();
+                if (/[<>:"/\\|?*]/.test(sanitizedFileName)) {
+                    showNotification('Dosya adı geçersiz karakterler içeriyor', 'warning');
+                    return false;
+                }
+
+                // Dosya boyutu kontrolü (maksimum 10MB)
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (fileUpload.files[0].size > maxSize) {
+                    showNotification('Dosya boyutu 10MB\'dan büyük olamaz', 'warning');
+                    return false;
+                }
+
                 return true;
             }
 
@@ -450,10 +480,18 @@
                 currentFile = filePath;
                 
                 const viewer = document.getElementById('pdfViewer');
-                // PDF'i web URL'i üzerinden aç
+                    // PDF'i güvenli bir şekilde web URL'i üzerinden aç
                 var fileName = filePath.split('\\').pop();
-                var webUrl = `/cdn/${fileName}`;
-                viewer.innerHTML = `<iframe src="${webUrl}" onload="hideLoading()"></iframe>`;
+                // XSS koruması için fileName'i sanitize et
+                fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '');
+                var webUrl = encodeURI(`/cdn/${fileName}`);
+                // iframe'i güvenli bir şekilde oluştur
+                var iframe = document.createElement('iframe');
+                iframe.setAttribute('src', webUrl);
+                iframe.setAttribute('onload', 'hideLoading()');
+                iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+                viewer.innerHTML = '';
+                viewer.appendChild(iframe);
                 
                 document.getElementById('<%= hdnSelectedFile.ClientID %>').value = filePath;
                 updateFileList();
