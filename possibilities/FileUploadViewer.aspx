@@ -7,9 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDF Dosya Yükleme ve Görüntüleme">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
+    <base target="_self">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="Window-Target" content="_self">
     <title>PDF Dosya Yükleme ve Görüntüleme v1</title>
     
-    <!-- Font Awesome - Local fr -->
+    <!-- Font Awesome - Local fr tr-->
     <style>
         /* Font Awesome temel ikonlar için minimal CSS */
         .fas {
@@ -467,10 +470,20 @@
         <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
 
         <script type="text/javascript">
-            // Güvenlik ayarları
-            if (window.top !== window.self) {
-                window.top.location.href = window.self.location.href;
-            }
+            // Güvenlik ayarları ve yeni pencere engelleme
+                    // Sayfanın iframe içinde olup olmadığını kontrol et
+                    if (window.top !== window.self) {
+                        // Eğer iframe içindeyse, aynı sayfada kal
+                        return;
+                    }
+
+            // Yeni pencerede açılmayı engelle
+            window.onbeforeunload = function(e) {
+                if (!document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
+            };
 
             // XSS koruması için
             function sanitizeInput(input) {
@@ -658,19 +671,28 @@
                                 { filePath: sanitizeInput(currentFile) },
                                 function(response) {
                                 if (response.success) {
-                                    if (window.opener && !window.opener.closed) {
-                                        try {
-                                            const fileName = sanitizeInput(currentFile.split('\\').pop());
-                                            const cdnPath = `/cdn/${fileName}`;
+                                    try {
+                                        const fileName = sanitizeInput(currentFile.split('\\').pop());
+                                        const cdnPath = `/cdn/${fileName}`;
 
+                                        // Parent window'a mesaj gönder
+                                        if (window.parent && window.parent !== window) {
+                                            window.parent.postMessage({
+                                                type: 'FILE_SELECTED',
+                                                filePath: cdnPath,
+                                                success: true
+                                            }, '*');
+                                        }
+                                        // Eğer popup olarak açıldıysa
+                                        else if (window.opener && !window.opener.closed) {
                                             window.opener.postMessage({
                                                 type: 'FILE_SELECTED',
                                                 filePath: cdnPath,
                                                 success: true
                                             }, '*');
-                                        } catch (e) {
-                                            console.warn('Opener window iletişim hatası:', e);
                                         }
+                                    } catch (e) {
+                                        console.warn('Parent/Opener window iletişim hatası:', e);
                                     }
                                     
                                     showNotification('Dosya başarıyla kaydedildi', 'success');

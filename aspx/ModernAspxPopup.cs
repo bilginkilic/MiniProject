@@ -46,6 +46,9 @@ namespace AspxExamples
             htmlBox.Margin = new Padding(10);
             htmlBox.BorderStyle = BorderStyle.None;
             htmlBox.BackColor = Color.White;
+            htmlBox.AllowNavigation = false;  // Yeni pencerede açılmasını engelle
+            htmlBox.WebBrowserShortcutsEnabled = false;  // Kısayolları devre dışı bırak
+            htmlBox.ScriptErrorsSuppressed = true;  // Script hatalarını gösterme
 
             // Container panel
             Panel contentPanel = new Panel();
