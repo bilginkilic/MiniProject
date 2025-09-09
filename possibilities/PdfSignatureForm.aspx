@@ -2690,7 +2690,7 @@
                             cell.textContent = cellData;
                             row.appendChild(cell);
                         });
-
+                        let base64tag="data:image/png;base64,";
                         // İmza hücreleri
                         for (let i = 0; i < 3; i++) {
                             const cell = document.createElement('td');
@@ -2698,7 +2698,7 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                signaturePreview.style.backgroundImage = `url('${data.Imzalar[i].Base64Image}')`;
+                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                             }
                             
                             cell.appendChild(signaturePreview);

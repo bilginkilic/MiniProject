@@ -1,4 +1,4 @@
-/* v1 - FileUploadViewer.aspx.cs - PDF Dosya Yükleme ve Görüntüleme */
+/* v1 - 2024.01.17 14:30 - FileUploadViewer.aspx.cs - PDF Dosya Yükleme ve Görüntüleme */
 
 using System;
 using System.IO;
@@ -10,30 +10,27 @@ using System.Web.Script.Services;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-
 namespace AspxExamples
 {
     public partial class FileUploadViewer : System.Web.UI.Page
     {
-        private string _cdn = @"\\trrgap3027\files\circular\cdn";
-        private string _cdnVirtualPath = "/cdn"; // Web'den erişim için virtual path
+        private const string NETWORK_PATH = @"\\trrgap3027\files\circular\cdn";
+        private const string WEB_PATH = "http://trrgap3027/BTMUAppsUI/cdn";
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
                 // CDN klasörünü kontrol et
-                if (!Directory.Exists(_cdn))
+                if (!Directory.Exists(NETWORK_PATH))
                 {
                     try
                     {
-                        Directory.CreateDirectory(_cdn);
-                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturuldu: {0}", _cdn));
+                        Directory.CreateDirectory(NETWORK_PATH);
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine(String.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
-                        ShowError("Sistem hazırlığı sırasında bir hata oluştu. Lütfen yöneticinize başvurun.");
+                        ShowError(String.Format("CDN klasörü oluşturma hatası: {0}", ex.Message));
                         return;
                     }
                 }
@@ -53,15 +50,21 @@ namespace AspxExamples
                         return;
                     }
 
-                    // Önceki dosyaları temizle
-                    CleanupOldFiles();
+                    string networkPath = Path.Combine(NETWORK_PATH, fileName);
+                    string webPath = String.Format("{0}/{1}", WEB_PATH, fileName);
 
-                    string pdfPath = Path.Combine(_cdn, fileName);
-                    fuPdfUpload.SaveAs(pdfPath);
+                    // Dosyayı network path'e kaydet
+                    fuPdfUpload.SaveAs(networkPath);
 
-                    // JavaScript'e dosya yolunu gönder
-                    var script = String.Format("fileList.push('{0}'); viewFile('{0}'); enableSaveButton();", pdfPath.Replace("\\", "\\\\"));
-                    ScriptManager.RegisterStartupScript(this, GetType(), "uploadComplete", script, true);
+                    // PDF görüntüleyiciyi ayarla
+                    var iframe = new System.Web.UI.HtmlControls.HtmlGenericControl("iframe");
+                    iframe.Attributes["src"] = webPath;
+                    iframe.Attributes["style"] = "width:100%; height:100%; border:none;";
+                    pageContents.Controls.Clear();
+                    pageContents.Controls.Add(iframe);
+
+                    // Hidden field'a dosya yolunu kaydet
+                    hdnSelectedFile.Value = networkPath;
 
                     ShowMessage("Dosya başarıyla yüklendi.", "success");
                 }
@@ -76,73 +79,8 @@ namespace AspxExamples
             }
         }
 
-        private void CleanupOldFiles()
-        {
-            try
-            {
-                // Tüm PDF dosyalarını temizle
-                foreach (string file in Directory.GetFiles(_cdn, "*.pdf"))
-                {
-                    try { File.Delete(file); } catch { }
-                }
-
-                System.Diagnostics.Debug.WriteLine("Eski dosyalar temizlendi");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(String.Format("Dosya temizleme hatası: {0}", ex.Message));
-            }
-        }
-
         [WebMethod]
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-        public static object DeleteFile(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                    return new { success = true };
-                }
-                return new { success = false, message = "Dosya bulunamadı." };
-            }
-            catch (Exception ex)
-            {
-                return new { success = false, message = ex.Message };
-            }
-        }
-
-        [System.Web.Services.WebMethod]
-        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
-        public static object SaveSignatureWithAjax(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    // SignatureAuthData nesnesini oluştur
-                    var signatureData = new SignatureAuthData
-                    {
-                        KaynakPdfAdi = Path.GetFileName(filePath),
-                        Yetkililer = new List<YetkiliData>()
-                    };
-
-                    // Session'a kaydet
-                    SessionHelper.SetSignatureAuthData(signatureData);
-
-                    return new { success = true, message = "İmza bilgileri kaydedildi" };
-                }
-                return new { success = false, error = "Dosya bulunamadı." };
-            }
-            catch (Exception ex)
-            {
-                return new { success = false, error = ex.Message };
-            }
-        }
-
-        [System.Web.Services.WebMethod]
-        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
         public static object SaveAndReturn(string filePath)
         {
             try
@@ -150,12 +88,12 @@ namespace AspxExamples
                 if (File.Exists(filePath))
                 {
                     string fileName = Path.GetFileName(filePath);
-                    string cdnPath = $"/cdn/{fileName}";
+                    string webPath = String.Format("{0}/{1}", WEB_PATH, fileName);
 
                     // Session'a dosya bilgilerini kaydet
                     var uploadResult = new UploadedFileResult
                     {
-                        FilePath = cdnPath,  // CDN yolunu kaydet
+                        FilePath = webPath,
                         FileName = fileName,
                         UploadDate = DateTime.Now
                     };
@@ -170,8 +108,8 @@ namespace AspxExamples
             }
         }
 
-        [System.Web.Services.WebMethod]
-        [System.Web.Script.Services.ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public static object SetSelectedFile(string filePath)
         {
             try
