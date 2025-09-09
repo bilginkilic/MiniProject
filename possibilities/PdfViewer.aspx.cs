@@ -105,11 +105,20 @@ namespace AspxExamples
                     ShowError("PDF dosyası bulunamadı.");
                     return;
                 }
-
                 // Session'a filename'i kaydet
-                SessionHelper.SetSelectedPdfFileName(Path.GetFileName(lastPdfPath));
-                Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", lastPdfPath));
+                SessionHelper.SetSelectedPdfFileName(lastPdfPath);
 
+                   // Session'a dosya bilgilerini kaydet
+                    var uploadResult = new UploadedFileResult
+                    {
+                        FilePath = lastPdfPath,
+                        FileName = Path.GetFileName(lastPdfPath),
+                        UploadDate = DateTime.Now
+                    };
+                    SessionHelper.SetUploadedFile(uploadResult);
+                
+                Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", lastPdfPath));
+SessionHelper.Setclosewindow(true);
                 // Sayfayı kapat/geri dön
                 ScriptManager.RegisterStartupScript(this, GetType(), "closeScript", 
                     "if (window.opener && !window.opener.closed) { window.close(); } else { window.location.href = document.referrer; }", true);
