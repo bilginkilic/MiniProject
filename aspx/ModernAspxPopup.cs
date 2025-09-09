@@ -104,7 +104,7 @@ namespace AspxExamples
         public object ResultData { get; private set; }
         private string aspxFileName;
 
-        protected override void OnClose(EventArgs e)
+        protected override void OnClosed(EventArgs e)
         {
             try
             {
@@ -117,16 +117,16 @@ namespace AspxExamples
                         if (signatureData != null)
                         {
                             this.ResultData = signatureData;
-                            SessionHelper.ClearSignatureAuthData();
+                           // SessionHelper.ClearSignatureAuthData();
                         }
                     }
-                    else if (htmlBox.Url.Contains("FileUploadViewer"))
+                    else if (htmlBox.Url.Contains("PdfViewer"))
                     {
                         var uploadedFile = SessionHelper.GetUploadedFile();
                         if (uploadedFile != null)
                         {
                             this.ResultData = uploadedFile;
-                            SessionHelper.ClearUploadedFile();
+                            //SessionHelper.ClearUploadedFile();
                         }
                     }
                 }
@@ -140,6 +140,8 @@ namespace AspxExamples
                 // Tüm session değerlerini temizle
                 SessionHelper.ClearCloseWindow();
                 SessionHelper.ClearInitialYetkiliData();
+                SessionHelper.ClearSignatureAuthData();
+                SessionHelper.ClearUploadedFile();
             }
 
             base.OnClose(e);
@@ -164,22 +166,22 @@ namespace AspxExamples
                     SessionHelper.ClearCloseWindow();
 
                     // Sayfa tipine göre session'dan veriyi al
-                    if (aspxFileName.Contains("PdfSignatureForm"))
+                    if (htmlBox.Url.Contains("PdfSignatureForm"))
                     {
                         var signatureData = SessionHelper.GetSignatureAuthData();
                         if (signatureData != null)
                         {
                             this.ResultData = signatureData;
-                            SessionHelper.ClearSignatureAuthData();
+                           // SessionHelper.ClearSignatureAuthData();
                         }
                     }
-                    else if (aspxFileName.Contains("FileUploadViewer"))
+                    else if (htmlBox.Url.Contains("PdfViewer"))
                     {
                         var uploadedFile = SessionHelper.GetUploadedFile();
                         if (uploadedFile != null)
                         {
                             this.ResultData = uploadedFile;
-                            SessionHelper.ClearUploadedFile();
+                           // SessionHelper.ClearUploadedFile();
                         }
                     }
 
