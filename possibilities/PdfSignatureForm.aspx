@@ -821,8 +821,8 @@
                     <div class="form-row">
                         <label>YETKİLİ KONTAKT:</label>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <asp:TextBox runat="server" ID="txtYetkiliKontakt" Text="5000711" style="flex: 1;" />
-                            <asp:TextBox runat="server" ID="txtYetkiliAdi" placeholder="Yetkili Adı" style="flex: 2;" />
+                            <asp:TextBox runat="server" ID="txtYetkiliKontakt" placeholder="Yetkili kontakt no giriniz" style="flex: 1;" />
+                            <asp:TextBox runat="server" ID="txtYetkiliAdi" placeholder="Yetkili adı ve soyadı" style="flex: 2;" />
                             <button type="button" id="btnYetkiliAra" class="button secondary" style="margin: 0;">
                                 <i class="fas fa-search"></i> Ara
                             </button>
@@ -830,19 +830,12 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ GRUBU:</label>
-                        <asp:DropDownList runat="server" ID="selYetkiGrubu">
-                            <asp:ListItem Text="A Grubu" Value="A Grubu" />
-                            <asp:ListItem Text="B Grubu" Value="B Grubu" />
-                            <asp:ListItem Text="C Grubu" Value="C Grubu" />
-                            <asp:ListItem Text="D Grubu" Value="D Grubu" />
-                            <asp:ListItem Text="E Grubu" Value="E Grubu" />
-                            <asp:ListItem Text="F Grubu" Value="F Grubu" />
-                            <asp:ListItem Text="G Grubu" Value="G Grubu" />
+                        <asp:DropDownList runat="server" ID="selYetkiGrubu" ClientIDMode="Static">
                         </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label for="txtYetkiTutari">YETKİ TUTARI:</label>
-                        <asp:TextBox runat="server" ID="txtYetkiTutari" Text="1000000" 
+                        <asp:TextBox runat="server" ID="txtYetkiTutari" placeholder="Yetki tutarını giriniz"
                                TextMode="Number" step="0.01" min="0"
                                onkeypress="return isNumberKey(event)"
                                onpaste="return validatePaste(event)"
@@ -878,16 +871,12 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ ŞEKLİ:</label>
-                        <asp:DropDownList runat="server" ID="selYetkiSekli">
-                            <asp:ListItem Text="Müştereken" Value="Müştereken" />
-                            <asp:ListItem Text="Müştereken1" Value="Müştereken1" />
+                        <asp:DropDownList runat="server" ID="selYetkiSekli" ClientIDMode="Static">
                         </asp:DropDownList>
                     </div>
                     <div class="form-row">
                         <label>YETKİ TÜRLERİ:</label>
-                        <asp:DropDownList runat="server" ID="selYetkiTurleri">
-                            <asp:ListItem Text="Kredi İşlemleri, Hazine İşlemleri" Value="Kredi İşlemleri, Hazine İşlemleri" />
-                            <asp:ListItem Text="Kredi İşlemleri2, Hazine İşlemleri1" Value="Kredi İşlemleri2, Hazine İşlemleri1" />
+                        <asp:DropDownList runat="server" ID="selYetkiTurleri" ClientIDMode="Static">
                         </asp:DropDownList>
                     </div>
                     <div class="form-row">
@@ -967,11 +956,11 @@
         <div id="customerSearchModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Müşteri Arama</h3>
+                    <h3>Yetkili Arama</h3>
                     <button type="button" class="modal-close" onclick="closeCustomerModal()">&times;</button>
                 </div>
                 <div class="modal-search">
-                    <input type="text" id="customerSearchInput" placeholder="Müşteri no ile arama yapın..." />
+                    <input type="text" id="customerSearchInput" placeholder="Yetkili kontakt no ile arama yapın..." />
                     <button type="button" class="button" onclick="searchCustomers()">
                         <i class="fas fa-search"></i> Ara
                     </button>
@@ -980,8 +969,8 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Müşteri No</th>
-                                <th>Müşteri Adı</th>
+                                <th>Yetkili No</th>
+                                <th>Yetkili Adı</th>
                                 <th>Durum</th>
                             </tr>
                         </thead>
@@ -1263,11 +1252,89 @@
                         return;
                     }
 
+                    // Parametreleri yükle
+                    loadParameters();
+
                     console.log('Application initialized successfully');
                 } catch (error) {
                     console.error('Application initialization failed:', error);
                 }
             });
+
+            // Parametre yükleme fonksiyonları
+            function loadParameters() {
+                loadYetkiGrubu();
+                loadYetkiSekli();
+                loadYetkiTurleri();
+            }
+
+            function loadYetkiGrubu() {
+                PageMethods.GetYetkiGrubu(function(response) {
+                    if (response.Success) {
+                        fillDropdown('selYetkiGrubu', response.Data);
+                    } else {
+                        showNotification('Yetki grubu yüklenirken hata: ' + response.Message, 'error');
+                    }
+                }, function(error) {
+                    console.error('Yetki grubu yükleme hatası:', error);
+                    showNotification('Yetki grubu yüklenirken bir hata oluştu', 'error');
+                });
+            }
+
+            function loadYetkiSekli() {
+                PageMethods.GetYetkiSekli(function(response) {
+                    if (response.Success) {
+                        fillDropdown('selYetkiSekli', response.Data);
+                    } else {
+                        showNotification('Yetki şekli yüklenirken hata: ' + response.Message, 'error');
+                    }
+                }, function(error) {
+                    console.error('Yetki şekli yükleme hatası:', error);
+                    showNotification('Yetki şekli yüklenirken bir hata oluştu', 'error');
+                });
+            }
+
+            function loadYetkiTurleri() {
+                PageMethods.GetYetkiTurleri(function(response) {
+                    if (response.Success) {
+                        fillDropdown('selYetkiTurleri', response.Data);
+                    } else {
+                        showNotification('Yetki türleri yüklenirken hata: ' + response.Message, 'error');
+                    }
+                }, function(error) {
+                    console.error('Yetki türleri yükleme hatası:', error);
+                    showNotification('Yetki türleri yüklenirken bir hata oluştu', 'error');
+                });
+            }
+
+            function fillDropdown(dropdownId, data) {
+                try {
+                    const dropdown = document.getElementById(dropdownId);
+                    if (!dropdown) {
+                        throw new Error('Dropdown bulunamadı: ' + dropdownId);
+                    }
+
+                    // Mevcut seçenekleri temizle
+                    dropdown.innerHTML = '';
+
+                    // Boş seçenek ekle
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.text = 'Seçiniz...';
+                    dropdown.appendChild(emptyOption);
+
+                    // Verileri ekle
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.Value;
+                        option.text = item.Text;
+                        dropdown.appendChild(option);
+                    });
+                } catch (err) {
+                    console.error('Dropdown doldurma hatası:', err);
+                    showNotification('Dropdown doldurulurken bir hata oluştu: ' + err.message, 'error');
+                }
+            }
 
             // Application functions
             function showNotification(message, type, persistent) {
@@ -2741,7 +2808,7 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
+                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].Base}')`;
                             }
                             
                             cell.appendChild(signaturePreview);

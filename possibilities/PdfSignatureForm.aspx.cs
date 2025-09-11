@@ -74,8 +74,129 @@ namespace AspxExamples
         public YetkiliKayit Data { get; set; }
     }
 
+    public class DropdownItem
+    {
+        public string Value { get; set; }
+        public string Text { get; set; }
+    }
+
+    public class ServiceResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public T Data { get; set; }
+    }
+
     public partial class PdfSignatureForm : System.Web.UI.Page
     {
+        [WebMethod]
+        public static ServiceResponse<List<DropdownItem>> GetYetkiGrubu()
+        {
+            try
+            {
+                // Örnek veri - Gerçek uygulamada bu veriler veritabanından gelecek
+                var yetkiGruplari = new List<DropdownItem>
+                {
+                    new DropdownItem { Value = "A", Text = "A Grubu" },
+                    new DropdownItem { Value = "B", Text = "B Grubu" },
+                    new DropdownItem { Value = "C", Text = "C Grubu" },
+                    new DropdownItem { Value = "D", Text = "D Grubu" },
+                    new DropdownItem { Value = "E", Text = "E Grubu" },
+                    new DropdownItem { Value = "F", Text = "F Grubu" },
+                    new DropdownItem { Value = "G", Text = "G Grubu" }
+                };
+
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = true,
+                    Data = yetkiGruplari
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = false,
+                    Message = "Yetki grupları yüklenirken hata oluştu: " + ex.Message
+                };
+            }
+        }
+
+        [WebMethod]
+        public static ServiceResponse<List<DropdownItem>> GetYetkiSekli()
+        {
+            try
+            {
+                // Örnek veri - Gerçek uygulamada bu veriler veritabanından gelecek
+                var yetkiSekilleri = new List<DropdownItem>
+                {
+                    new DropdownItem { Value = "MUNFERIDEN", Text = "Münferiden" },
+                    new DropdownItem { Value = "MUSTEREKEN", Text = "Müştereken" },
+                    new DropdownItem { Value = "MUSTEREKEN_2", Text = "Müştereken 2" },
+                    new DropdownItem { Value = "MUSTEREKEN_3", Text = "Müştereken 3" }
+                };
+
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = true,
+                    Data = yetkiSekilleri
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = false,
+                    Message = "Yetki şekilleri yüklenirken hata oluştu: " + ex.Message
+                };
+            }
+        }
+
+        [WebMethod]
+        public static ServiceResponse<List<DropdownItem>> GetYetkiTurleri()
+        {
+            try
+            {
+                // Örnek veri - Gerçek uygulamada bu veriler veritabanından gelecek
+                var yetkiTurleri = new List<DropdownItem>
+                {
+                    new DropdownItem 
+                    { 
+                        Value = "KREDI_HAZINE", 
+                        Text = "Kredi İşlemleri, Hazine İşlemleri" 
+                    },
+                    new DropdownItem 
+                    { 
+                        Value = "KREDI", 
+                        Text = "Kredi İşlemleri" 
+                    },
+                    new DropdownItem 
+                    { 
+                        Value = "HAZINE", 
+                        Text = "Hazine İşlemleri" 
+                    },
+                    new DropdownItem 
+                    { 
+                        Value = "GENEL", 
+                        Text = "Genel Yetki" 
+                    }
+                };
+
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = true,
+                    Data = yetkiTurleri
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<List<DropdownItem>>
+                {
+                    Success = false,
+                    Message = "Yetki türleri yüklenirken hata oluştu: " + ex.Message
+                };
+            }
+        }
         protected string GetInitialYetkiliDataJson()
         {
             try
