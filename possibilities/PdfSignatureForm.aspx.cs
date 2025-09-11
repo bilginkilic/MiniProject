@@ -203,6 +203,8 @@ namespace AspxExamples
                             {
                                 var rowData = new
                                 {
+                                    ID = yetkiliData.ID,
+                                    CircularID = yetkiliData.CircularID,
                                     YetkiliKontakt = yetkiliData.YetkiliKontakt,
                                     YetkiliAdi = yetkiliData.YetkiliAdi,
                                     YetkiSekli = yetkiliData.YetkiSekli,
@@ -214,7 +216,12 @@ namespace AspxExamples
                                     YetkiTutari = yetkiliData.YetkiTutari,
                                     YetkiDovizCinsi = yetkiliData.YetkiDovizCinsi,
                                     YetkiDurumu = yetkiliData.YetkiDurumu,
-                                    Imzalar = yetkiliData.Imzalar?.Select(i => i.Base64Image).ToList() ?? new List<string>()
+                                    Imzalar = yetkiliData.Imzalar?.Select(i => new {
+                                        ID = i.ID,
+                                        AuthDetailID = i.AuthDetailID,
+                                        Base64Image = i.Base64Image,
+                                        SlotIndex = i.SlotIndex
+                                    }).ToList() ?? new List<object>()
                                 };
                                 gridData.Add(rowData);
                             }
@@ -649,6 +656,12 @@ namespace AspxExamples
                                         if (imzaToken.Type == JTokenType.Object)
                                         {
                                             var imzaObj = (JObject)imzaToken;
+                                            var idToken = imzaObj["ID"];
+                                            imza.ID = idToken != null ? idToken.Value<int>() : 0;
+                                            
+                                            var authDetailIdToken = imzaObj["AuthDetailID"];
+                                            imza.AuthDetailID = authDetailIdToken != null ? authDetailIdToken.Value<int>() : 0;
+                                            
                                             var base64Token = imzaObj["Base64Image"];
                                             imza.Base64Image = base64Token?.ToString();
                                             
@@ -672,6 +685,12 @@ namespace AspxExamples
                                     if (imzalarToken.Type == JTokenType.Object)
                                     {
                                         var imzaObj = (JObject)imzalarToken;
+                                        var idToken = imzaObj["ID"];
+                                        imza.ID = idToken != null ? idToken.Value<int>() : 0;
+                                        
+                                        var authDetailIdToken = imzaObj["AuthDetailID"];
+                                        imza.AuthDetailID = authDetailIdToken != null ? authDetailIdToken.Value<int>() : 0;
+                                        
                                         var base64Token = imzaObj["Base64Image"];
                                         imza.Base64Image = base64Token?.ToString();
                                         
@@ -769,10 +788,12 @@ namespace AspxExamples
                     {
                         foreach (var imza in kayit.Imzalar)
                         {
-                            yetkiliData.Imzalar.Add(new SignatureImage
-                            {
-                                ImageData = imza.Base64Image,
-                                SiraNo = imza.SlotIndex,
+                                yetkiliData.Imzalar.Add(new SignatureImage
+                                {
+                                    ID = imza.ID,
+                                    AuthDetailID = imza.AuthDetailID,
+                                    ImageData = imza.Base64Image,
+                                    SiraNo = imza.SlotIndex,
                                 SourcePdfPath = signatures.FirstOrDefault()?.SourcePdfPath
                             });
                         }

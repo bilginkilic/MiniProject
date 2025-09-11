@@ -911,6 +911,8 @@
                 <table class="auth-details-table">
                     <thead>
                         <tr>
+                            <th style="display: none;">ID</th>
+                            <th style="display: none;">CircularID</th>
                             <th>Yetkili Kont. No</th>
                             <th>Yetkili Adı Soyadı</th>
                             <th>Yetki Şekli</th>
@@ -1015,6 +1017,8 @@
                     document.querySelectorAll('.signature-area').forEach(function(area) {
                         if (area.dataset.image) {
                             signatures.push({
+                                Id: area.dataset.id || '',
+                                AuthDetailId: area.dataset.authDetailId || '',
                                 Page: parseInt(area.dataset.page),
                                 X: parseInt(area.dataset.x),
                                 Y: parseInt(area.dataset.y),
@@ -1035,13 +1039,15 @@
                         yetkiliKayitlarJson: JSON.stringify(kayitlar),
                         signatureDataJson: JSON.stringify(signatures.map(function(sig) {
                             return {
-                                                            Page: sig.Page,
-                            X: sig.X,
-                            Y: sig.Y,
-                            Width: sig.Width,
-                            Height: sig.Height,
-                            Image: sig.Image,
-                            SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value
+                                Id: sig.Id || '',
+                                AuthDetailId: sig.AuthDetailId || '',
+                                Page: sig.Page,
+                                X: sig.X,
+                                Y: sig.Y,
+                                Width: sig.Width,
+                                Height: sig.Height,
+                                Image: sig.Image,
+                                SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value
                             };
                         }))
                     };
@@ -1565,15 +1571,17 @@
                 const currentPdfPath = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
 
                 // Add to selected signatures
-                const signatureData = {
-                    page: currentPage,
-                    x: Math.round(x),
-                    y: Math.round(y),
-                    width: Math.round(w),
-                    height: Math.round(h),
-                    image: imageData,
-                    sourcePdfPath: currentPdfPath
-                };
+                    const signatureData = {
+                        id: '', // Yeni imza için boş ID
+                        authDetailId: '', // Yeni imza için boş AuthDetailID
+                        page: currentPage,
+                        x: Math.round(x),
+                        y: Math.round(y),
+                        width: Math.round(w),
+                        height: Math.round(h),
+                        image: imageData,
+                        sourcePdfPath: currentPdfPath
+                    };
 
                 selectedSignatures.push(signatureData);
                 updateSignatureSlots();
@@ -1597,6 +1605,9 @@
                     if (signature) {
                         slot.classList.add('filled');
                         slotImage.style.backgroundImage = `url(${signature.image})`;
+                        // ID ve AuthDetailID'yi data attribute olarak sakla
+                        slot.dataset.signatureId = signature.id || '';
+                        slot.dataset.authDetailId = signature.authDetailId || '';
                         deleteBtn.style.display = 'flex';
                         deleteBtn.onclick = () => deleteSignature(index);
                     } else {
@@ -1693,15 +1704,34 @@
                 
                 // Form alanlarını doldur
                                     // Form alanlarını doldur
-                    document.getElementById('txtYetkiliKontakt').value = row.cells[0].textContent;
-                    document.getElementById('txtYetkiliAdi').value = row.cells[1].textContent;
-                    document.getElementById('selYetkiSekli').value = row.cells[2].textContent;
-                    document.getElementById('selYetkiGrubu').value = row.cells[5].textContent;
-                    document.getElementById('txtSinirliYetkiDetaylari').value = row.cells[6].textContent;
-                    document.getElementById('selYetkiTurleri').value = row.cells[7].textContent;
-                    document.getElementById('txtYetkiTutari').value = row.cells[11].textContent;
-                    document.getElementById('selYetkiDovizCinsi').value = row.cells[12].textContent;
-                    document.getElementById('selYetkiDurumu').value = row.cells[13].textContent;
+                    // ID ve CircularID değerlerini gizli input'lara kaydet
+                    const rowId = row.cells[0].textContent;
+                    const circularId = row.cells[1].textContent;
+                    document.getElementById('txtYetkiliKontakt').value = row.cells[2].textContent;
+                    document.getElementById('txtYetkiliAdi').value = row.cells[3].textContent;
+                    document.getElementById('selYetkiSekli').value = row.cells[4].textContent;
+                    document.getElementById('selYetkiGrubu').value = row.cells[7].textContent;
+                    document.getElementById('txtSinirliYetkiDetaylari').value = row.cells[8].textContent;
+                    document.getElementById('selYetkiTurleri').value = row.cells[9].textContent;
+                    document.getElementById('txtYetkiTutari').value = row.cells[12].textContent;
+                    document.getElementById('selYetkiDovizCinsi').value = row.cells[13].textContent;
+                    document.getElementById('selYetkiDurumu').value = row.cells[14].textContent;
+                    
+                    // ID ve CircularID değerlerini saklamak için hidden field'ları ekle
+                    if (!document.getElementById('hdnSelectedRowId')) {
+                        const hdnId = document.createElement('input');
+                        hdnId.type = 'hidden';
+                        hdnId.id = 'hdnSelectedRowId';
+                        document.getElementById('form1').appendChild(hdnId);
+                    }
+                    if (!document.getElementById('hdnSelectedCircularId')) {
+                        const hdnCircularId = document.createElement('input');
+                        hdnCircularId.type = 'hidden';
+                        hdnCircularId.id = 'hdnSelectedCircularId';
+                        document.getElementById('form1').appendChild(hdnCircularId);
+                    }
+                    document.getElementById('hdnSelectedRowId').value = rowId;
+                    document.getElementById('hdnSelectedCircularId').value = circularId;
                 
                 // Tarih değerini ayarla
                 const tarihText = row.cells[3].textContent;
@@ -1853,18 +1883,20 @@
                     .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
 
                 return {
-                    YetkiliKontakt: row.cells[0].textContent,
-                    YetkiliAdi: row.cells[1].textContent,
-                    YetkiSekli: row.cells[2].textContent,
-                    YetkiTarihi: row.cells[3].textContent,
-                    YetkiBitisTarihi: row.cells[4].textContent,
-                    YetkiGrubu: row.cells[5].textContent,
-                    SinirliYetkiDetaylari: row.cells[6].textContent,
-                    YetkiTurleri: row.cells[7].textContent,
+                    Id: row.cells[0].textContent,
+                    CircularId: row.cells[1].textContent,
+                    YetkiliKontakt: row.cells[2].textContent,
+                    YetkiliAdi: row.cells[3].textContent,
+                    YetkiSekli: row.cells[4].textContent,
+                    YetkiTarihi: row.cells[5].textContent,
+                    YetkiBitisTarihi: row.cells[6].textContent,
+                    YetkiGrubu: row.cells[7].textContent,
+                    SinirliYetkiDetaylari: row.cells[8].textContent,
+                    YetkiTurleri: row.cells[9].textContent,
                     Imzalar: signaturePreviews,
-                    YetkiTutari: row.cells[11].textContent,
-                    YetkiDovizCinsi: row.cells[12].textContent,
-                    YetkiDurumu: row.cells[13].textContent
+                    YetkiTutari: row.cells[12].textContent,
+                    YetkiDovizCinsi: row.cells[13].textContent,
+                    YetkiDurumu: row.cells[14].textContent
                 };
             }
 
@@ -2171,6 +2203,8 @@
                     if (!tbody) return null;
                     const row = tbody.insertRow(0);
                     const allCells = [
+                        data.id || '', // ID hücresi
+                        data.circularId || '', // CircularID hücresi
                         data.yetkiliKontakt || '',
                         data.yetkiliAdi || '',
                         document.getElementById('selYetkiSekli').value || 'Müştereken',
@@ -2182,9 +2216,13 @@
                     ];
 
                     // Temel hücreleri ekle
-                    allCells.forEach(cellData => {
+                    allCells.forEach((cellData, index) => {
                         const cell = row.insertCell();
                         cell.textContent = cellData;
+                        // ID ve CircularID hücrelerini gizle
+                        if (index === 0 || index === 1) {
+                            cell.style.display = 'none';
+                        }
                     });
 
                     // İmza hücreleri
@@ -2674,6 +2712,7 @@
                         
                         // Temel hücreler
                         const cells = [
+                            data.Id || '', // ID hücresi eklendi
                             data.YetkiliKontakt || '',
                             data.YetkiliAdi || '',
                             data.YetkiSekli || '',
@@ -2685,9 +2724,13 @@
                         ];
 
                         // Temel hücreleri ekle
-                        cells.forEach(cellData => {
+                        cells.forEach((cellData, index) => {
                             const cell = document.createElement('td');
                             cell.textContent = cellData;
+                            // ID ve CircularID hücrelerini gizle
+                            if (index === 0 || index === 1) {
+                                cell.style.display = 'none';
+                            }
                             row.appendChild(cell);
                         });
                         let base64tag="data:image/png;base64,";
