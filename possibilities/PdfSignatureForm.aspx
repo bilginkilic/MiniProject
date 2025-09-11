@@ -796,17 +796,17 @@
                 <div class="selected-signatures">
                     <h3>Seçilen İmzalar</h3>
                     <div class="signature-slots">
-                        <div class="signature-slot" data-slot="1">
+                        <div class="signature-slot" data-slot="1" data-signature-id="" data-auth-detail-id="">
                             <div class="slot-placeholder">İmza 1</div>
                             <div class="slot-image"></div>
                             <button type="button" class="delete-signature" style="display: none;">Sil</button>
                         </div>
-                        <div class="signature-slot" data-slot="2">
+                        <div class="signature-slot" data-slot="2" data-signature-id="" data-auth-detail-id="">
                             <div class="slot-placeholder">İmza 2</div>
                             <div class="slot-image"></div>
                             <button type="button" class="delete-signature" style="display: none;">Sil</button>
                         </div>
-                        <div class="signature-slot" data-slot="3">
+                        <div class="signature-slot" data-slot="3" data-signature-id="" data-auth-detail-id="">
                             <div class="slot-placeholder">İmza 3</div>
                             <div class="slot-image"></div>
                             <button type="button" class="delete-signature" style="display: none;">Sil</button>
@@ -900,8 +900,6 @@
                 <table class="auth-details-table">
                     <thead>
                         <tr>
-                            <th style="display: none;">ID</th>
-                            <th style="display: none;">CircularID</th>
                             <th>Yetkili Kont. No</th>
                             <th>Yetkili Adı Soyadı</th>
                             <th>Yetki Şekli</th>
@@ -916,6 +914,8 @@
                             <th>Yetki Tutarı</th>
                             <th>Yetki Döv.</th>
                             <th>Durum</th>
+                            <th style="display: none;">ID</th>
+                            <th style="display: none;">CircularID</th>
                         </tr>
                     </thead>
                     <tbody id="yetkiliTableBody">
@@ -1677,6 +1677,17 @@
                         slot.dataset.authDetailId = signature.authDetailId || '';
                         deleteBtn.style.display = 'flex';
                         deleteBtn.onclick = () => deleteSignature(index);
+                        
+                        // İmza ID'lerini görünmez div'lerde sakla
+                        let idContainer = slot.querySelector('.signature-ids');
+                        if (!idContainer) {
+                            idContainer = document.createElement('div');
+                            idContainer.className = 'signature-ids';
+                            idContainer.style.display = 'none';
+                            slot.appendChild(idContainer);
+                        }
+                        idContainer.dataset.id = signature.id || '';
+                        idContainer.dataset.authDetailId = signature.authDetailId || '';
                     } else {
                         slot.classList.remove('filled');
                         slotImage.style.backgroundImage = '';
@@ -1950,20 +1961,20 @@
                     .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
 
                 return {
-                    Id: row.cells[0].textContent,
-                    CircularId: row.cells[1].textContent,
-                    YetkiliKontakt: row.cells[2].textContent,
-                    YetkiliAdi: row.cells[3].textContent,
-                    YetkiSekli: row.cells[4].textContent,
-                    YetkiTarihi: row.cells[5].textContent,
-                    YetkiBitisTarihi: row.cells[6].textContent,
-                    YetkiGrubu: row.cells[7].textContent,
-                    SinirliYetkiDetaylari: row.cells[8].textContent,
-                    YetkiTurleri: row.cells[9].textContent,
+                    YetkiliKontakt: row.cells[0].textContent,
+                    YetkiliAdi: row.cells[1].textContent,
+                    YetkiSekli: row.cells[2].textContent,
+                    YetkiTarihi: row.cells[3].textContent,
+                    YetkiBitisTarihi: row.cells[4].textContent,
+                    YetkiGrubu: row.cells[5].textContent,
+                    SinirliYetkiDetaylari: row.cells[6].textContent,
+                    YetkiTurleri: row.cells[7].textContent,
                     Imzalar: signaturePreviews,
-                    YetkiTutari: row.cells[12].textContent,
-                    YetkiDovizCinsi: row.cells[13].textContent,
-                    YetkiDurumu: row.cells[14].textContent
+                    YetkiTutari: row.cells[11].textContent,
+                    YetkiDovizCinsi: row.cells[12].textContent,
+                    YetkiDurumu: row.cells[13].textContent,
+                    Id: row.cells[14].textContent,
+                    CircularId: row.cells[15].textContent
                 };
             }
 
@@ -2270,8 +2281,6 @@
                     if (!tbody) return null;
                     const row = tbody.insertRow(0);
                     const allCells = [
-                        data.id || '', // ID hücresi
-                        data.circularId || '', // CircularID hücresi
                         data.yetkiliKontakt || '',
                         data.yetkiliAdi || '',
                         document.getElementById('selYetkiSekli').value || 'Müştereken',
@@ -2279,15 +2288,29 @@
                         data.yetkiTarihi || '',
                         document.getElementById('selYetkiGrubu').value || 'A Grubu',
                         document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        document.getElementById('selYetkiTurleri').value || ''
+                        document.getElementById('selYetkiTurleri').value || '',
+                        '', // İmza 1
+                        '', // İmza 2
+                        '', // İmza 3
+                        data.yetkiTutari || '',
+                        data.yetkiDovizCinsi || '',
+                        data.yetkiDurumu || '',
+                        data.id || '', // ID hücresi
+                        data.circularId || '', // CircularID hücresi
+                        data.imzalar && data.imzalar[0] ? data.imzalar[0].id || '' : '', // ImzaID1
+                        data.imzalar && data.imzalar[0] ? data.imzalar[0].authDetailId || '' : '', // ImzaAuthDetailID1
+                        data.imzalar && data.imzalar[1] ? data.imzalar[1].id || '' : '', // ImzaID2
+                        data.imzalar && data.imzalar[1] ? data.imzalar[1].authDetailId || '' : '', // ImzaAuthDetailID2
+                        data.imzalar && data.imzalar[2] ? data.imzalar[2].id || '' : '', // ImzaID3
+                        data.imzalar && data.imzalar[2] ? data.imzalar[2].authDetailId || '' : '' // ImzaAuthDetailID3
                     ];
 
                     // Temel hücreleri ekle
                     allCells.forEach((cellData, index) => {
                         const cell = row.insertCell();
                         cell.textContent = cellData;
-                        // ID ve CircularID hücrelerini gizle
-                        if (index === 0 || index === 1) {
+                        // ID ve diğer gizli hücreleri gizle
+                        if (index >= 14 && index <= 21) { // ID, CircularID ve İmza ID'leri
                             cell.style.display = 'none';
                         }
                     });
@@ -2923,15 +2946,9 @@
                         }
                     });
 
-                    // Restore any saved signatures
-                    if (hiddenSignatures.value) {
-                        try {
-                            selectedSignatures = JSON.parse(hiddenSignatures.value);
-                            updateSignatureSlots();
-                        } catch (e) {
-                            console.error('Error restoring signatures:', e);
-                        }
-                    }
+                    // Sayfa ilk yüklendiğinde imza slotlarını temizle
+                    selectedSignatures = [];
+                    updateSignatureSlots();
                 });
             }
 

@@ -382,38 +382,29 @@ namespace AspxExamples
                             // Değer atandıktan sonra kontrol et
                             System.Diagnostics.Debug.WriteLine(string.Format("PdfSignatureForm: Hidden field değeri atandıktan sonra: {0}", hdnYetkiliKayitlar.Value));
 
-                            // İlk yetkiliyi form alanlarına doldur
-                            var ilkYetkili = yetkiliDataList[0];
-                            txtYetkiliKontakt.Text = ilkYetkili.YetkiliKontakt;
-                            txtYetkiliAdi.Text = ilkYetkili.YetkiliAdi;
-                            selYetkiSekli.SelectedValue = ilkYetkili.YetkiSekli;
-                            txtSinirliYetkiDetaylari.Text = ilkYetkili.SinirliYetkiDetaylari;
-                            selYetkiTurleri.SelectedValue = ilkYetkili.YetkiTurleri;
-                            txtYetkiTutari.Text = ilkYetkili.YetkiTutari;
-                            selYetkiDovizCinsi.SelectedValue = ilkYetkili.YetkiDovizCinsi;
-                            selYetkiDurumu.SelectedValue = ilkYetkili.YetkiDurumu;
+                            // Form alanlarını temizle/boşalt
+                            txtYetkiliKontakt.Text = string.Empty;
+                            txtYetkiliAdi.Text = string.Empty;
+                            txtSinirliYetkiDetaylari.Text = string.Empty;
+                            txtYetkiTutari.Text = string.Empty;
+                            
+                            // Dropdown'ları ilk değere ayarla
+                            if (selYetkiSekli.Items.Count > 0)
+                                selYetkiSekli.SelectedIndex = 0;
+                            if (selYetkiTurleri.Items.Count > 0)
+                                selYetkiTurleri.SelectedIndex = 0;
+                            if (selYetkiDovizCinsi.Items.Count > 0)
+                                selYetkiDovizCinsi.SelectedIndex = 0;
+                            if (selYetkiDurumu.Items.Count > 0)
+                                selYetkiDurumu.SelectedIndex = 0;
 
-                            // Tarih ayarları
-                            if (ilkYetkili.AksiKararaKadar)
-                            {
-                                chkAksiKarar.Checked = true;
-                                yetkiBitisTarihi.Enabled = false;
-                            }
-                            else
-                            {
-                                yetkiBitisTarihi.Text = ilkYetkili.YetkiTarihi;
-                            }
+                            // Tarih ayarlarını sıfırla
+                            chkAksiKarar.Checked = false;
+                            yetkiBitisTarihi.Enabled = true;
+                            yetkiBitisTarihi.Text = string.Empty;
 
-                            // Tüm imzaları topla
-                            var allSignatures = new List<string>();
-                            foreach (var yetkili in yetkiliDataList)
-                            {
-                                if (yetkili.Imzalar != null)
-                                {
-                                    allSignatures.AddRange(yetkili.Imzalar.Select(i => i.Base64Image));
-                                }
-                            }
-                            hdnSignatures.Value = serializer.Serialize(allSignatures);
+                            // İmza seçimlerini temizle
+                            hdnSignatures.Value = "[]";
 
                             // JavaScript'i çağırarak grid ve imzaları göster
                             ScriptManager.RegisterStartupScript(this, GetType(),
