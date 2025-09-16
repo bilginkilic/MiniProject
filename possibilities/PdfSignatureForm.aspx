@@ -1,12 +1,174 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: f kulaklık --%>
+<%-- Created: f polly kulaklık --%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
-<head runat="server">
+  <head runat="server">
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="İmza Sirkülerinden İmza Seçimi ve Yönetimi">
+    <!--[if IE]>
+    <script>
+        // Temel polyfill'ler
+        (function(w) {
+            // Promise polyfill
+            if (!w.Promise) {
+                w.Promise = function(fn) {
+                    var state = 'pending';
+                    var value;
+                    var deferred = null;
+
+                    function resolve(newValue) {
+                        if (deferred) {
+                            setTimeout(function() { deferred.resolve(newValue); }, 1);
+                        }
+                        state = 'resolved';
+                        value = newValue;
+                    }
+
+                    function reject(reason) {
+                        if (deferred) {
+                            setTimeout(function() { deferred.reject(reason); }, 1);
+                        }
+                        state = 'rejected';
+                        value = reason;
+                    }
+
+                    this.then = function(callback) {
+                        if (state === 'pending') {
+                            deferred = new w.Promise(function(resolve) {
+                                resolve(callback(value));
+                            });
+                            return deferred;
+                        }
+                        return new w.Promise(function(resolve) {
+                            resolve(callback(value));
+                        });
+                    };
+
+                    fn(resolve, reject);
+                };
+            }
+
+            // fetch polyfill basit versiyonu
+            if (!w.fetch) {
+                w.fetch = function(url, options) {
+                    return new Promise(function(resolve, reject) {
+                        var xhr = new XMLHttpRequest();
+                        xhr.open(options && options.method || 'GET', url);
+                        
+                        if (options && options.headers) {
+                            Object.keys(options.headers).forEach(function(key) {
+                                xhr.setRequestHeader(key, options.headers[key]);
+                            });
+                        }
+                        
+                        xhr.onload = function() {
+                            resolve({
+                                ok: xhr.status >= 200 && xhr.status < 300,
+                                status: xhr.status,
+                                json: function() {
+                                    return Promise.resolve(JSON.parse(xhr.responseText));
+                                },
+                                text: function() {
+                                    return Promise.resolve(xhr.responseText);
+                                }
+                            });
+                        };
+                        
+                        xhr.onerror = function() {
+                            reject(new TypeError('Network request failed'));
+                        };
+                        
+                        xhr.send(options && options.body);
+                    });
+                };
+            }
+
+            // Array metodları için polyfill'ler
+            if (!Array.from) {
+                Array.from = function(arrayLike) {
+                    return Array.prototype.slice.call(arrayLike);
+                };
+            }
+
+            if (!Array.prototype.forEach) {
+                Array.prototype.forEach = function(callback, thisArg) {
+                    for (var i = 0; i < this.length; i++) {
+                        callback.call(thisArg, this[i], i, this);
+                    }
+                };
+            }
+
+            if (!Array.prototype.map) {
+                Array.prototype.map = function(callback, thisArg) {
+                    var arr = [];
+                    for (var i = 0; i < this.length; i++) {
+                        arr.push(callback.call(thisArg, this[i], i, this));
+                    }
+                    return arr;
+                };
+            }
+
+            // Element.classList polyfill
+            if (!("classList" in document.documentElement)) {
+                Object.defineProperty(Element.prototype, 'classList', {
+                    get: function() {
+                        var self = this;
+                        function update(fn) {
+                            return function(value) {
+                                var classes = self.className.split(/\s+/);
+                                var index = classes.indexOf(value);
+                                fn(classes, index, value);
+                                self.className = classes.join(" ");
+                            };
+                        }
+
+                        return {
+                            add: update(function(classes, index, value) {
+                                if (!~index) classes.push(value);
+                            }),
+                            remove: update(function(classes, index) {
+                                if (~index) classes.splice(index, 1);
+                            }),
+                            toggle: update(function(classes, index, value) {
+                                if (~index) { classes.splice(index, 1); }
+                                else { classes.push(value); }
+                            }),
+                            contains: function(value) {
+                                return !!~self.className.split(/\s+/).indexOf(value);
+                            }
+                        };
+                    }
+                });
+            }
+
+            // querySelector polyfill
+            if (!document.querySelector) {
+                document.querySelector = function(selector) {
+                    return document.getElementsByTagName(selector)[0] || 
+                           document.getElementsByClassName(selector.replace('.',''))[0] || 
+                           document.getElementById(selector.replace('#',''));
+                };
+            }
+
+            // querySelectorAll polyfill
+            if (!document.querySelectorAll) {
+                document.querySelectorAll = function(selector) {
+                    var elements = [];
+                    var all = document.getElementsByTagName('*');
+                    for (var i = 0; i < all.length; i++) {
+                        if (all[i].className.indexOf(selector.replace('.','')) > -1) {
+                            elements.push(all[i]);
+                        }
+                    }
+                    return elements;
+                };
+            }
+        })(window);
+    </script>
+    <![endif]-->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <title>İmza Sirkülerinden İmza Seçimi</title>
     <style type="text/css">
@@ -596,6 +758,51 @@
             margin: 5px 0 0 0;
             font-size: 14px;
         }
+        
+        /* Validation Summary Styles */
+        .validation-summary {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .validation-summary.show {
+            display: block;
+        }
+        
+        .validation-summary ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .validation-summary li {
+            margin: 5px 0;
+        }
+        
+        /* IE specific fixes */
+        @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+            .container {
+                min-width: 1200px;
+            }
+            
+            .image-wrapper {
+                position: relative;
+                min-height: 400px;
+            }
+            
+            .signature-slot {
+                position: relative;
+                min-height: 80px;
+            }
+            
+            .modal {
+                background-color: rgba(0,0,0,0.5) !important;
+            }
+        }
 
         /* PDF List Panel Styles */
         .pdf-list-panel {
@@ -752,6 +959,8 @@
 <body>
     <form id="form1" runat="server">
         <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
+        <asp:ValidationSummary ID="ValidationSummary1" runat="server" ValidationGroup="SignatureValidation" 
+            DisplayMode="BulletList" ShowMessageBox="false" ShowSummary="true" CssClass="validation-summary" />
         
         <div class="container">
             <div class="header">
@@ -2917,8 +3126,24 @@
                 }
             }
 
+            // IE compatibility check
+            function isIE() {
+                return window.navigator.userAgent.match(/(MSIE|Trident)/);
+            }
+
+            // Add IE specific class to html element
+            if (isIE()) {
+                document.documentElement.className += ' ie';
+            }
+
+            // Event listener with IE fallback
             if (window.addEventListener) {
-                window.addEventListener('load', function() {
+                window.addEventListener('load', initializeApp);
+            } else if (window.attachEvent) {
+                window.attachEvent('onload', initializeApp);
+            }
+
+            function initializeApp() {
                     console.log('Window load event fired');
                     
                     // Hidden field değerini kontrol et
