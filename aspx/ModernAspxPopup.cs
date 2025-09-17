@@ -74,8 +74,19 @@ namespace AspxExamples
             try
             {
                 string aspxUrl = AspxUrlHelper.GetAspxUrl(aspxFileName);
-                htmlBox.Url = aspxUrl;
-                UpdateStatus("Sayfa yüklendi");
+                
+                // IE kontrolü yap
+                if (IsInternetExplorer())
+                {
+                    // Edge'de aç
+                    OpenInEdge(aspxUrl);
+                }
+                else
+                {
+                    // Normal HtmlBox'ta aç
+                    htmlBox.Url = aspxUrl;
+                    UpdateStatus("Sayfa yüklendi");
+                }
             }
             catch (Exception ex)
             {
@@ -88,6 +99,57 @@ namespace AspxExamples
                 UpdateStatus("Hata: Sayfa yüklenemedi");
             }
         }
+
+        private bool IsInternetExplorer()
+        {
+            try
+            {
+                // Web tarayıcısı kontrolü
+                var webBrowser = new System.Windows.Forms.WebBrowser();
+                string userAgent = webBrowser.Version.ToString();
+                return userAgent.Contains("Trident") || userAgent.Contains("MSIE");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void OpenInEdge(string url)
+        {
+            try
+            {
+                // Edge'de açmak için ProcessStartInfo hazırla
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "microsoft-edge:" + url,
+                    UseShellExecute = true
+                };
+
+                // Edge'i başlat
+                System.Diagnostics.Process.Start(psi);
+
+                // Form'u gizle
+                this.Hide();
+
+                // Mevcut closeCheckTimer zaten çalışıyor
+                UpdateStatus("Sayfa Edge'de açıldı");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    String.Format("Edge'de açılırken hata: {0}", ex.Message),
+                    "Hata",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+
+                // Edge açılamazsa normal HtmlBox'ta aç
+                htmlBox.Url = url;
+                UpdateStatus("Sayfa normal modda yüklendi");
+            }
+        }
+
 
                     private string referenceId;
 
