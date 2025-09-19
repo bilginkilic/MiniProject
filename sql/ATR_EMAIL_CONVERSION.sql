@@ -16,14 +16,49 @@ BEGIN TRY
     );
 
     -- Çoklu email içeren kayıtları bul ve geçici tabloya ekle
-    INSERT INTO #TempEmails (OriginalID, Email)
-    SELECT 
-        ATR.ID,
-        TRIM(value) as Email
-    FROM ATR
-    CROSS APPLY STRING_SPLIT(ATR.Email, ';')
-    WHERE ATR.Email LIKE '%;%'
-    AND ATR.Status != 'D';
+    DECLARE @ID INT
+    DECLARE @Email VARCHAR(MAX)
+    DECLARE @StartPos INT
+    DECLARE @EndPos INT
+    DECLARE @SingleEmail VARCHAR(255)
+
+    -- Aktif ve çoklu email içeren kayıtları seç
+    DECLARE email_cursor CURSOR FOR
+    SELECT ID, Email 
+    FROM ATR 
+    WHERE Email LIKE '%;%' AND Status != 'D'
+
+    OPEN email_cursor
+    FETCH NEXT FROM email_cursor INTO @ID, @Email
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @StartPos = 1
+        SET @EndPos = CHARINDEX(';', @Email)
+        
+        WHILE @EndPos > 0
+        BEGIN
+            SET @SingleEmail = LTRIM(RTRIM(SUBSTRING(@Email, @StartPos, @EndPos - @StartPos)))
+            
+            IF LEN(@SingleEmail) > 0
+                INSERT INTO #TempEmails (OriginalID, Email)
+                VALUES (@ID, @SingleEmail)
+            
+            SET @StartPos = @EndPos + 1
+            SET @EndPos = CHARINDEX(';', @Email, @StartPos)
+        END
+        
+        -- Son email'i ekle
+        SET @SingleEmail = LTRIM(RTRIM(SUBSTRING(@Email, @StartPos, LEN(@Email) - @StartPos + 1)))
+        IF LEN(@SingleEmail) > 0
+            INSERT INTO #TempEmails (OriginalID, Email)
+            VALUES (@ID, @SingleEmail)
+        
+        FETCH NEXT FROM email_cursor INTO @ID, @Email
+    END
+
+    CLOSE email_cursor
+    DEALLOCATE email_cursor;
 
     -- Debug için kontrol
     -- SELECT * FROM #TempEmails;
