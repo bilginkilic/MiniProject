@@ -115,30 +115,107 @@ namespace AspxExamples
             }
         }
 
+        // v2 - OpenInEdge metodu güncellendi - Process.Start için alternatif yöntemler eklendi
         private void OpenInEdge(string url)
         {
             try
             {
-                // Edge'de açmak için ProcessStartInfo hazırla
-                var psi = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "microsoft-edge:" + url,
-                    UseShellExecute = true
-                };
+                // Detaylı loglama ekle
+                System.Diagnostics.Debug.WriteLine(string.Format("Trying to open URL: {0}", url));
+                System.Diagnostics.Debug.WriteLine(string.Format("Current User: {0}", 
+                    System.Security.Principal.WindowsIdentity.GetCurrent().Name));
+                System.Diagnostics.Debug.WriteLine(string.Format("Is Server: {0}", 
+                    System.Environment.MachineName.Contains("SERVER")));
+                System.Diagnostics.Debug.WriteLine(string.Format("Is Interactive: {0}", 
+                    System.Environment.UserInteractive));
 
-                // Edge'i başlat
-                System.Diagnostics.Process.Start(psi);
+                // Farklı yöntemleri dene
+                bool success = false;
+
+                // 1. Yöntem: Edge protokolü
+                try 
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = string.Format("microsoft-edge:{0}", url),
+                        UseShellExecute = true,
+                        Verb = "open",
+                        WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal
+                    };
+                    var process = System.Diagnostics.Process.Start(psi);
+                    if (process != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Edge protokolü başarılı");
+                        success = true;
+                    }
+                }
+                catch (Exception ex1)
+                {
+                    System.Diagnostics.Debug.WriteLine(string.Format("Edge protokolü hatası: {0}", ex1.Message));
+                }
+
+                // 2. Yöntem: CMD üzerinden
+                if (!success)
+                {
+                    try 
+                    {
+                        var cmdPsi = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = string.Format("/c start microsoft-edge:{0}", url),
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        var cmdProcess = System.Diagnostics.Process.Start(cmdPsi);
+                        if (cmdProcess != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("CMD yöntemi başarılı");
+                            success = true;
+                        }
+                    }
+                    catch (Exception ex2)
+                    {
+                        System.Diagnostics.Debug.WriteLine(string.Format("CMD yöntemi hatası: {0}", ex2.Message));
+                    }
+                }
+
+                // 3. Yöntem: Default browser
+                if (!success)
+                {
+                    try 
+                    {
+                        var defaultPsi = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = url,
+                            UseShellExecute = true
+                        };
+                        var defaultProcess = System.Diagnostics.Process.Start(defaultPsi);
+                        if (defaultProcess != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Default browser yöntemi başarılı");
+                            success = true;
+                        }
+                    }
+                    catch (Exception ex3)
+                    {
+                        System.Diagnostics.Debug.WriteLine(string.Format("Default browser hatası: {0}", ex3.Message));
+                    }
+                }
+
+                if (!success)
+                {
+                    throw new Exception("Hiçbir açma yöntemi başarılı olmadı");
+                }
 
                 // Form'u gizle
                 this.Hide();
-
-                // Mevcut closeCheckTimer zaten çalışıyor
-                UpdateStatus("Sayfa Edge'de açıldı");
+                UpdateStatus("Sayfa açıldı");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(string.Format("Genel hata: {0}", ex.Message));
                 MessageBox.Show(
-                    String.Format("Edge'de açılırken hata: {0}", ex.Message),
+                    String.Format("Sayfa açılırken hata: {0}", ex.Message),
                     "Hata",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
