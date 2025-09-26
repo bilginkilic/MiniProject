@@ -7,26 +7,9 @@ IE'den Edge'e yönlendirme yaparken, Edge'in yeni tab ayarlarındaki redirect so
 ```javascript
 function openMenuItem(url) {
     if (url.toLowerCase().indexOf('imza sirkuler') > -1) {
-        // Direkt HTML içeriğini aç
-        var redirectHtml = [
-            '<html>',
-            '<head>',
-            '<title>Yönlendiriliyor...</title>',
-            '<script>',
-            'window.onload = function() {',
-            '   window.location.replace("' + url + '");',
-            '};',
-            '</script>',
-            '</head>',
-            '<body>',
-            '<p>Yönlendiriliyor...</p>',
-            '</body>',
-            '</html>'
-        ].join('');
-
-        // Data URI olarak Edge'de aç
-        var dataUri = 'data:text/html;charset=utf-8,' + encodeURIComponent(redirectHtml);
-        window.open('microsoft-edge:' + dataUri, '_blank');
+        // Javascript protokolü ile direkt yönlendirme
+        var jsRedirect = 'javascript:window.location.href="' + url + '";';
+        window.open('microsoft-edge:' + jsRedirect, '_blank');
     } else {
         // Popup olarak aç
         var width = 1280;
