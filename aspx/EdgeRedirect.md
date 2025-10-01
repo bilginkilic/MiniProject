@@ -7,9 +7,35 @@ IE'den Edge'e yönlendirme yaparken, Edge'in yeni tab ayarlarındaki redirect so
 ```javascript
 function openMenuItem(url) {
     if (url.toLowerCase().indexOf('imza sirkuler') > -1) {
-        // Javascript protokolü ile direkt yönlendirme
-        var jsRedirect = 'javascript:window.location.href="' + url + '";';
-        window.open('microsoft-edge:' + jsRedirect, '_blank');
+        try {
+            // VWGInstance'dan önceki URL'yi al
+            var originalUrl = url;
+            var vwgIndex = url.indexOf('VWGInstance');
+            
+            if (vwgIndex > -1) {
+                // URL'yi parçala
+                var baseUrl = url.substring(0, url.indexOf('?'));
+                var fullQueryString = url.substring(url.indexOf('?') + 1);
+                var originalParams = fullQueryString.substring(0, fullQueryString.indexOf('VWGInstance') - 1);
+                
+                // Orijinal URL'yi oluştur
+                originalUrl = baseUrl;
+                if (originalParams) {
+                    originalUrl += '?' + originalParams;
+                }
+                
+                // Debug için
+                console.log('Orijinal URL:', originalUrl);
+            }
+            
+            // Edge'de aç
+            window.open('microsoft-edge:' + originalUrl, '_blank');
+            
+        } catch(e) {
+            console.log('URL işleme hatası:', e);
+            // Hata durumunda normal aç
+            window.open(url, '_blank');
+        }
     } else {
         // Popup olarak aç
         var width = 1280;
