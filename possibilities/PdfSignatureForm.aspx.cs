@@ -218,6 +218,23 @@ namespace AspxExamples
         private static List<YetkiliKayit> yetkiliKayitlar;
         private static List<SignatureData> signatures;
         private string _cdn = @"\\trrgap3027\files\circular\cdn";
+
+        private string CreateUploadDirectory()
+        {
+            string directoryId = string.Format("{0}_{1}", 
+                DateTime.Now.Ticks, 
+                Guid.NewGuid().ToString("N").Substring(0, 8));
+            
+            string uploadDir = Path.Combine(_cdn, directoryId);
+            
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+                System.Diagnostics.Debug.WriteLine(string.Format("Yeni yükleme klasörü oluşturuldu: {0}", uploadDir));
+            }
+            
+            return uploadDir;
+        }
         private static readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
         {
             MaxDepth = 128,
@@ -446,15 +463,12 @@ namespace AspxExamples
                         return;
                     }
 
-                    // Önceki dosyaları temizle
-                    CleanupOldFiles();
-
-                    // Benzersiz dosya adı oluştur
-                    string uniqueFileName = string.Format("{0}_{1}.pdf", 
-                        DateTime.Now.Ticks, 
-                        Guid.NewGuid().ToString("N"));
+                    // Yeni bir yükleme klasörü oluştur
+                    string uploadDir = CreateUploadDirectory();
                     
-                    string pdfPath = Path.Combine(_cdn, uniqueFileName);
+                    // PDF'yi yeni klasöre kaydet
+                    string uniqueFileName = string.Format("circular.pdf");
+                    string pdfPath = Path.Combine(uploadDir, uniqueFileName);
 
                     try
                     {
@@ -488,7 +502,7 @@ namespace AspxExamples
 
                         for (int i = 1; i <= pageCount; i++)
                         {
-                            string imagePath = Path.Combine(_cdn, String.Format("page_{0}.png", i));
+                            string imagePath = Path.Combine(Path.GetDirectoryName(pdfPath), string.Format("page_{0}.png", i));
                             if (!File.Exists(imagePath))
                             {
                                 System.Diagnostics.Debug.WriteLine(String.Format("Sayfa bulunamadı: {0}", imagePath));
@@ -555,30 +569,6 @@ namespace AspxExamples
             {
                 System.Diagnostics.Debug.WriteLine(String.Format("Dosya yükleme hatası: {0}", ex.Message));
                 ShowError(String.Format("Dosya yüklenirken bir hata oluştu: {0}", ex.Message));
-            }
-        }
-
-        private void CleanupOldFiles()
-        {
-            try
-            {
-                // Tüm PNG dosyalarını temizle
-                foreach (string file in Directory.GetFiles(_cdn, "*.png"))
-                {
-                    try { File.Delete(file); } catch { }
-                }
-
-                // Tüm PDF dosyalarını temizle
-                foreach (string file in Directory.GetFiles(_cdn, "*.pdf"))
-                {
-                    try { File.Delete(file); } catch { }
-                }
-
-                System.Diagnostics.Debug.WriteLine("Eski dosyalar temizlendi");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(String.Format("Dosya temizleme hatası: {0}", ex.Message));
             }
         }
 

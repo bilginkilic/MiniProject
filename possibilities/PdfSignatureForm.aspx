@@ -283,12 +283,65 @@
             display: flex;
             flex-direction: column;
         }
-        .tabs {
-            display: flex;
-            padding: 10px 10px 0 10px;
+        .tabs-container {
+            position: relative;
             background: #f8f9fa;
             border-bottom: 2px solid #eee;
+            padding: 10px 40px;  /* Oklar için yer bırak */
+        }
+        .tabs {
+            display: flex;
             gap: 5px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            padding: 0 5px;
+        }
+        .tabs::-webkit-scrollbar {
+            height: 6px;
+        }
+        .tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .tabs::-webkit-scrollbar-thumb {
+            background: #dc3545;
+            border-radius: 3px;
+        }
+        .tabs::-webkit-scrollbar-thumb:hover {
+            background: #c82333;
+        }
+        .tab-scroll-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 1;
+            transition: all 0.2s ease;
+        }
+        .tab-scroll-button:hover {
+            background: #c82333;
+        }
+        .tab-scroll-button.left {
+            left: 5px;
+        }
+        .tab-scroll-button.right {
+            right: 5px;
+        }
+        .tab-scroll-button.hidden {
+            display: none;
         }
         .tab {
             padding: 8px 16px;
@@ -969,8 +1022,12 @@
 
             <div class="main-content">
                 <div id="imageContainer" runat="server" class="image-container">
-                    <div class="tabs" id="pageTabs">
-                        <!-- Tabs will be added here dynamically -->
+                    <div class="tabs-container">
+                        <button type="button" class="tab-scroll-button left" onclick="scrollTabs('left')">&lt;</button>
+                        <div class="tabs" id="pageTabs">
+                            <!-- Tabs will be added here dynamically -->
+                        </div>
+                        <button type="button" class="tab-scroll-button right" onclick="scrollTabs('right')">&gt;</button>
                     </div>
                     <div id="pageContents">
                         <!-- Tab contents will be added here dynamically -->
@@ -1643,17 +1700,58 @@
             var selectedSignatures = [];
             const MAX_SIGNATURES = 3;
 
+            function scrollTabs(direction) {
+                const tabsContainer = document.querySelector('.tabs');
+                const scrollAmount = 200; // Her tıklamada kaydırma miktarı
+                
+                if (direction === 'left') {
+                    tabsContainer.scrollLeft -= scrollAmount;
+                } else {
+                    tabsContainer.scrollLeft += scrollAmount;
+                }
+                
+                // Scroll butonlarının görünürlüğünü güncelle
+                updateScrollButtons();
+            }
+
+            function updateScrollButtons() {
+                const tabsContainer = document.querySelector('.tabs');
+                const leftButton = document.querySelector('.tab-scroll-button.left');
+                const rightButton = document.querySelector('.tab-scroll-button.right');
+                
+                // Sol buton görünürlüğü
+                if (tabsContainer.scrollLeft <= 0) {
+                    leftButton.classList.add('hidden');
+                } else {
+                    leftButton.classList.remove('hidden');
+                }
+                
+                // Sağ buton görünürlüğü
+                if (tabsContainer.scrollLeft + tabsContainer.clientWidth >= tabsContainer.scrollWidth) {
+                    rightButton.classList.add('hidden');
+                } else {
+                    rightButton.classList.remove('hidden');
+                }
+            }
+
             function showPage(pageNumber) {
                 // Tüm tabları ve içerikleri gizle
                 document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                 
                 // Seçilen tabı ve içeriği göster
-                document.querySelector(`.tab[data-page="${pageNumber}"]`).classList.add('active');
+                const selectedTab = document.querySelector(`.tab[data-page="${pageNumber}"]`);
+                selectedTab.classList.add('active');
                 document.querySelector(`.tab-content[data-page="${pageNumber}"]`).classList.add('active');
+                
+                // Seçilen tabı görünür alana kaydır
+                selectedTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 
                 // Seçimi temizle
                 clearSelection();
+                
+                // Scroll butonlarının görünürlüğünü güncelle
+                updateScrollButtons();
             }
 
             function initializeTabs(pageCount) {
