@@ -13,7 +13,7 @@ using System.Web.Services;
 using System.Web.Script.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/* v2 - axoi.aspx7.cs - Debug logları eklendi ve string.Format kullanımına geçildi */
+/* v3 - axoi.aspx7.cs - Debug logları eklendi, string.Format kullanımına geçildi ve benzersiz dosya adı oluşturma özelliği eklendi */
 
 namespace AspxExamples
 {
@@ -440,8 +440,7 @@ namespace AspxExamples
             {
                 if (fuSignature.HasFile)
                 {
-                    string fileName = Path.GetFileName(fuSignature.FileName);
-                    if (Path.GetExtension(fileName).ToLower() != ".pdf")
+                    if (Path.GetExtension(fuSignature.FileName).ToLower() != ".pdf")
                     {
                         ShowError("Lütfen sadece PDF formatında dosya yükleyiniz.", true);
                         return;
@@ -450,9 +449,28 @@ namespace AspxExamples
                     // Önceki dosyaları temizle
                     CleanupOldFiles();
 
-                    string pdfPath = Path.Combine(_cdn, fileName);
-                    fuSignature.SaveAs(pdfPath);
-                    Session["LastUploadedPdf"] = pdfPath;
+                    // Benzersiz dosya adı oluştur
+                    string uniqueFileName = string.Format("{0}_{1}.pdf", 
+                        DateTime.Now.Ticks, 
+                        Guid.NewGuid().ToString("N"));
+                    
+                    string pdfPath = Path.Combine(_cdn, uniqueFileName);
+
+                    try
+                    {
+                        // Dosyayı benzersiz isimle kaydet
+                        fuSignature.SaveAs(pdfPath);
+                        Session["LastUploadedPdf"] = pdfPath;
+                        hdnCurrentPdfList.Value = uniqueFileName;
+                        
+                        System.Diagnostics.Debug.WriteLine(string.Format("PDF kaydedildi: {0}", pdfPath));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(string.Format("PDF kaydetme hatası: {0}", ex.Message));
+                        ShowError(string.Format("Dosya kaydedilirken bir hata oluştu: {0}", ex.Message));
+                        return;
+                    }
 
                     // PDF'i hemen göster
                     try
