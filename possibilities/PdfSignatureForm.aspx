@@ -809,6 +809,7 @@
                         <asp:FileUpload ID="fuSignature" runat="server" accept=".pdf" />
                         <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
                         <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
+                        <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
                 </div>
 
                 <!-- Selected Signatures Container -->
@@ -1054,7 +1055,7 @@
                                 Width: sig.Width,
                                 Height: sig.Height,
                                 Image: sig.Image,
-                                SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value
+                                SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value || ''
                             };
                         }))
                     };
@@ -1693,9 +1694,6 @@
                 // Convert to base64
                 const imageData = canvas.toDataURL('image/png');
 
-                // Get current active PDF path from hidden field
-                const currentPdfPath = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
-
                 // Add to selected signatures
                     const signatureData = {
                         id: '', // Yeni imza için boş ID
@@ -1706,7 +1704,7 @@
                         width: Math.round(w),
                         height: Math.round(h),
                         image: imageData,
-                        sourcePdfPath: currentPdfPath
+                        sourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value || ''
                     };
 
                 selectedSignatures.push(signatureData);
