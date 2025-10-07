@@ -2667,109 +2667,6 @@
                 }
             }
 
-            function handleAddUpdate() {
-                try {
-                    console.log('handleAddUpdate başladı');
-                    const btnEkle = document.getElementById('btnEkle');
-                    if (!btnEkle) {
-                        throw new Error('btnEkle elementi bulunamadı');
-                    }
-                    console.log('btnEkle bulundu:', btnEkle);
-                    let isUpdate = false;
-                    if (btnEkle) {
-                        isUpdate = btnEkle.classList.contains('update-mode');
-                    }
-                
-                    // Form verilerini kontrol et
-                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
-                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
-                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
-                    const yetkiTutariNum = parseFloat(yetkiTutari);
-                    const imzalar = [];
-                    
-                    document.querySelectorAll('.signature-slot').forEach(slot => {
-                        if (slot.classList.contains('filled')) {
-                            const slotImage = slot.querySelector('.slot-image');
-                            if (slotImage && slotImage.style.backgroundImage) {
-                                imzalar.push(slotImage.style.backgroundImage);
-                            }
-                        }
-                    });
-
-                    // Zorunlu alan kontrolü
-                    if (!yetkiliKontakt || !yetkiliAdi) {
-                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
-                        return;
-                    }
-
-                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
-                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
-                        return;
-                    }
-                    
-                    // Ondalık basamak kontrolü
-                    if (yetkiTutari.includes('.')) {
-                        const decimalPlaces = yetkiTutari.split('.')[1].length;
-                        if (decimalPlaces > 2) {
-                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
-                            return;
-                        }
-                    }
-
-                    if (imzalar.length === 0) {
-                        showNotification('Lütfen en az bir imza seçin', 'warning');
-                        return;
-                    }
-
-                    // Tarih kontrolü
-                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
-                    const today = new Date();
-                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
-                    const yetkiBitisTarihi = isAksiKarar ? 
-                        'Aksi Karara Kadar' : 
-                        document.getElementById('yetkiBitisTarihi').value;
-                
-                    // Yeni kayıt veya güncelleme için veri hazırla
-                    const formData = {
-                        yetkiliKontakt: yetkiliKontakt,
-                        yetkiliAdi: yetkiliAdi,
-                        yetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        yetkiTarihi: yetkiTarihi,
-                        yetkiBitisTarihi: yetkiBitisTarihi,
-                        yetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        yetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
-                        yetkiTutari: yetkiTutariNum.toFixed(2),
-                        yetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        yetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
-                        imzalar: imzalar
-                    };
-
-                    if(isUpdate) {
-                        if(!selectedRow) {
-                            throw new Error('Güncellenecek satır seçilmedi');
-                        }
-
-                        // Satırı güncelle
-                        updateTableRow(selectedRow, formData);
-                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                        btnEkle.classList.remove('update-mode');
-                        selectedRow = null;
-                        showNotification('Kayıt başarıyla güncellendi', 'success');
-                    } else {
-                        // Yeni satır ekle
-                        addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
-                    }
-
-                    // Formu temizle
-                    clearForm();
-                    
-                } catch (err) {
-                    console.error('handleAddUpdate hatası:', err);
-                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
-                }
-            }
             
 
             function clearForm() {
@@ -3272,7 +3169,6 @@
                     // Sayfa ilk yüklendiğinde imza slotlarını temizle
                     selectedSignatures = [];
                     updateSignatureSlots();
-                });
             }
 
             window.addEventListener('resize', function() {
