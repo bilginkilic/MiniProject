@@ -675,63 +675,6 @@
         }
         
 
-        /* PDF List Panel Styles */
-        .pdf-list-panel {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #eee;
-        }
-
-        .pdf-list-panel h3 {
-            margin: 0 0 15px 0;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .pdf-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .pdf-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .pdf-item:hover {
-            background: #f0f0f0;
-        }
-
-        .pdf-item.active {
-            background: #e3f2fd;
-            border-color: #2196f3;
-        }
-
-        .pdf-item-name {
-            margin-right: 10px;
-        }
-
-        .pdf-item-remove {
-            color: #dc3545;
-            cursor: pointer;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
-        .pdf-item-remove:hover {
-            background: #dc3545;
-            color: white;
-        }
 
         /* Selected Signatures Styles */
         .selected-signatures {
@@ -854,15 +797,7 @@
             </div>
 
             <div class="sidebar">
-                <div class="pdf-list-panel">
-                    <h3>Mevcut PDF Listesi</h3>
-                    <div class="pdf-list" id="pdfList">
-                        <!-- PDF listesi buraya dinamik olarak eklenecek -->
-                    </div>
-                    <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
-                </div>
-
-                                    <div class="upload-panel">
+                <div class="upload-panel">
                         <div class="instructions">
                             <strong>Nasıl Kullanılır:</strong>
                             <ol>
@@ -999,7 +934,6 @@
                             <th>Yetki Döv.</th>
                             <th>Durum</th>
                             <th style="display: none;">ID</th>
-                            <th style="display: none;">CircularID</th>
                         </tr>
                     </thead>
                     <tbody id="yetkiliTableBody">
@@ -2025,9 +1959,7 @@
                     const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
                     const yetkiBitisTarihi = isAksiKarar ? 
                         '31.12.2050' : 
-                        document.querySelector('select[name="gun"]').value + '.' + 
-                        document.querySelector('select[name="ay"]').value + '.' + 
-                        document.querySelector('select[name="yil"]').value;
+                        formatDateToTurkish(document.getElementById('yetkiBitisTarihi').value);
                 
                     // Yeni kayıt veya güncelleme için veri hazırla
                     const formData = {
@@ -2085,7 +2017,7 @@
                     .map(preview => preview.style.backgroundImage)
                     .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
 
-                return {
+                    return {
                     YetkiliKontakt: row.cells[0].textContent,
                     YetkiliAdi: row.cells[1].textContent,
                     YetkiSekli: row.cells[2].textContent,
@@ -2098,8 +2030,7 @@
                     YetkiTutari: row.cells[11].textContent,
                     YetkiDovizCinsi: row.cells[12].textContent,
                     YetkiDurumu: row.cells[13].textContent,
-                    Id: row.cells[14].textContent,
-                    CircularId: row.cells[15].textContent
+                    Id: row.cells[14].textContent
                 };
             }
 
@@ -2751,10 +2682,6 @@
                 });
             }
 
-            // PDF listesi yönetimi
-            let pdfList = [];
-            const pdfListContainer = document.getElementById('pdfList');
-            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
 
             function initializeGrid() {
                 try {
@@ -2824,7 +2751,7 @@
                         
                         // Temel hücreler
                         const cells = [
-                            data.Id || '', // ID hücresi eklendi
+                            data.Id || '', // ID hücresi
                             data.YetkiliKontakt || '',
                             data.YetkiliAdi || '',
                             data.YetkiSekli || '',
@@ -2853,7 +2780,7 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].Base}')`;
+                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                             }
                             
                             cell.appendChild(signaturePreview);
@@ -2891,52 +2818,12 @@
                 }
             }
 
-            function initializePdfList() {
-                // URL'den PDF listesini al
-                const urlParams = new URLSearchParams(window.location.search);
-                const pdfListParam = urlParams.get('pdfList');
-                
-                if (pdfListParam) {
-                    pdfList = decodeURIComponent(pdfListParam).split(',');
-                    hdnCurrentPdfList.value = pdfListParam;
-                    updatePdfListUI();
-                }
-            }
 
-            function updatePdfListUI() {
-                pdfListContainer.innerHTML = '';
-                pdfList.forEach((pdfPath, index) => {
-                    const pdfItem = document.createElement('div');
-                    pdfItem.className = 'pdf-item';
-                    pdfItem.innerHTML = `
-                        <span class="pdf-item-name">${pdfPath.split('/').pop()}</span>
-                        <span class="pdf-item-remove" onclick="removePdf(${index}, event)">✕</span>
-                    `;
-                    pdfItem.onclick = () => loadPdf(pdfPath);
-                    pdfListContainer.appendChild(pdfItem);
-                });
-            }
-
-            function loadPdf(pdfPath) {
-                // PDF yükleme işlemi için mevcut form mekanizmasını kullan
-                showLoading('PDF yükleniyor...');
-                // TODO: PDF yükleme işlemi için sunucu tarafında gerekli değişiklikleri yap
-            }
-
-            function removePdf(index, event) {
-                event.stopPropagation();
-                pdfList.splice(index, 1);
-                hdnCurrentPdfList.value = pdfList.join(',');
-                updatePdfListUI();
-                showNotification('PDF listeden kaldırıldı', 'success');
-            }
-
-            function addPdfToList(pdfPath) {
-                if (!pdfList.includes(pdfPath)) {
-                    pdfList.push(pdfPath);
-                    hdnCurrentPdfList.value = pdfList.join(',');
-                    updatePdfListUI();
-                }
+            // Tarih formatı yardımcı fonksiyonu
+            function formatDateToTurkish(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
             }
 
             // Event listener
@@ -2957,7 +2844,6 @@
                     });
                     
                     initializeImageEvents();
-                    initializePdfList();
                     initializeDatePicker();
                     initializeGrid(); // Grid initialization added here
                     
