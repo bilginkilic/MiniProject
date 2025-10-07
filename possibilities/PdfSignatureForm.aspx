@@ -2335,39 +2335,18 @@
                     if (!tbody) return null;
                     const row = tbody.insertRow(0);
                     const allCells = [
-                        data.yetkiliKontakt || '',
-                        data.yetkiliAdi || '',
-                        document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        data.yetkiTarihi || '',
-                        data.yetkiTarihi || '',
-                        document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        document.getElementById('selYetkiTurleri').value || '',
-                        '', // İmza 1
-                        '', // İmza 2
-                        '', // İmza 3
-                        data.yetkiTutari || '',
-                        data.yetkiDovizCinsi || '',
-                        data.yetkiDurumu || '',
-                        data.id || '', // ID hücresi
-                        data.circularId || '', // CircularID hücresi
-                        data.imzalar && data.imzalar[0] ? data.imzalar[0].id || '' : '', // ImzaID1
-                        data.imzalar && data.imzalar[0] ? data.imzalar[0].authDetailId || '' : '', // ImzaAuthDetailID1
-                        data.imzalar && data.imzalar[1] ? data.imzalar[1].id || '' : '', // ImzaID2
-                        data.imzalar && data.imzalar[1] ? data.imzalar[1].authDetailId || '' : '', // ImzaAuthDetailID2
-                        data.imzalar && data.imzalar[2] ? data.imzalar[2].id || '' : '', // ImzaID3
-                        data.imzalar && data.imzalar[2] ? data.imzalar[2].authDetailId || '' : '' // ImzaAuthDetailID3
+                        data.YetkiliKontakt || '',
+                        data.YetkiliAdi || '',
+                        data.YetkiSekli || 'Müştereken',
+                        data.YetkiTarihi || '',
+                        data.YetkiBitisTarihi || '',
+                        data.YetkiGrubu || '',
+                        data.SinirliYetkiDetaylari || '',
+                        data.YetkiTurleri  || ''
+                    
                     ];
 
-                    // Temel hücreleri ekle
-                    allCells.forEach((cellData, index) => {
-                        const cell = row.insertCell();
-                        cell.textContent = cellData;
-                        // ID ve diğer gizli hücreleri gizle
-                        if (index >= 14 && index <= 21) { // ID, CircularID ve İmza ID'leri
-                            cell.style.display = 'none';
-                        }
-                    });
+                
 
                     // İmza hücreleri
                     for(let i = 0; i < 3; i++) {
@@ -2382,9 +2361,9 @@
 
                     // Son hücreleri ekle
                     [
-                        document.getElementById('txtYetkiTutari').value || '100.000',
-                        document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        document.getElementById('selYetkiDurumu').value || 'Aktif'
+                        document.getElementById('txtYetkiTutari').value || '',
+                        document.getElementById('selYetkiDovizCinsi').value || '',
+                        document.getElementById('selYetkiDurumu').value || ''
                     ].forEach(text => {
                         const cell = row.insertCell();
                         cell.textContent = text;
