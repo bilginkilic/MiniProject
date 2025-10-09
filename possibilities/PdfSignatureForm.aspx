@@ -2344,7 +2344,10 @@
                         data.SinirliYetkiDetaylari || '',
                         data.YetkiTurleri  || ''
                     
-                    ];
+                    ].forEach(text => {
+                        const cell = row.insertCell();
+                        cell.textContent = text;
+                    });
 
                 
 
