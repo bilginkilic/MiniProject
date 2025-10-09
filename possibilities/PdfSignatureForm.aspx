@@ -2337,7 +2337,7 @@
                     const allCells = [
                         data.YetkiliKontakt || '',
                         data.YetkiliAdi || '',
-                        data.YetkiSekli || 'Müştereken',
+                        data.YetkiSekli || '',
                         data.YetkiTarihi || '',
                         data.YetkiBitisTarihi || '',
                         data.YetkiGrubu || '',
