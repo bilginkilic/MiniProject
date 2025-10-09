@@ -2387,7 +2387,7 @@
 
                     // Yetkili kayıtlarını güncelle
                     updateYetkiliKayitlar();
-
+                    clearForm();
                     return row;
                 } catch (err) {
                     console.error('Satır ekleme hatası:', err);
@@ -2838,7 +2838,8 @@
 
                     // Sayfa ilk yüklendiğinde imza slotlarını temizle
                     selectedSignatures = [];
-                    updateSignatureSlots();
+                    //updateSignatureSlots();
+                    clearForm();
             }
 
             window.addEventListener('resize', function() {
