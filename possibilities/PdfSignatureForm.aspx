@@ -2027,8 +2027,8 @@
                     Imzalar: signaturePreviews,
                     YetkiTutari: row.cells[11].textContent,
                     YetkiDovizCinsi: row.cells[12].textContent,
-                    YetkiDurumu: row.cells[13].textContent,
-                    Id: row.cells[14].textContent
+                    YetkiDurumu: row.cells[13].textContent
+                   // Id: row.cells[14].textContent
                 };
             }
 
@@ -2356,7 +2356,7 @@
                         const cell = row.insertCell();
                         const signaturePreview = document.createElement('div');
                         signaturePreview.className = 'signature-preview';
-                        if(data.imzalar && data.imzalar[i]) {
+                        if(data.imzalar && data.Imzalar[i]) {
                             signaturePreview.style.backgroundImage = data.imzalar[i];
                         }
                         cell.appendChild(signaturePreview);
@@ -2731,7 +2731,7 @@
                         
                         // Temel hücreler
                         const cells = [
-                            data.Id || '', // ID hücresi
+                          //  data.Id || '', // ID hücresi
                             data.YetkiliKontakt || '',
                             data.YetkiliAdi || '',
                             data.YetkiSekli || '',
@@ -2747,9 +2747,9 @@
                             const cell = document.createElement('td');
                             cell.textContent = cellData;
                             // ID ve CircularID hücrelerini gizle
-                            if (index === 0 || index === 1) {
-                                cell.style.display = 'none';
-                            }
+                            //if (index === 0 || index === 1) {
+                            //    cell.style.display = 'none';
+                            //}
                             row.appendChild(cell);
                         });
                         let base64tag="data:image/png;base64,";
