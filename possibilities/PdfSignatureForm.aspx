@@ -1966,6 +1966,7 @@
                         YetkiSekli: document.getElementById('selYetkiSekli')?.value || 'Müştereken',
                         YetkiTarihi: yetkiTarihi,
                         YetkiBitisTarihi: yetkiBitisTarihi,
+                        YetkiGrubu: document.getElementById('selYetkiGrubu')?.value || '',
                         SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
                         YetkiTurleri: document.getElementById('selYetkiTurleri')?.value || '',
                         YetkiTutari: yetkiTutariNum.toFixed(2),
