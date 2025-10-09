@@ -348,7 +348,7 @@ namespace AspxExamples
                                     YetkiSekli = yetkiliData.YetkiSekli,
                                     YetkiTarihi = yetkiliData.YetkiTarihi,
                                     YetkiBitisTarihi = yetkiliData.AksiKararaKadar ? "Aksi Karara Kadar" : yetkiliData.YetkiTarihi,
-                                    YetkiGrubu = yetkiliData.YetkiSekli,
+                                    YetkiGrubu = yetkiliData.YetkiGrubu,
                                     SinirliYetkiDetaylari = yetkiliData.SinirliYetkiDetaylari,
                                     YetkiTurleri = yetkiliData.YetkiTurleri,
                                     YetkiTutari = yetkiliData.YetkiTutari,
