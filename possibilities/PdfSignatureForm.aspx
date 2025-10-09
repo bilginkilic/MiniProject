@@ -1963,14 +1963,14 @@
                     const formData = {
                         YetkiliKontakt: yetkiliKontakt,
                         YetkiliAdi: yetkiliAdi,
-                        YetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                        YetkiSekli: document.getElementById('selYetkiSekli')?.value || 'Müştereken',
                         YetkiTarihi: yetkiTarihi,
                         YetkiBitisTarihi: yetkiBitisTarihi,
-                        SinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
-                        YetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                        SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
+                        YetkiTurleri: document.getElementById('selYetkiTurleri')?.value || '',
                         YetkiTutari: yetkiTutariNum.toFixed(2),
-                        YetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
-                        YetkiDurumu: 'Aktif',
+                        YetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi')?.value || 'USD',
+                        YetkiDurumu: document.getElementById('selYetkiDurumu')?.value || 'Aktif',
                         Imzalar: imzalar
                     };
 
