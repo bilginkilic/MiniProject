@@ -2419,8 +2419,8 @@
                         const cell = row.insertCell();
                         const signaturePreview = document.createElement('div');
                         signaturePreview.className = 'signature-preview';
-                        if(data.imzalar && data.Imzalar[i]) {
-                            signaturePreview.style.backgroundImage = data.imzalar[i];
+                        if(data.Imzalar && data.Imzalar[i]) {
+                            signaturePreview.style.backgroundImage = data.Imzalar[i];
                         }
                         cell.appendChild(signaturePreview);
                     }
