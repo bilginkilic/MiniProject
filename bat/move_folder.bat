@@ -1,28 +1,25 @@
 @echo off
-REM Klasör Kopyalama Scripti
-REM Kullanım: move_folder.bat "kaynak_klasör" "hedef_klasör"
+REM Klasör Kopyalama ve Kaynak Silme Scripti
+REM Parametreler dosyada gömülü olarak tanımlanmıştır
+REM İşlem: Kopyala → Kaynak klasörü sil
 
 setlocal enabledelayedexpansion
 
-REM Parametreleri kontrol et
-if "%~1"=="" (
-    echo HATA: Kaynak klasör parametresi eksik!
-    echo Kullanım: %0 "kaynak_klasör" "hedef_klasör"
-    echo Örnek: %0 "C:\temp\eski" "C:\temp\yeni"
-    pause
-    exit /b 1
-)
+REM ========================================
+REM PARAMETRELER - Burayı ihtiyacınıza göre düzenleyin
+REM ========================================
+set "SOURCE_FOLDER=C:\temp\eski"
+set "TARGET_FOLDER=C:\temp\yeni"
+REM ========================================
 
-if "%~2"=="" (
-    echo HATA: Hedef klasör parametresi eksik!
-    echo Kullanım: %0 "kaynak_klasör" "hedef_klasör"
-    echo Örnek: %0 "C:\temp\eski" "C:\temp\yeni"
-    pause
-    exit /b 1
-)
-
-set "SOURCE_FOLDER=%~1"
-set "TARGET_FOLDER=%~2"
+echo.
+echo ========================================
+echo KLASÖR KOPYALAMA SCRIPTI
+echo ========================================
+echo Kaynak: %SOURCE_FOLDER%
+echo Hedef:  %TARGET_FOLDER%
+echo ========================================
+echo.
 
 REM Kaynak klasörün varlığını kontrol et
 if not exist "%SOURCE_FOLDER%" (
@@ -55,7 +52,7 @@ if exist "%TARGET_FOLDER%" (
 
 echo.
 echo ========================================
-echo KLASÖR KOPYALAMA İŞLEMİ
+echo KLASÖR KOPYALAMA İŞLEMİ BAŞLIYOR
 echo ========================================
 echo Kaynak: %SOURCE_FOLDER%
 echo Hedef:  %TARGET_FOLDER%
@@ -80,8 +77,19 @@ REM İşlem sonucunu kontrol et
 if exist "%TARGET_FOLDER%" (
     echo.
     echo ✓ BAŞARILI: Klasör başarıyla kopyalandı!
-    echo Kaynak: %SOURCE_FOLDER% (orijinal korundu)
+    echo Kaynak: %SOURCE_FOLDER%
     echo Hedef:  %TARGET_FOLDER%
+    
+    echo.
+    echo Kaynak klasör siliniyor...
+    rmdir /s /q "%SOURCE_FOLDER%"
+    
+    if not exist "%SOURCE_FOLDER%" (
+        echo ✓ Kaynak klasör başarıyla silindi!
+    ) else (
+        echo ⚠ UYARI: Kaynak klasör silinemedi!
+        echo Lütfen manuel olarak silin: %SOURCE_FOLDER%
+    )
 ) else (
     echo.
     echo ✗ HATA: Klasör kopyalanamadı!
