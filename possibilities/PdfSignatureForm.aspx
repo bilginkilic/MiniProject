@@ -436,6 +436,37 @@
             background-color: #5a6268;
         }
         
+        /* Compact mode: hide non-essential sections and expand main content */
+        .compact-mode .header,
+        .compact-mode .sidebar,
+        .compact-mode .footer {
+            display: none !important;
+        }
+        .compact-mode .auth-details .form-grid,
+        .compact-mode .auth-details .form-row,
+        .compact-mode .auth-details .form-grid + div,
+        .compact-mode .auth-details button {
+            display: none !important;
+        }
+        .compact-mode .container {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: auto 1fr !important;
+            grid-template-areas:
+                "main"
+                "auth-details" !important;
+            min-width: 0;
+            max-width: none;
+            width: 100%;
+        }
+        .compact-mode .main-content {
+            border-right: none;
+            padding-right: 0;
+        }
+        .compact-mode .auth-details {
+            margin-top: 20px;
+            padding: 20px;
+        }
+
         /* Loading Animation Styles */
         .loading-overlay {
             display: none;
@@ -1249,6 +1280,21 @@
         </div>
 
         <script type="text/javascript">
+            // Enable compact mode via URL: ?mode=compact
+            (function() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    if ((params.get('mode') || '').toLowerCase() === 'compact') {
+                        // Add class to body as early as possible to avoid flashes
+                        document.addEventListener('DOMContentLoaded', function () {
+                            document.body.classList.add('compact-mode');
+                        });
+                    }
+                } catch (e) {
+                    // no-op
+                }
+            })();
+
             // Hidden field değerini almak için yardımcı fonksiyon
             function getHiddenFieldValue(fieldId) {
                 var element = document.getElementById(fieldId);
