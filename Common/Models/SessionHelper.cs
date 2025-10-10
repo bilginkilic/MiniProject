@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Web;
 
 namespace AspxExamples.Common.Models
@@ -10,6 +11,25 @@ namespace AspxExamples.Common.Models
         public DateTime UploadDate { get; set; }
     }
 
+    public class PdfFileInfo
+    {
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public DateTime UploadDate { get; set; }
+    }
+
+    public class PdfListResult
+    {
+        public List<PdfFileInfo> PdfFiles { get; set; }
+        public DateTime SaveDate { get; set; }
+        
+        public PdfListResult()
+        {
+            PdfFiles = new List<PdfFileInfo>();
+            SaveDate = DateTime.Now;
+        }
+    }
+
     public static class SessionHelper
     {
         private const string SIGNATURE_AUTH_KEY = "SignatureAuthData";
@@ -18,6 +38,7 @@ namespace AspxExamples.Common.Models
         private const string INITIAL_YETKILI_DATA_KEY = "InitialYetkiliData";
         private const string SELECTED_PDF_KEY = "SelectedPdfFileName";
         private const string UPLOADED_PDF_PATH_KEY = "LastUploadedPdf";
+        private const string PDF_LIST_KEY = "PdfListResult";
         
         public static void SetSignatureAuthData(SignatureAuthData data)
         {
@@ -178,6 +199,45 @@ namespace AspxExamples.Common.Models
             {
                 HttpContext.Current.Session.Remove(SELECTED_PDF_KEY);
                 HttpContext.Current.Session.Remove(UPLOADED_PDF_PATH_KEY);
+            }
+        }
+
+        // PDF Listesi işlemleri için metodlar
+        public static void SetPdfList(PdfListResult pdfList)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[PDF_LIST_KEY] = pdfList;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static PdfListResult GetPdfList()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[PDF_LIST_KEY] != null)
+            {
+                return (PdfListResult)HttpContext.Current.Session[PDF_LIST_KEY];
+            }
+            return null;
+        }
+
+        public static void ClearPdfList()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(PDF_LIST_KEY);
+            }
+        }
+
+        public static void ClearAllPdfData()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(SELECTED_PDF_KEY);
+                HttpContext.Current.Session.Remove(UPLOADED_PDF_PATH_KEY);
+                HttpContext.Current.Session.Remove(PDF_LIST_KEY);
             }
         }
     }

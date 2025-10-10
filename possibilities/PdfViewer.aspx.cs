@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -35,6 +36,9 @@ namespace AspxExamples
                     }
                 }
 
+                // Mevcut PDF dosyalarını yükle
+                LoadExistingPdfs();
+
                 // Başlangıç mesajını göster
                 ShowMessage("PDF dosyanızı yükleyerek başlayabilirsiniz.", "info");
             }
@@ -67,8 +71,8 @@ namespace AspxExamples
                     // Session'a kaydet
                     SessionHelper.SetUploadedPdfPath(pdfPath);
 
-                    // PDF listesine ekle
-                    AddPdfToList(uniqueFileName, pdfPath);
+                    // PDF listesine ekle (en üste ekle)
+                    AddPdfToList(uniqueFileName, pdfPath, true);
                     
                     btnSave.Visible = true;
                     btnCancel.Visible = true;
@@ -99,16 +103,24 @@ namespace AspxExamples
         {
             try
             {
-                string lastPdfPath = SessionHelper.GetUploadedPdfPath();
-                if (string.IsNullOrEmpty(lastPdfPath) || !File.Exists(lastPdfPath))
+                // Listedeki tüm PDF dosyalarını al
+                var pdfListResult = GetCurrentPdfList();
+                
+                if (pdfListResult.PdfFiles.Count == 0)
                 {
-                    ShowError("PDF dosyası bulunamadı.");
+                    ShowError("Kaydedilecek PDF dosyası bulunamadı.");
                     return;
                 }
-                // Session'a filename'i kaydet
-                SessionHelper.SetSelectedPdfFileName(lastPdfPath);
 
-                   // Session'a dosya bilgilerini kaydet
+                // Session'a PDF listesini kaydet
+                SessionHelper.SetPdfList(pdfListResult);
+
+                // Geriye uyumluluk için son yüklenen dosyayı da kaydet
+                string lastPdfPath = SessionHelper.GetUploadedPdfPath();
+                if (!string.IsNullOrEmpty(lastPdfPath) && File.Exists(lastPdfPath))
+                {
+                    SessionHelper.SetSelectedPdfFileName(lastPdfPath);
+                    
                     var uploadResult = new UploadedFileResult
                     {
                         FilePath = lastPdfPath,
@@ -116,9 +128,11 @@ namespace AspxExamples
                         UploadDate = DateTime.Now
                     };
                     SessionHelper.SetUploadedFile(uploadResult);
+                }
+
+                Debug.WriteLine(string.Format("Toplam {0} PDF dosyası kaydedildi.", pdfListResult.PdfFiles.Count));
+                SessionHelper.SetCloseWindow(true);
                 
-                Debug.WriteLine(string.Format("PDF dosyası kaydedildi: {0}", lastPdfPath));
-SessionHelper.Setclosewindow(true);
                 // Sayfayı kapat/geri dön
                 ScriptManager.RegisterStartupScript(this, GetType(), "closeScript", 
                     "if (window.opener && !window.opener.closed) { window.close(); } else { window.location.href = document.referrer; }", true);
@@ -134,19 +148,23 @@ SessionHelper.Setclosewindow(true);
         {
             try
             {
+                // Son yüklenen dosyayı sil (eğer varsa)
                 string lastPdfPath = SessionHelper.GetUploadedPdfPath();
                 if (!string.IsNullOrEmpty(lastPdfPath) && File.Exists(lastPdfPath))
                 {
                     File.Delete(lastPdfPath);
-                    Debug.WriteLine(string.Format("PDF dosyası silindi: {0}", lastPdfPath));
+                    Debug.WriteLine(string.Format("Son yüklenen PDF dosyası silindi: {0}", lastPdfPath));
                 }
 
-                // Session'daki değerleri temizle
-                SessionHelper.ClearPdfData();
+                // Session'daki tüm PDF verilerini temizle
+                SessionHelper.ClearAllPdfData();
 
-                // Sayfayı kapat/geri dön
-                ScriptManager.RegisterStartupScript(this, GetType(), "closeScript", 
-                    "if (window.opener && !window.opener.closed) { window.close(); } else { window.location.href = document.referrer; }", true);
+                // Kaydet/İptal butonlarını gizle
+                btnSave.Visible = false;
+                btnCancel.Visible = false;
+
+                // Sayfayı yenile (liste güncellensin)
+                Response.Redirect(Request.RawUrl);
             }
             catch (Exception ex)
             {
@@ -155,7 +173,7 @@ SessionHelper.Setclosewindow(true);
             }
         }
 
-        private void AddPdfToList(string fileName, string filePath)
+        private void AddPdfToList(string fileName, string filePath, bool addToTop = false)
         {
             // PDF listesi öğesi oluştur
             var pdfItem = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
@@ -190,7 +208,16 @@ SessionHelper.Setclosewindow(true);
             actions.Controls.Add(deleteButton);
 
             pdfItem.Controls.Add(actions);
-            pdfList.Controls.Add(pdfItem);
+            
+            // En üste ekle veya normal sırayla ekle
+            if (addToTop && pdfList.Controls.Count > 0)
+            {
+                pdfList.Controls.AddAt(0, pdfItem);
+            }
+            else
+            {
+                pdfList.Controls.Add(pdfItem);
+            }
         }
 
         [System.Web.Services.WebMethod]
@@ -210,6 +237,80 @@ SessionHelper.Setclosewindow(true);
             {
                 return new { success = false, error = ex.Message };
             }
+        }
+
+        private void LoadExistingPdfs()
+        {
+            try
+            {
+                // CDN klasöründeki tüm PDF dosyalarını al
+                if (Directory.Exists(_cdn))
+                {
+                    var pdfFiles = Directory.GetFiles(_cdn, "*.pdf")
+                        .OrderByDescending(f => File.GetCreationTime(f))
+                        .ToArray();
+
+                    if (pdfFiles.Length > 0)
+                    {
+                        foreach (var pdfFile in pdfFiles)
+                        {
+                            string fileName = Path.GetFileName(pdfFile);
+                            AddPdfToList(fileName, pdfFile);
+                        }
+                        
+                        Debug.WriteLine(string.Format("Toplam {0} PDF dosyası yüklendi.", pdfFiles.Length));
+                    }
+                    else
+                    {
+                        // Hiç PDF dosyası yoksa bilgi mesajı göster
+                        var noFilesMessage = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
+                        noFilesMessage.Attributes["class"] = "pdf-item";
+                        noFilesMessage.InnerText = "Henüz yüklenmiş PDF dosyası bulunmuyor.";
+                        pdfList.Controls.Add(noFilesMessage);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(string.Format("Mevcut PDF dosyaları yüklenirken hata: {0}", ex.Message));
+                ShowError("Mevcut PDF dosyaları yüklenirken bir hata oluştu.");
+            }
+        }
+
+        private PdfListResult GetCurrentPdfList()
+        {
+            var result = new PdfListResult();
+            
+            try
+            {
+                // CDN klasöründeki mevcut PDF dosyalarını al
+                if (Directory.Exists(_cdn))
+                {
+                    var pdfFiles = Directory.GetFiles(_cdn, "*.pdf")
+                        .OrderByDescending(f => File.GetCreationTime(f))
+                        .ToArray();
+
+                    foreach (var pdfFile in pdfFiles)
+                    {
+                        var pdfInfo = new PdfFileInfo
+                        {
+                            FileName = Path.GetFileName(pdfFile),
+                            FilePath = pdfFile,
+                            UploadDate = File.GetCreationTime(pdfFile)
+                        };
+                        result.PdfFiles.Add(pdfInfo);
+                    }
+                }
+                
+                Debug.WriteLine(string.Format("Kaydetme için {0} PDF dosyası bulundu.", result.PdfFiles.Count));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(string.Format("PDF listesi alınırken hata: {0}", ex.Message));
+                ShowError("PDF listesi alınırken bir hata oluştu.");
+            }
+            
+            return result;
         }
 
         private void ShowMessage(string message, string type = "info")
