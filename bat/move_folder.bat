@@ -64,26 +64,35 @@ set "ERROR_COUNT=0"
 
 for %%F in ("%SOURCE_FOLDER%\*") do (
     if not exist "%%F\" (
-        set "filename=%%~nxF"
-        set "extension=%%~xF"
-        
-        REM .txt dosyalarını atla
-        if /i not "!extension!"==".txt" (
-            echo Tasiniyor: !filename!
-            move "%%F" "%TARGET_FOLDER%\" >nul 2>&1
-            if !errorlevel! equ 0 (
-                set /a "SUCCESS_COUNT+=1"
-                echo %date% %time% - BASARILI: !filename! tasindi >> "%LOG_FILE%"
-            ) else (
-                set /a "ERROR_COUNT+=1"
-                echo %date% %time% - HATA: !filename! tasinamadi >> "%LOG_FILE%"
-            )
-        ) else (
-            echo Atlaniyor (.txt): !filename!
-            echo %date% %time% - ATLANDI (.txt): !filename! >> "%LOG_FILE%"
-        )
+        call :ProcessFile "%%F"
     )
 )
+
+goto :ShowResults
+
+:ProcessFile
+set "filepath=%~1"
+set "filename=%~nx1"
+set "extension=%~x1"
+
+REM .txt dosyalarını atla
+if /i not "%extension%"==".txt" (
+    echo Tasiniyor: %filename%
+    move "%filepath%" "%TARGET_FOLDER%\" >nul 2>&1
+    if !errorlevel! equ 0 (
+        set /a "SUCCESS_COUNT+=1"
+        echo %date% %time% - BASARILI: %filename% tasindi >> "%LOG_FILE%"
+    ) else (
+        set /a "ERROR_COUNT+=1"
+        echo %date% %time% - HATA: %filename% tasinamadi >> "%LOG_FILE%"
+    )
+) else (
+    echo Atlaniyor (.txt): %filename%
+    echo %date% %time% - ATLANDI (.txt): %filename% >> "%LOG_FILE%"
+)
+goto :eof
+
+:ShowResults
 
 REM Sonuçları göster ve log'a yaz
 echo.
