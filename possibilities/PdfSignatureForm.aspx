@@ -1047,6 +1047,16 @@
                     // no-op
                 }
             })();
+            
+            // Compact mod kontrolü
+            function isCompactMode() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    return (params.get('mode') || '').toLowerCase() === 'compact';
+                } catch (e) {
+                    return false;
+                }
+            }
 
             // Hidden field değerini almak için yardımcı fonksiyon
             function getHiddenFieldValue(fieldId) {
@@ -1328,6 +1338,12 @@
 
             // Parametre yükleme fonksiyonları
             function loadParameters() {
+                // Compact modda dropdown'ları doldurma
+                if (isCompactMode()) {
+                    console.log('Compact modda dropdown yükleme atlandı');
+                    return;
+                }
+                
                 loadYetkiGrubu();
                 loadYetkiSekli();
                 loadYetkiTurleri();
@@ -2811,7 +2827,7 @@
                             
                             if (data.Imzalar && data.Imzalar[i]) {
                                 if(isCompactMode()) {
-                                    signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].base64image}')`;
+                                    signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].Base64Image}')`;
                                 } else {
                                     signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                                 }
@@ -2867,34 +2883,55 @@
             function initializeApp() {
                     console.log('Window load event fired');
                     
-                    // Hidden field değerini kontrol et
-                    const hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
-                    console.log('Hidden field elementi:', hdnYetkiliKayitlar);
-                    console.log('Hidden field ID:', '<%= hdnYetkiliKayitlar.ClientID %>');
-                    console.log('Hidden field değeri:', hdnYetkiliKayitlar?.value);
+                    // Compact mod kontrolü
+                    if (isCompactMode()) {
+                        console.log('Compact modda başlatılıyor');
+                        initializeCompactMode();
+                    } else {
+                        console.log('Normal modda başlatılıyor');
+                        initializeNormalMode();
+                    }
                     
-                    // Tüm hidden fieldları kontrol et
-                    document.querySelectorAll('input[type="hidden"]').forEach(hf => {
-                        console.log('Hidden field bulundu:', hf.id, 'değer:', hf.value);
-                    });
-                    
+                    // Ortak başlatma işlemleri
                     initializeImageEvents();
-                    initializeDatePicker();
-                    initializeGrid(); // Grid initialization added here
+                    initializeGrid();
                     
-                    // Initialize signature slots
-                    const slots = document.querySelectorAll('.signature-slot');
-                    slots.forEach((slot, index) => {
-                        const deleteBtn = slot.querySelector('.delete-signature');
-                        if (deleteBtn) {
-                            deleteBtn.onclick = (e) => deleteSignature(index, e);
-                        }
-                    });
-
                     // Sayfa ilk yüklendiğinde imza slotlarını temizle
                     selectedSignatures = [];
-                    //updateSignatureSlots();
                     clearForm();
+            }
+            
+            function initializeCompactMode() {
+                console.log('Compact mod başlatma işlemleri');
+                // Compact modda sadece gerekli işlemler
+                // Dropdown'lar ve form elemanları zaten CSS ile gizli
+            }
+            
+            function initializeNormalMode() {
+                console.log('Normal mod başlatma işlemleri');
+                
+                // Hidden field değerini kontrol et
+                const hdnYetkiliKayitlar = document.getElementById('<%= hdnYetkiliKayitlar.ClientID %>');
+                console.log('Hidden field elementi:', hdnYetkiliKayitlar);
+                console.log('Hidden field ID:', '<%= hdnYetkiliKayitlar.ClientID %>');
+                console.log('Hidden field değeri:', hdnYetkiliKayitlar?.value);
+                
+                // Tüm hidden fieldları kontrol et
+                document.querySelectorAll('input[type="hidden"]').forEach(hf => {
+                    console.log('Hidden field bulundu:', hf.id, 'değer:', hf.value);
+                });
+                
+                // Normal modda form elemanlarını başlat
+                initializeDatePicker();
+                
+                // Initialize signature slots
+                const slots = document.querySelectorAll('.signature-slot');
+                slots.forEach((slot, index) => {
+                    const deleteBtn = slot.querySelector('.delete-signature');
+                    if (deleteBtn) {
+                        deleteBtn.onclick = (e) => deleteSignature(index, e);
+                    }
+                });
             }
 
             window.addEventListener('resize', function() {
