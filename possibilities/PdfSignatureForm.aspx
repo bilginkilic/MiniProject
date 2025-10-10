@@ -2708,7 +2708,10 @@
                     setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
                 });
             }
-
+            function isCompactMode() {
+    // CSS'de compact-mode class'ının varlığını kontrol et
+    return document.querySelector('.compact-mode') !== null;
+}
 
             function initializeGrid() {
                 try {
@@ -2807,7 +2810,12 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
+                                if(isCompactMode()) {
+                                    signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].base64image}')`;
+                                } else {
+                                    signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
+                                }
+                               // signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                             }
                             
                             cell.appendChild(signaturePreview);
