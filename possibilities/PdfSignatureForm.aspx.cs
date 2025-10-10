@@ -348,7 +348,7 @@ namespace AspxExamples
                                     YetkiSekli = yetkiliData.YetkiSekli,
                                     YetkiTarihi = yetkiliData.YetkiTarihi,
                                     YetkiBitisTarihi = yetkiliData.AksiKararaKadar ? "Aksi Karara Kadar" : yetkiliData.YetkiTarihi,
-                                    YetkiGrubu = yetkiliData.YetkiSekli,
+                                    YetkiGrubu = yetkiliData.YetkiGrubu,
                                     SinirliYetkiDetaylari = yetkiliData.SinirliYetkiDetaylari,
                                     YetkiTurleri = yetkiliData.YetkiTurleri,
                                     YetkiTutari = yetkiliData.YetkiTutari,
@@ -758,6 +758,9 @@ namespace AspxExamples
                             
                             var islemToken = kayitObj["IslemTipi"];
                             kayit.IslemTipi = islemToken != null ? islemToken.ToString() : null;
+
+                            var yetkigrubuToken = kayitObj["YetkiGrubu"];
+                            kayit.YetkiGrubu = yetkigrubuToken != null ? yetkigrubuToken.ToString() : null;
                             
                             kayit.Imzalar = new List<YetkiliImza>();
 
@@ -829,7 +832,7 @@ namespace AspxExamples
                             yetkiliKayitlar.Add(kayit);
                         }
 
-                        foreach (JObject sigObj in signaturesArray)
+                        /*foreach (JObject sigObj in signaturesArray)
                         {
                             var signatureData = new SignatureData();
                             
@@ -855,7 +858,7 @@ namespace AspxExamples
                             signatureData.SourcePdfPath = sourcePathToken != null ? sourcePathToken.ToString() : null;
                             
                             signatures.Add(signatureData);
-                        }
+                        }*/
 
                         System.Diagnostics.Debug.WriteLine("JSON başarıyla parse edildi");
                     }
@@ -894,7 +897,7 @@ namespace AspxExamples
                         YetkiSekli = kayit.YetkiSekli,
                         YetkiTarihi = kayit.YetkiTarihi,
                         YetkiBitisTarihi = kayit.AksiKararaKadar ? "Aksi Karara Kadar" : kayit.YetkiTarihi,
-                        YetkiGrubu = kayit.YetkiSekli,
+                        YetkiGrubu = kayit.YetkiGrubu,
                         SinirliYetkiDetaylari = kayit.SinirliYetkiDetaylari,
                         YetkiTurleri = kayit.YetkiTurleri,
                         YetkiTutari = decimal.Parse(kayit.YetkiTutari ?? "0"),

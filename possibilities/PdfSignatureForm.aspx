@@ -1,174 +1,12 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PdfSignatureForm.aspx.cs" Inherits="AspxExamples.PdfSignatureForm" %>
-<%-- Created: f polly kulaklık --%>
+<%-- Created: f polly kulaklık e--%>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
   <head runat="server">
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="İmza Sirkülerinden İmza Seçimi ve Yönetimi">
-    <!--[if IE]>
-    <script>
-        // Temel polyfill'ler
-        (function(w) {
-            // Promise polyfill
-            if (!w.Promise) {
-                w.Promise = function(fn) {
-                    var state = 'pending';
-                    var value;
-                    var deferred = null;
-
-                    function resolve(newValue) {
-                        if (deferred) {
-                            setTimeout(function() { deferred.resolve(newValue); }, 1);
-                        }
-                        state = 'resolved';
-                        value = newValue;
-                    }
-
-                    function reject(reason) {
-                        if (deferred) {
-                            setTimeout(function() { deferred.reject(reason); }, 1);
-                        }
-                        state = 'rejected';
-                        value = reason;
-                    }
-
-                    this.then = function(callback) {
-                        if (state === 'pending') {
-                            deferred = new w.Promise(function(resolve) {
-                                resolve(callback(value));
-                            });
-                            return deferred;
-                        }
-                        return new w.Promise(function(resolve) {
-                            resolve(callback(value));
-                        });
-                    };
-
-                    fn(resolve, reject);
-                };
-            }
-
-            // fetch polyfill basit versiyonu
-            if (!w.fetch) {
-                w.fetch = function(url, options) {
-                    return new Promise(function(resolve, reject) {
-                        var xhr = new XMLHttpRequest();
-                        xhr.open(options && options.method || 'GET', url);
-                        
-                        if (options && options.headers) {
-                            Object.keys(options.headers).forEach(function(key) {
-                                xhr.setRequestHeader(key, options.headers[key]);
-                            });
-                        }
-                        
-                        xhr.onload = function() {
-                            resolve({
-                                ok: xhr.status >= 200 && xhr.status < 300,
-                                status: xhr.status,
-                                json: function() {
-                                    return Promise.resolve(JSON.parse(xhr.responseText));
-                                },
-                                text: function() {
-                                    return Promise.resolve(xhr.responseText);
-                                }
-                            });
-                        };
-                        
-                        xhr.onerror = function() {
-                            reject(new TypeError('Network request failed'));
-                        };
-                        
-                        xhr.send(options && options.body);
-                    });
-                };
-            }
-
-            // Array metodları için polyfill'ler
-            if (!Array.from) {
-                Array.from = function(arrayLike) {
-                    return Array.prototype.slice.call(arrayLike);
-                };
-            }
-
-            if (!Array.prototype.forEach) {
-                Array.prototype.forEach = function(callback, thisArg) {
-                    for (var i = 0; i < this.length; i++) {
-                        callback.call(thisArg, this[i], i, this);
-                    }
-                };
-            }
-
-            if (!Array.prototype.map) {
-                Array.prototype.map = function(callback, thisArg) {
-                    var arr = [];
-                    for (var i = 0; i < this.length; i++) {
-                        arr.push(callback.call(thisArg, this[i], i, this));
-                    }
-                    return arr;
-                };
-            }
-
-            // Element.classList polyfill
-            if (!("classList" in document.documentElement)) {
-                Object.defineProperty(Element.prototype, 'classList', {
-                    get: function() {
-                        var self = this;
-                        function update(fn) {
-                            return function(value) {
-                                var classes = self.className.split(/\s+/);
-                                var index = classes.indexOf(value);
-                                fn(classes, index, value);
-                                self.className = classes.join(" ");
-                            };
-                        }
-
-                        return {
-                            add: update(function(classes, index, value) {
-                                if (!~index) classes.push(value);
-                            }),
-                            remove: update(function(classes, index) {
-                                if (~index) classes.splice(index, 1);
-                            }),
-                            toggle: update(function(classes, index, value) {
-                                if (~index) { classes.splice(index, 1); }
-                                else { classes.push(value); }
-                            }),
-                            contains: function(value) {
-                                return !!~self.className.split(/\s+/).indexOf(value);
-                            }
-                        };
-                    }
-                });
-            }
-
-            // querySelector polyfill
-            if (!document.querySelector) {
-                document.querySelector = function(selector) {
-                    return document.getElementsByTagName(selector)[0] || 
-                           document.getElementsByClassName(selector.replace('.',''))[0] || 
-                           document.getElementById(selector.replace('#',''));
-                };
-            }
-
-            // querySelectorAll polyfill
-            if (!document.querySelectorAll) {
-                document.querySelectorAll = function(selector) {
-                    var elements = [];
-                    var all = document.getElementsByTagName('*');
-                    for (var i = 0; i < all.length; i++) {
-                        if (all[i].className.indexOf(selector.replace('.','')) > -1) {
-                            elements.push(all[i]);
-                        }
-                    }
-                    return elements;
-                };
-            }
-        })(window);
-    </script>
-    <![endif]-->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <title>İmza Sirkülerinden İmza Seçimi</title>
     <style type="text/css">
@@ -867,84 +705,7 @@
             margin: 5px 0;
         }
         
-        /* IE specific fixes */
-        @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
-            .container {
-                min-width: 1200px;
-            }
-            
-            .image-wrapper {
-                position: relative;
-                min-height: 400px;
-            }
-            
-            .signature-slot {
-                position: relative;
-                min-height: 80px;
-            }
-            
-            .modal {
-                background-color: rgba(0,0,0,0.5) !important;
-            }
-        }
 
-        /* PDF List Panel Styles */
-        .pdf-list-panel {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #eee;
-        }
-
-        .pdf-list-panel h3 {
-            margin: 0 0 15px 0;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .pdf-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .pdf-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .pdf-item:hover {
-            background: #f0f0f0;
-        }
-
-        .pdf-item.active {
-            background: #e3f2fd;
-            border-color: #2196f3;
-        }
-
-        .pdf-item-name {
-            margin-right: 10px;
-        }
-
-        .pdf-item-remove {
-            color: #dc3545;
-            cursor: pointer;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
-        .pdf-item-remove:hover {
-            background: #dc3545;
-            color: white;
-        }
 
         /* Selected Signatures Styles */
         .selected-signatures {
@@ -1067,15 +828,7 @@
             </div>
 
             <div class="sidebar">
-                <div class="pdf-list-panel">
-                    <h3>Mevcut PDF Listesi</h3>
-                    <div class="pdf-list" id="pdfList">
-                        <!-- PDF listesi buraya dinamik olarak eklenecek -->
-                    </div>
-                    <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
-                </div>
-
-                                    <div class="upload-panel">
+                <div class="upload-panel">
                         <div class="instructions">
                             <strong>Nasıl Kullanılır:</strong>
                             <ol>
@@ -1087,6 +840,7 @@
                         <asp:FileUpload ID="fuSignature" runat="server" accept=".pdf" />
                         <asp:Button ID="btnUpload" runat="server" Text="İmza Sirkülerini Yükle ve Göster" CssClass="button" OnClick="BtnUpload_Click" />
                         <asp:Button ID="btnShowPdf" runat="server" Text="" CssClass="button" style="display: none;" />
+                        <asp:HiddenField ID="hdnCurrentPdfList" runat="server" />
                 </div>
 
                 <!-- Selected Signatures Container -->
@@ -1132,7 +886,7 @@
                     </div>
                     <div class="form-row">
                         <label for="txtYetkiTutari">YETKİ TUTARI:</label>
-                        <asp:TextBox runat="server" ID="txtYetkiTutari" placeholder="Yetki tutarını giriniz"
+                        <asp:TextBox runat="server" ID="txtYetkiTutari"
                                TextMode="Number" step="0.01" min="0"
                                onkeypress="return isNumberKey(event)"
                                onpaste="return validatePaste(event)"
@@ -1212,7 +966,6 @@
                             <th>Yetki Döv.</th>
                             <th>Durum</th>
                             <th style="display: none;">ID</th>
-                            <th style="display: none;">CircularID</th>
                         </tr>
                     </thead>
                     <tbody id="yetkiliTableBody">
@@ -1348,7 +1101,7 @@
                                 Width: sig.Width,
                                 Height: sig.Height,
                                 Image: sig.Image,
-                                SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value
+                                SourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value || ''
                             };
                         }))
                     };
@@ -1987,9 +1740,6 @@
                 // Convert to base64
                 const imageData = canvas.toDataURL('image/png');
 
-                // Get current active PDF path from hidden field
-                const currentPdfPath = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
-
                 // Add to selected signatures
                     const signatureData = {
                         id: '', // Yeni imza için boş ID
@@ -2000,7 +1750,7 @@
                         width: Math.round(w),
                         height: Math.round(h),
                         image: imageData,
-                        sourcePdfPath: currentPdfPath
+                        sourcePdfPath: document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value || ''
                     };
 
                 selectedSignatures.push(signatureData);
@@ -2253,22 +2003,21 @@
                     const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
                     const yetkiBitisTarihi = isAksiKarar ? 
                         '31.12.2050' : 
-                        document.querySelector('select[name="gun"]').value + '.' + 
-                        document.querySelector('select[name="ay"]').value + '.' + 
-                        document.querySelector('select[name="yil"]').value;
+                        formatDateToTurkish(document.getElementById('yetkiBitisTarihi').value);
                 
                     // Yeni kayıt veya güncelleme için veri hazırla
                     const formData = {
                         YetkiliKontakt: yetkiliKontakt,
                         YetkiliAdi: yetkiliAdi,
-                        YetkiSekli: document.querySelector('select[name="yetkiSekli"]')?.value || 'Müştereken',
+                        YetkiSekli: document.getElementById('selYetkiSekli')?.value || 'Müştereken',
                         YetkiTarihi: yetkiTarihi,
                         YetkiBitisTarihi: yetkiBitisTarihi,
-                        SinirliYetkiDetaylari: document.querySelector('textarea[name="sinirliYetkiDetaylari"]')?.value || '',
-                        YetkiTurleri: document.querySelector('select[name="yetkiTurleri"]')?.value || '',
+                        YetkiGrubu: document.getElementById('selYetkiGrubu')?.value || '',
+                        SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
+                        YetkiTurleri: document.getElementById('selYetkiTurleri')?.value || '',
                         YetkiTutari: yetkiTutariNum.toFixed(2),
-                        YetkiDovizCinsi: document.querySelector('select[name="yetkiDovizCinsi"]')?.value || 'USD',
-                        YetkiDurumu: 'Aktif',
+                        YetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi')?.value || 'USD',
+                        YetkiDurumu: document.getElementById('selYetkiDurumu')?.value || 'Aktif',
                         Imzalar: imzalar
                     };
 
@@ -2313,7 +2062,7 @@
                     .map(preview => preview.style.backgroundImage)
                     .map(bgImage => bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1') || '');
 
-                return {
+                    return {
                     YetkiliKontakt: row.cells[0].textContent,
                     YetkiliAdi: row.cells[1].textContent,
                     YetkiSekli: row.cells[2].textContent,
@@ -2325,9 +2074,8 @@
                     Imzalar: signaturePreviews,
                     YetkiTutari: row.cells[11].textContent,
                     YetkiDovizCinsi: row.cells[12].textContent,
-                    YetkiDurumu: row.cells[13].textContent,
-                    Id: row.cells[14].textContent,
-                    CircularId: row.cells[15].textContent
+                    YetkiDurumu: row.cells[13].textContent
+                   // Id: row.cells[14].textContent
                 };
             }
 
@@ -2634,46 +2382,28 @@
                     if (!tbody) return null;
                     const row = tbody.insertRow(0);
                     const allCells = [
-                        data.yetkiliKontakt || '',
-                        data.yetkiliAdi || '',
-                        document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        data.yetkiTarihi || '',
-                        data.yetkiTarihi || '',
-                        document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        document.getElementById('selYetkiTurleri').value || '',
-                        '', // İmza 1
-                        '', // İmza 2
-                        '', // İmza 3
-                        data.yetkiTutari || '',
-                        data.yetkiDovizCinsi || '',
-                        data.yetkiDurumu || '',
-                        data.id || '', // ID hücresi
-                        data.circularId || '', // CircularID hücresi
-                        data.imzalar && data.imzalar[0] ? data.imzalar[0].id || '' : '', // ImzaID1
-                        data.imzalar && data.imzalar[0] ? data.imzalar[0].authDetailId || '' : '', // ImzaAuthDetailID1
-                        data.imzalar && data.imzalar[1] ? data.imzalar[1].id || '' : '', // ImzaID2
-                        data.imzalar && data.imzalar[1] ? data.imzalar[1].authDetailId || '' : '', // ImzaAuthDetailID2
-                        data.imzalar && data.imzalar[2] ? data.imzalar[2].id || '' : '', // ImzaID3
-                        data.imzalar && data.imzalar[2] ? data.imzalar[2].authDetailId || '' : '' // ImzaAuthDetailID3
-                    ];
-
-                    // Temel hücreleri ekle
-                    allCells.forEach((cellData, index) => {
+                        data.YetkiliKontakt || '',
+                        data.YetkiliAdi || '',
+                        data.YetkiSekli || '',
+                        data.YetkiTarihi || '',
+                        data.YetkiBitisTarihi || '',
+                        data.YetkiGrubu || '',
+                        data.SinirliYetkiDetaylari || '',
+                        data.YetkiTurleri  || ''
+                    
+                    ].forEach(text => {
                         const cell = row.insertCell();
-                        cell.textContent = cellData;
-                        // ID ve diğer gizli hücreleri gizle
-                        if (index >= 14 && index <= 21) { // ID, CircularID ve İmza ID'leri
-                            cell.style.display = 'none';
-                        }
+                        cell.textContent = text;
                     });
+
+                
 
                     // İmza hücreleri
                     for(let i = 0; i < 3; i++) {
                         const cell = row.insertCell();
                         const signaturePreview = document.createElement('div');
                         signaturePreview.className = 'signature-preview';
-                        if(data.imzalar && data.imzalar[i]) {
+                        if(data.imzalar && data.Imzalar[i]) {
                             signaturePreview.style.backgroundImage = data.imzalar[i];
                         }
                         cell.appendChild(signaturePreview);
@@ -2681,9 +2411,9 @@
 
                     // Son hücreleri ekle
                     [
-                        document.getElementById('txtYetkiTutari').value || '100.000',
-                        document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        document.getElementById('selYetkiDurumu').value || 'Aktif'
+                        document.getElementById('txtYetkiTutari').value || '',
+                        document.getElementById('selYetkiDovizCinsi').value || '',
+                        document.getElementById('selYetkiDurumu').value || ''
                     ].forEach(text => {
                         const cell = row.insertCell();
                         cell.textContent = text;
@@ -2704,7 +2434,7 @@
 
                     // Yetkili kayıtlarını güncelle
                     updateYetkiliKayitlar();
-
+                    clearForm();
                     return row;
                 } catch (err) {
                     console.error('Satır ekleme hatası:', err);
@@ -2713,109 +2443,6 @@
                 }
             }
 
-            function handleAddUpdate() {
-                try {
-                    console.log('handleAddUpdate başladı');
-                    const btnEkle = document.getElementById('btnEkle');
-                    if (!btnEkle) {
-                        throw new Error('btnEkle elementi bulunamadı');
-                    }
-                    console.log('btnEkle bulundu:', btnEkle);
-                    let isUpdate = false;
-                    if (btnEkle) {
-                        isUpdate = btnEkle.classList.contains('update-mode');
-                    }
-                
-                    // Form verilerini kontrol et
-                    const yetkiliKontakt = document.getElementById('txtYetkiliKontakt')?.value?.trim();
-                    const yetkiliAdi = document.getElementById('txtYetkiliAdi')?.value?.trim();
-                    const yetkiTutari = document.getElementById('txtYetkiTutari')?.value;
-                    const yetkiTutariNum = parseFloat(yetkiTutari);
-                    const imzalar = [];
-                    
-                    document.querySelectorAll('.signature-slot').forEach(slot => {
-                        if (slot.classList.contains('filled')) {
-                            const slotImage = slot.querySelector('.slot-image');
-                            if (slotImage && slotImage.style.backgroundImage) {
-                                imzalar.push(slotImage.style.backgroundImage);
-                            }
-                        }
-                    });
-
-                    // Zorunlu alan kontrolü
-                    if (!yetkiliKontakt || !yetkiliAdi) {
-                        showNotification('Lütfen yetkili kontakt ve adı alanlarını doldurun', 'warning');
-                        return;
-                    }
-
-                    if (!yetkiTutari || isNaN(yetkiTutariNum) || yetkiTutariNum <= 0) {
-                        showNotification('Lütfen geçerli bir yetki tutarı girin', 'warning');
-                        return;
-                    }
-                    
-                    // Ondalık basamak kontrolü
-                    if (yetkiTutari.includes('.')) {
-                        const decimalPlaces = yetkiTutari.split('.')[1].length;
-                        if (decimalPlaces > 2) {
-                            showNotification('Yetki tutarı en fazla 2 ondalık basamak içerebilir', 'warning');
-                            return;
-                        }
-                    }
-
-                    if (imzalar.length === 0) {
-                        showNotification('Lütfen en az bir imza seçin', 'warning');
-                        return;
-                    }
-
-                    // Tarih kontrolü
-                    const isAksiKarar = document.getElementById('chkAksiKarar').checked;
-                    const today = new Date();
-                    const yetkiTarihi = today.getDate() + '.' + (today.getMonth() + 1) + '.' + today.getFullYear();
-                    const yetkiBitisTarihi = isAksiKarar ? 
-                        'Aksi Karara Kadar' : 
-                        document.getElementById('yetkiBitisTarihi').value;
-                
-                    // Yeni kayıt veya güncelleme için veri hazırla
-                    const formData = {
-                        yetkiliKontakt: yetkiliKontakt,
-                        yetkiliAdi: yetkiliAdi,
-                        yetkiSekli: document.getElementById('selYetkiSekli').value || 'Müştereken',
-                        yetkiTarihi: yetkiTarihi,
-                        yetkiBitisTarihi: yetkiBitisTarihi,
-                        yetkiGrubu: document.getElementById('selYetkiGrubu').value || 'A Grubu',
-                        sinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari').value || '',
-                        yetkiTurleri: document.getElementById('selYetkiTurleri').value || '',
-                        yetkiTutari: yetkiTutariNum.toFixed(2),
-                        yetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi').value || 'USD',
-                        yetkiDurumu: document.getElementById('selYetkiDurumu').value || 'Aktif',
-                        imzalar: imzalar
-                    };
-
-                    if(isUpdate) {
-                        if(!selectedRow) {
-                            throw new Error('Güncellenecek satır seçilmedi');
-                        }
-
-                        // Satırı güncelle
-                        updateTableRow(selectedRow, formData);
-                        btnEkle.innerHTML = '<i class="fas fa-plus"></i> Ekle';
-                        btnEkle.classList.remove('update-mode');
-                        selectedRow = null;
-                        showNotification('Kayıt başarıyla güncellendi', 'success');
-                    } else {
-                        // Yeni satır ekle
-                        addTableRow(formData);
-                        showNotification('Yeni kayıt eklendi', 'success');
-                    }
-
-                    // Formu temizle
-                    clearForm();
-                    
-                } catch (err) {
-                    console.error('handleAddUpdate hatası:', err);
-                    showNotification(err.message || 'İşlem sırasında bir hata oluştu', 'error');
-                }
-            }
             
 
             function clearForm() {
@@ -3082,10 +2709,6 @@
                 });
             }
 
-            // PDF listesi yönetimi
-            let pdfList = [];
-            const pdfListContainer = document.getElementById('pdfList');
-            const hdnCurrentPdfList = document.getElementById('<%= hdnCurrentPdfList.ClientID %>').value;
 
             function initializeGrid() {
                 try {
@@ -3155,7 +2778,7 @@
                         
                         // Temel hücreler
                         const cells = [
-                            data.Id || '', // ID hücresi eklendi
+                          //  data.Id || '', // ID hücresi
                             data.YetkiliKontakt || '',
                             data.YetkiliAdi || '',
                             data.YetkiSekli || '',
@@ -3171,9 +2794,9 @@
                             const cell = document.createElement('td');
                             cell.textContent = cellData;
                             // ID ve CircularID hücrelerini gizle
-                            if (index === 0 || index === 1) {
-                                cell.style.display = 'none';
-                            }
+                            //if (index === 0 || index === 1) {
+                            //    cell.style.display = 'none';
+                            //}
                             row.appendChild(cell);
                         });
                         let base64tag="data:image/png;base64,";
@@ -3184,7 +2807,7 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].Base}')`;
+                                signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                             }
                             
                             cell.appendChild(signaturePreview);
@@ -3222,70 +2845,16 @@
                 }
             }
 
-            function initializePdfList() {
-                // URL'den PDF listesini al
-                const urlParams = new URLSearchParams(window.location.search);
-                const pdfListParam = urlParams.get('pdfList');
-                
-                if (pdfListParam) {
-                    pdfList = decodeURIComponent(pdfListParam).split(',');
-                    hdnCurrentPdfList.value = pdfListParam;
-                    updatePdfListUI();
-                }
+
+            // Tarih formatı yardımcı fonksiyonu
+            function formatDateToTurkish(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
             }
 
-            function updatePdfListUI() {
-                pdfListContainer.innerHTML = '';
-                pdfList.forEach((pdfPath, index) => {
-                    const pdfItem = document.createElement('div');
-                    pdfItem.className = 'pdf-item';
-                    pdfItem.innerHTML = `
-                        <span class="pdf-item-name">${pdfPath.split('/').pop()}</span>
-                        <span class="pdf-item-remove" onclick="removePdf(${index}, event)">✕</span>
-                    `;
-                    pdfItem.onclick = () => loadPdf(pdfPath);
-                    pdfListContainer.appendChild(pdfItem);
-                });
-            }
-
-            function loadPdf(pdfPath) {
-                // PDF yükleme işlemi için mevcut form mekanizmasını kullan
-                showLoading('PDF yükleniyor...');
-                // TODO: PDF yükleme işlemi için sunucu tarafında gerekli değişiklikleri yap
-            }
-
-            function removePdf(index, event) {
-                event.stopPropagation();
-                pdfList.splice(index, 1);
-                hdnCurrentPdfList.value = pdfList.join(',');
-                updatePdfListUI();
-                showNotification('PDF listeden kaldırıldı', 'success');
-            }
-
-            function addPdfToList(pdfPath) {
-                if (!pdfList.includes(pdfPath)) {
-                    pdfList.push(pdfPath);
-                    hdnCurrentPdfList.value = pdfList.join(',');
-                    updatePdfListUI();
-                }
-            }
-
-            // IE compatibility check
-            function isIE() {
-                return window.navigator.userAgent.match(/(MSIE|Trident)/);
-            }
-
-            // Add IE specific class to html element
-            if (isIE()) {
-                document.documentElement.className += ' ie';
-            }
-
-            // Event listener with IE fallback
-            if (window.addEventListener) {
-                window.addEventListener('load', initializeApp);
-            } else if (window.attachEvent) {
-                window.attachEvent('onload', initializeApp);
-            }
+            // Event listener
+            window.addEventListener('load', initializeApp);
 
             function initializeApp() {
                     console.log('Window load event fired');
@@ -3302,7 +2871,6 @@
                     });
                     
                     initializeImageEvents();
-                    initializePdfList();
                     initializeDatePicker();
                     initializeGrid(); // Grid initialization added here
                     
@@ -3317,8 +2885,8 @@
 
                     // Sayfa ilk yüklendiğinde imza slotlarını temizle
                     selectedSignatures = [];
-                    updateSignatureSlots();
-                });
+                    //updateSignatureSlots();
+                    clearForm();
             }
 
             window.addEventListener('resize', function() {
