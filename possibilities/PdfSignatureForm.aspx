@@ -1050,12 +1050,8 @@
             
             // Compact mod kontrolü
             function isCompactMode() {
-                try {
-                    var params = new URLSearchParams(window.location.search);
-                    return (params.get('mode') || '').toLowerCase() === 'compact';
-                } catch (e) {
-                    return false;
-                }
+                // CSS'de compact-mode class'ının varlığını kontrol et
+                return document.querySelector('.compact-mode') !== null;
             }
 
             // Hidden field değerini almak için yardımcı fonksiyon
@@ -2724,10 +2720,6 @@
                     setTimeout(() => updateLoadingMessage('Görüntü hazırlanıyor...'), 2000);
                 });
             }
-            function isCompactMode() {
-    // CSS'de compact-mode class'ının varlığını kontrol et
-    return document.querySelector('.compact-mode') !== null;
-}
 
             function initializeGrid() {
                 try {
@@ -2826,11 +2818,11 @@
                             signaturePreview.className = 'signature-preview';
                             
                             if (data.Imzalar && data.Imzalar[i]) {
-                                if(isCompactMode()) {
+                              /*  if(isCompactMode()) {
                                     signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i].Base64Image}')`;
-                                } else {
+                                } else {*/
                                     signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
-                                }
+                                //}
                                // signaturePreview.style.backgroundImage = `url('${base64tag}${data.Imzalar[i]}')`;
                             }
                             
