@@ -305,7 +305,37 @@
             padding: 20px;
         }
 
-        /* Loading Animation Styles */
+        /* Multi-select ListBox styles */
+        .multi-select-listbox {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 14px;
+            background-color: #fff;
+        }
+        .multi-select-listbox option:checked {
+            background-color: #007bff;
+            color: white;
+        }
+        .selected-items-display {
+            margin-top: 5px;
+            padding: 5px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            min-height: 20px;
+            font-size: 12px;
+        }
+        .selected-item-tag {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
         .loading-overlay {
             display: none;
             position: fixed;
@@ -509,6 +539,18 @@
             background-position: center;
             background-color: white;
             margin: 0 auto;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+        .signature-preview:hover {
+            transform: scale(2.5);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 2px solid #007bff;
+        }
+        .signature-preview:not(:empty):hover {
+            background-color: rgba(255,255,255,0.95);
         }
         .footer {
             grid-area: footer;
@@ -927,8 +969,9 @@
                     </div>
                     <div class="form-row">
                         <label>YETKİ TÜRLERİ:</label>
-                        <asp:DropDownList runat="server" ID="selYetkiTurleri" ClientIDMode="Static">
-                        </asp:DropDownList>
+                        <asp:ListBox runat="server" ID="selYetkiTurleri" ClientIDMode="Static" SelectionMode="Multiple" Rows="4" CssClass="multi-select-listbox">
+                        </asp:ListBox>
+                        <div class="selected-items-display" id="selectedYetkiTurleri"></div>
                     </div>
                     <div class="form-row">
                         <label>YETKİ DURUMU:</label>
@@ -1058,6 +1101,58 @@
             function getHiddenFieldValue(fieldId) {
                 var element = document.getElementById(fieldId);
                 return element ? element.value : null;
+            }
+
+            // Seçilen yetki türlerini göster
+            function updateSelectedYetkiTurleri() {
+                const listbox = document.getElementById('selYetkiTurleri');
+                const displayDiv = document.getElementById('selectedYetkiTurleri');
+                
+                if (!listbox || !displayDiv) return;
+                
+                const selectedOptions = Array.from(listbox.options)
+                    .filter(option => option.selected)
+                    .map(option => option.text);
+                
+                displayDiv.innerHTML = '';
+                selectedOptions.forEach(text => {
+                    const tag = document.createElement('span');
+                    tag.className = 'selected-item-tag';
+                    tag.textContent = text;
+                    displayDiv.appendChild(tag);
+                });
+            }
+
+            // Yetki türleri değerini al (virgülle ayrılmış string olarak)
+            function getSelectedYetkiTurleri() {
+                const listbox = document.getElementById('selYetkiTurleri');
+                if (!listbox) return '';
+                
+                const selectedOptions = Array.from(listbox.options)
+                    .filter(option => option.selected)
+                    .map(option => option.value);
+                
+                return selectedOptions.join(', ');
+            }
+
+            // Yetki türleri değerini ayarla (virgülle ayrılmış string'den)
+            function setSelectedYetkiTurleri(valueString) {
+                const listbox = document.getElementById('selYetkiTurleri');
+                if (!listbox || !valueString) return;
+                
+                // Önce tüm seçimleri temizle
+                Array.from(listbox.options).forEach(option => option.selected = false);
+                
+                // Virgülle ayrılmış değerleri ayır ve seç
+                const values = valueString.split(',').map(v => v.trim());
+                values.forEach(value => {
+                    const option = Array.from(listbox.options).find(opt => opt.value === value);
+                    if (option) {
+                        option.selected = true;
+                    }
+                });
+                
+                updateSelectedYetkiTurleri();
             }
 
             function saveAndReturn() {
@@ -1375,6 +1470,12 @@
                 PageMethods.GetYetkiTurleri(function(response) {
                     if (response.Success) {
                         fillDropdown('selYetkiTurleri', response.Data);
+                        
+                        // ListBox'a change event listener ekle
+                        const listbox = document.getElementById('selYetkiTurleri');
+                        if (listbox) {
+                            listbox.addEventListener('change', updateSelectedYetkiTurleri);
+                        }
                     } else {
                         showNotification('Yetki türleri yüklenirken hata: ' + response.Message, 'error');
                     }
@@ -1905,7 +2006,7 @@
                     document.getElementById('selYetkiSekli').value = row.cells[4].textContent;
                     document.getElementById('selYetkiGrubu').value = row.cells[7].textContent;
                     document.getElementById('txtSinirliYetkiDetaylari').value = row.cells[8].textContent;
-                    document.getElementById('selYetkiTurleri').value = row.cells[9].textContent;
+                    setSelectedYetkiTurleri(row.cells[9].textContent);
                     document.getElementById('txtYetkiTutari').value = row.cells[12].textContent;
                     document.getElementById('selYetkiDovizCinsi').value = row.cells[13].textContent;
                     document.getElementById('selYetkiDurumu').value = row.cells[14].textContent;
@@ -2026,7 +2127,7 @@
                         YetkiBitisTarihi: yetkiBitisTarihi,
                         YetkiGrubu: document.getElementById('selYetkiGrubu')?.value || '',
                         SinirliYetkiDetaylari: document.getElementById('txtSinirliYetkiDetaylari')?.value || '',
-                        YetkiTurleri: document.getElementById('selYetkiTurleri')?.value || '',
+                        YetkiTurleri: getSelectedYetkiTurleri(),
                         YetkiTutari: yetkiTutariNum.toFixed(2),
                         YetkiDovizCinsi: document.getElementById('selYetkiDovizCinsi')?.value || 'USD',
                         YetkiDurumu: document.getElementById('selYetkiDurumu')?.value || 'Aktif',
@@ -2267,7 +2368,27 @@
 
                     updates.forEach(update => {
                         if (row.cells[update.index]) {
-                            row.cells[update.index].textContent = update.value || '';
+                            // Yetki türleri hücresi için özel formatlama (index 7)
+                            if (update.index === 7 && update.value) {
+                                // Mevcut içeriği temizle
+                                row.cells[update.index].innerHTML = '';
+                                
+                                // Virgülle ayrılmış yetki türlerini tag'ler halinde göster
+                                const yetkiTurleri = update.value.split(',').map(tur => tur.trim()).filter(tur => tur);
+                                if (yetkiTurleri.length > 0) {
+                                    yetkiTurleri.forEach(tur => {
+                                        const tag = document.createElement('span');
+                                        tag.className = 'selected-item-tag';
+                                        tag.textContent = tur;
+                                        tag.style.margin = '1px';
+                                        row.cells[update.index].appendChild(tag);
+                                    });
+                                } else {
+                                    row.cells[update.index].textContent = update.value;
+                                }
+                            } else {
+                                row.cells[update.index].textContent = update.value || '';
+                            }
                         }
                     });
 
@@ -2401,11 +2522,30 @@
                         data.YetkiBitisTarihi || '',
                         data.YetkiGrubu || '',
                         data.SinirliYetkiDetaylari || '',
-                        data.YetkiTurleri  || ''
-                    
-                    ].forEach(text => {
+                        data.YetkiTurleri || ''
+                    ];
+
+                    allCells.forEach((text, index) => {
                         const cell = row.insertCell();
-                        cell.textContent = text;
+                        
+                        // Yetki türleri hücresi için özel formatlama (index 7)
+                        if (index === 7 && text) {
+                            // Virgülle ayrılmış yetki türlerini tag'ler halinde göster
+                            const yetkiTurleri = text.split(',').map(tur => tur.trim()).filter(tur => tur);
+                            if (yetkiTurleri.length > 0) {
+                                yetkiTurleri.forEach(tur => {
+                                    const tag = document.createElement('span');
+                                    tag.className = 'selected-item-tag';
+                                    tag.textContent = tur;
+                                    tag.style.margin = '1px';
+                                    cell.appendChild(tag);
+                                });
+                            } else {
+                                cell.textContent = text;
+                            }
+                        } else {
+                            cell.textContent = text;
+                        }
                     });
 
                 
@@ -2486,6 +2626,13 @@
                     
                     // Aksi karara kadar checkbox'ını temizle
                     document.getElementById('chkAksiKarar').checked = false;
+                    
+                    // Yetki türleri seçimlerini temizle
+                    const listbox = document.getElementById('selYetkiTurleri');
+                    if (listbox) {
+                        Array.from(listbox.options).forEach(option => option.selected = false);
+                        updateSelectedYetkiTurleri();
+                    }
                     
                     // İmzaları temizle
                     document.querySelectorAll('.signature-slot').forEach(slot => {
@@ -2803,7 +2950,26 @@
                         // Temel hücreleri ekle
                         cells.forEach((cellData, index) => {
                             const cell = document.createElement('td');
-                            cell.textContent = cellData;
+                            
+                            // Yetki türleri hücresi için özel formatlama (index 7)
+                            if (index === 7 && cellData) {
+                                // Virgülle ayrılmış yetki türlerini tag'ler halinde göster
+                                const yetkiTurleri = cellData.split(',').map(tur => tur.trim()).filter(tur => tur);
+                                if (yetkiTurleri.length > 0) {
+                                    yetkiTurleri.forEach(tur => {
+                                        const tag = document.createElement('span');
+                                        tag.className = 'selected-item-tag';
+                                        tag.textContent = tur;
+                                        tag.style.margin = '1px';
+                                        cell.appendChild(tag);
+                                    });
+                                } else {
+                                    cell.textContent = cellData;
+                                }
+                            } else {
+                                cell.textContent = cellData;
+                            }
+                            
                             // ID ve CircularID hücrelerini gizle
                             //if (index === 0 || index === 1) {
                             //    cell.style.display = 'none';
