@@ -250,7 +250,7 @@ namespace AspxExamples
         protected CheckBox chkAksiKarar;
         protected DropDownList selYetkiGrubu;
         protected TextBox txtSinirliYetkiDetaylari;
-        protected DropDownList selYetkiTurleri;
+        protected ListBox selYetkiTurleri;
         protected TextBox txtYetkiTutari;
         protected DropDownList selYetkiDovizCinsi;
         protected DropDownList selYetkiDurumu;
@@ -409,7 +409,10 @@ namespace AspxExamples
                             if (selYetkiSekli.Items.Count > 0)
                                 selYetkiSekli.SelectedIndex = 0;
                             if (selYetkiTurleri.Items.Count > 0)
-                                selYetkiTurleri.SelectedIndex = 0;
+                            {
+                                // ListBox için tüm seçimleri temizle
+                                selYetkiTurleri.ClearSelection();
+                            }
                             if (selYetkiDovizCinsi.Items.Count > 0)
                                 selYetkiDovizCinsi.SelectedIndex = 0;
                             if (selYetkiDurumu.Items.Count > 0)
@@ -988,7 +991,9 @@ namespace AspxExamples
                         YetkiBitisTarihi = chkAksiKarar.Checked ? "Aksi Karara Kadar" : yetkiBitisTarihi.Text,
                         YetkiGrubu = selYetkiGrubu.SelectedValue,
                         SinirliYetkiDetaylari = txtSinirliYetkiDetaylari.Text,
-                        YetkiTurleri = selYetkiTurleri.SelectedValue,
+                        YetkiTurleri = string.Join(", ", selYetkiTurleri.Items.Cast<ListItem>()
+                            .Where(item => item.Selected)
+                            .Select(item => item.Value)),
                         YetkiTutari = decimal.Parse(txtYetkiTutari.Text),
                         YetkiDovizCinsi = selYetkiDovizCinsi.SelectedValue,
                         YetkiDurumu = selYetkiDurumu.SelectedValue,
