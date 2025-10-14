@@ -1225,25 +1225,7 @@
                             // Kapanma isteğini işaretle
                             document.getElementById('<%= hdnIsReturnRequested.ClientID %>').value = 'true';
                             
-                            // Pencereyi kapatmak için timer başlat
-                            var checkCloseTimer = setInterval(function() {
-                                // Session'dan closeWindow değerini kontrol et
-                                PageMethods.CheckCloseWindow(function(response) {
-                                    if (response && response.shouldClose) {
-                                        clearInterval(checkCloseTimer);
-                                        if (window.opener && !window.opener.closed) {
-                                            window.close();
-                                        } else {
-                                            window.location.href = document.referrer || '/';
-                                        }
-                                    }
-                                });
-                            }, 500); // Her 500ms'de bir kontrol et
-
-                            // 10 saniye sonra timer'ı temizle (güvenlik için)
-                            setTimeout(function() {
-                                clearInterval(checkCloseTimer);
-                            }, 10000);
+                          
                         } else {
                             showNotification(data.d.error || 'Bilinmeyen bir hata oluştu', 'error');
                         }
