@@ -2244,10 +2244,30 @@
                 try {
                     // Müşteri arama modalını aç
                     document.getElementById('customerSearchModal').classList.add('show');
-                    document.getElementById('customerSearchInput').focus();
+                    const searchInput = document.getElementById('customerSearchInput');
+                    searchInput.focus();
+                    
+                    // Sayfa açıldığında otomatik olarak tüm müşterileri getir
+                    showLoading('Yetkililer yükleniyor...');
+                    
+                    // Tüm müşterileri getirmek için boş string ile arama yap
+                    PageMethods.SearchCustomers('', function(response) {
+                        if (response.Success) {
+                            updateCustomerTable(response.Data);
+                        } else {
+                            showNotification(response.Message || 'Yetkililer yüklenirken hata oluştu', 'error');
+                        }
+                        hideLoading();
+                    }, function(error) {
+                        console.error('Yetkili yükleme hatası:', error);
+                        showNotification('Yetkililer yüklenirken bir hata oluştu', 'error');
+                        hideLoading();
+                    });
+                    
                 } catch (err) {
                     console.error('Yetkili arama hatası:', err);
                     showNotification(err.message || 'Arama sırasında bir hata oluştu', 'error');
+                    hideLoading();
                 }
             }
 
@@ -2263,12 +2283,7 @@
                     }
 
                     const searchTerm = searchInput.value.trim();
-                    if (!searchTerm) {
-                        showNotification('Lütfen bir arama terimi girin', 'warning');
-                        return;
-                    }
-
-                    showLoading('Müşteriler aranıyor...');
+                    showLoading('Yetkililer aranıyor...');
 
                     // Web servis çağrısı
                     PageMethods.SearchCustomers(searchTerm, function(response) {
@@ -2316,7 +2331,7 @@
                             <tr>
                                 <td colspan="3" class="no-results">
                                     <i class="fas fa-search"></i>
-                                    <p>Arama kriterlerine uygun müşteri bulunamadı</p>
+                                    <p>Arama kriterlerine uygun yetkili bulunamadı</p>
                                 </td>
                             </tr>
                         `;
@@ -3053,6 +3068,27 @@
                     // Ortak başlatma işlemleri
                     initializeImageEvents();
                     initializeGrid();
+                    
+                    // Müşteri arama input'u için event listener ekle
+                    const searchInput = document.getElementById('customerSearchInput');
+                    if (searchInput) {
+                        searchInput.addEventListener('input', Utils.debounce(function(e) {
+                            const searchTerm = e.target.value.trim();
+                            showLoading('Yetkililer aranıyor...');
+                            PageMethods.SearchCustomers(searchTerm, function(response) {
+                                if (response.Success) {
+                                    updateCustomerTable(response.Data);
+                                } else {
+                                    showNotification(response.Message || 'Arama sırasında bir hata oluştu', 'error');
+                                }
+                                hideLoading();
+                            }, function(error) {
+                                console.error('Müşteri arama hatası:', error);
+                                showNotification('Arama sırasında bir hata oluştu', 'error');
+                                hideLoading();
+                            });
+                        }, 500)); // 500ms debounce süresi
+                    }
                     
                     // Sayfa ilk yüklendiğinde imza slotlarını temizle
                     selectedSignatures = [];
