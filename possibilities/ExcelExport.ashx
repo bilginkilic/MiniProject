@@ -18,12 +18,53 @@ public class ExcelExport : IHttpHandler
             // POST body'den oku
             if (context.Request.HttpMethod == "POST")
             {
-                using (var reader = new StreamReader(context.Request.InputStream))
+                // Önce Content-Type'ı kontrol et
+                string contentType = context.Request.ContentType ?? "";
+                
+                // JSON content type ise (application/json)
+                if (contentType.Contains("application/json"))
                 {
-                    jsonData = reader.ReadToEnd();
+                    using (var reader = new StreamReader(context.Request.InputStream))
+                    {
+                        jsonData = reader.ReadToEnd();
+                    }
+                }
+                // Form data ise (application/x-www-form-urlencoded veya multipart/form-data)
+                else if (contentType.Contains("application/x-www-form-urlencoded") || 
+                         contentType.Contains("multipart/form-data") ||
+                         !string.IsNullOrEmpty(context.Request.Form["data"]))
+                {
+                    // Form'dan "data" field'ını al
+                    jsonData = context.Request.Form["data"];
+                    
+                    // Eğer form'da yoksa, InputStream'den oku (form-encoded olabilir)
+                    if (string.IsNullOrEmpty(jsonData))
+                    {
+                        using (var reader = new StreamReader(context.Request.InputStream))
+                        {
+                            string formData = reader.ReadToEnd();
+                            // Form data formatından "data=" kısmını çıkar
+                            if (formData.StartsWith("data="))
+                            {
+                                jsonData = HttpUtility.UrlDecode(formData.Substring(5));
+                            }
+                            else
+                            {
+                                jsonData = formData;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Content-Type belirtilmemişse, InputStream'den oku
+                    using (var reader = new StreamReader(context.Request.InputStream))
+                    {
+                        jsonData = reader.ReadToEnd();
+                    }
                 }
             }
-            // Query string'den oku (IE uyumluluğu için)
+            // Query string'den oku (eski IE uyumluluğu için - sadece küçük veriler için)
             else if (!string.IsNullOrEmpty(context.Request.QueryString["data"]))
             {
                 jsonData = context.Request.QueryString["data"];

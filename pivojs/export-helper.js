@@ -45,117 +45,89 @@ function exportToExcelServer(data, fileName, sheetName, exportType, serverUrl) {
     
     return new Promise(function(resolve, reject) {
         try {
+            // Export tipine göre doğru property adını kullan
             var exportData = {
                 exportType: exportType || "pivotTable",
                 fileName: fileName || "Export_" + formatDateForFileName() + ".xlsx",
-                sheetName: sheetName || "Sheet1",
-                data: data
+                sheetName: sheetName || "Sheet1"
             };
+            
+            // Server-side handler'ın beklediği property adlarını kullan
+            if (exportType === "pivotTable") {
+                exportData.tableData = data;
+            } else if (exportType === "pivotData") {
+                exportData.pivotData = data;
+            } else {
+                // jsonData veya diğer tipler için
+                exportData.data = data;
+            }
             
             var jsonData = JSON.stringify(exportData);
             
-            // Büyük veri için POST kullan, küçük veri için GET (IE uyumluluğu)
-            var usePost = jsonData.length > 2000;
+            // Query string uzunluk limiti sorunlarını önlemek için her zaman POST kullan
+            // GET yöntemi query string uzunluk limitlerini aşabilir (genellikle 2048 karakter)
             var xhr = createXHR();
             
-            if (usePost) {
-                // POST ile gönder
-                xhr.open("POST", serverUrl, true);
-                xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-                
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            // IE uyumlu dosya indirme
-                            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                                // IE 10+ için
-                                var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                                window.navigator.msSaveOrOpenBlob(blob, fileName || "Export.xlsx");
-                                resolve({ success: true, fileName: fileName });
-                            } else if (window.Blob && window.URL && window.URL.createObjectURL) {
-                                // Modern tarayıcılar için
-                                var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                                var url = window.URL.createObjectURL(blob);
-                                var a = document.createElement("a");
-                                a.href = url;
-                                a.download = fileName || "Export.xlsx";
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                window.URL.revokeObjectURL(url);
-                                resolve({ success: true, fileName: fileName });
-                            } else {
-                                // Eski IE için iframe ile indirme
-                                var iframe = document.createElement("iframe");
-                                iframe.style.display = "none";
-                                iframe.src = serverUrl + "?data=" + encodeURIComponent(JSON.stringify(exportData));
-                                document.body.appendChild(iframe);
-                                setTimeout(function() {
-                                    document.body.removeChild(iframe);
-                                    resolve({ success: true, fileName: fileName });
-                                }, 1000);
-                            }
+            // POST ile gönder (query string limiti sorununu önler)
+            xhr.open("POST", serverUrl, true);
+            xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        // IE uyumlu dosya indirme
+                        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                            // IE 10+ için
+                            var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                            window.navigator.msSaveOrOpenBlob(blob, fileName || "Export.xlsx");
+                            resolve({ success: true, fileName: fileName });
+                        } else if (window.Blob && window.URL && window.URL.createObjectURL) {
+                            // Modern tarayıcılar için
+                            var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                            var url = window.URL.createObjectURL(blob);
+                            var a = document.createElement("a");
+                            a.href = url;
+                            a.download = fileName || "Export.xlsx";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+                            resolve({ success: true, fileName: fileName });
                         } else {
-                            try {
-                                var errorResponse = JSON.parse(xhr.responseText);
-                                reject(new Error(errorResponse.error || "Sunucu hatası"));
-                            } catch (e) {
-                                reject(new Error("Excel export hatası: " + xhr.status));
-                            }
+                            // Eski IE için form submit ile POST gönderimi
+                            // Query string kullanmak yerine form ile POST yapıyoruz
+                            var form = document.createElement("form");
+                            form.method = "POST";
+                            form.action = serverUrl;
+                            form.style.display = "none";
+                            
+                            var input = document.createElement("input");
+                            input.type = "hidden";
+                            input.name = "data";
+                            input.value = jsonData;
+                            form.appendChild(input);
+                            
+                            document.body.appendChild(form);
+                            form.submit();
+                            
+                            setTimeout(function() {
+                                document.body.removeChild(form);
+                                resolve({ success: true, fileName: fileName });
+                            }, 1000);
                         }
-                    }
-                };
-                
-                xhr.responseType = "blob";
-                xhr.send(jsonData);
-            } else {
-                // GET ile gönder (IE uyumluluğu için)
-                var encodedData = encodeURIComponent(jsonData);
-                var url = serverUrl + "?data=" + encodedData;
-                
-                xhr.open("GET", url, true);
-                xhr.responseType = "blob";
-                
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            // IE uyumlu dosya indirme
-                            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                                // IE 10+ için
-                                var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                                window.navigator.msSaveOrOpenBlob(blob, fileName || "Export.xlsx");
-                                resolve({ success: true, fileName: fileName });
-                            } else if (window.Blob && window.URL && window.URL.createObjectURL) {
-                                // Modern tarayıcılar için
-                                var blob = new Blob([xhr.response], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                                var url = window.URL.createObjectURL(blob);
-                                var a = document.createElement("a");
-                                a.href = url;
-                                a.download = fileName || "Export.xlsx";
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                window.URL.revokeObjectURL(url);
-                                resolve({ success: true, fileName: fileName });
-                            } else {
-                                // Eski IE için iframe ile indirme
-                                var iframe = document.createElement("iframe");
-                                iframe.style.display = "none";
-                                iframe.src = url;
-                                document.body.appendChild(iframe);
-                                setTimeout(function() {
-                                    document.body.removeChild(iframe);
-                                    resolve({ success: true, fileName: fileName });
-                                }, 1000);
-                            }
-                        } else {
+                    } else {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            reject(new Error(errorResponse.error || "Sunucu hatası"));
+                        } catch (e) {
                             reject(new Error("Excel export hatası: " + xhr.status));
                         }
                     }
-                };
-                
-                xhr.send();
-            }
+                }
+            };
+            
+            xhr.responseType = "blob";
+            xhr.send(jsonData);
         } catch (error) {
             reject(error);
         }
