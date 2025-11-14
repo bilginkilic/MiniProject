@@ -179,18 +179,32 @@ exportMultiplePivotTablesToExcel([
 ], "Raporlar.xlsx");
 ```
 
-### exportPivotDataToExcel(pivotData, fileName, sheetName)
+### exportPivotDataToExcel(pivotData, fileName, sheetName, options)
 
-PivotJS pivotData objesini Excel formatına aktarır.
+PivotTable.js pivotData objesini Excel formatına aktarır. PivotTable.js resmi API'sine uygun olarak geliştirilmiştir.
 
 **Parametreler:**
-- `pivotData` (Object): PivotJS pivotData objesi
+- `pivotData` (Object): PivotTable.js pivotData objesi (pivot() veya pivotUI() onRefresh callback'inden)
 - `fileName` (string, opsiyonel): İndirilecek dosya adı
 - `sheetName` (string, opsiyonel): Excel çalışma sayfası adı
+- `options` (Object, opsiyonel): 
+  - `includeRowLabels` (boolean, varsayılan: true): Satır etiketlerini dahil et
+  - `includeColLabels` (boolean, varsayılan: true): Sütun etiketlerini dahil et
 
 **Örnek:**
 ```javascript
-exportPivotDataToExcel(pivotData, "Pivot_Veri.xlsx", "Analiz");
+// PivotTable.js onRefresh callback'inden pivotData al
+$("#output").pivotUI(data, {
+    rows: ["Bölge"],
+    cols: ["Ay"],
+    vals: ["Satış"]
+}, function(config) {
+    // pivotData'yı Excel'e aktar
+    exportPivotDataToExcel(config, "Pivot_Veri.xlsx", "Analiz", {
+        includeRowLabels: true,
+        includeColLabels: true
+    });
+});
 ```
 
 ## Özellikler

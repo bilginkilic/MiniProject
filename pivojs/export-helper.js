@@ -1,13 +1,20 @@
 /**
  * PivotJS Excel Export Helper Functions
- * Bu dosya PivotJS pivot tablolarını Excel formatına aktarmak için yardımcı fonksiyonlar içerir.
+ * Bu dosya PivotJS (PivotTable.js) pivot tablolarını Excel formatına aktarmak için yardımcı fonksiyonlar içerir.
+ * 
+ * PivotTable.js Resmi Örnekler: https://pivottable.js.org/examples/
+ * 
+ * Bu helper fonksiyonları PivotTable.js'in resmi API'sine uygun olarak geliştirilmiştir.
  */
 
 /**
- * Pivot tabloyu Excel formatına aktarır
+ * PivotTable.js pivot tablosunu Excel formatına aktarır
+ * PivotTable.js'in oluşturduğu HTML tablosunu Excel'e dönüştürür
+ * 
  * @param {string} tableSelector - Pivot tablonun CSS selector'ı (örn: "#output table.pvtTable")
  * @param {string} fileName - İndirilecek dosya adı (varsayılan: "Pivot_Tablo.xlsx")
  * @param {string} sheetName - Excel çalışma sayfası adı (varsayılan: "Pivot Tablo")
+ * @returns {Object} {success: boolean, fileName: string}
  */
 function exportPivotTableToExcel(tableSelector, fileName, sheetName) {
     // SheetJS kontrolü
@@ -18,11 +25,11 @@ function exportPivotTableToExcel(tableSelector, fileName, sheetName) {
     const pivotTable = document.querySelector(tableSelector);
     
     if (!pivotTable) {
-        throw new Error('Pivot tablo bulunamadı!');
+        throw new Error('Pivot tablo bulunamadı! Lütfen geçerli bir CSS selector kullanın (örn: "#output table.pvtTable")');
     }
 
     try {
-        // HTML tablosunu worksheet'e dönüştür
+        // HTML tablosunu worksheet'e dönüştür (PivotTable.js'in oluşturduğu tablo)
         const ws = XLSX.utils.table_to_sheet(pivotTable);
         
         // Sütun genişliklerini otomatik ayarla
@@ -203,39 +210,88 @@ function calculateAutoColumnWidths(data) {
 }
 
 /**
- * PivotJS pivot verisini (pivotData) Excel formatına aktarır
- * @param {Object} pivotData - PivotJS pivotData objesi
+ * PivotTable.js pivot verisini (pivotData) Excel formatına aktarır
+ * PivotTable.js resmi API'sine uygun olarak geliştirilmiştir
+ * 
+ * @param {Object} pivotData - PivotTable.js pivotData objesi (pivot() veya pivotUI() onRefresh callback'inden)
  * @param {string} fileName - İndirilecek dosya adı
  * @param {string} sheetName - Excel çalışma sayfası adı
+ * @param {Object} options - Ek seçenekler {includeRowLabels: true, includeColLabels: true}
  */
-function exportPivotDataToExcel(pivotData, fileName, sheetName) {
+function exportPivotDataToExcel(pivotData, fileName, sheetName, options) {
     if (typeof XLSX === 'undefined') {
         throw new Error('SheetJS (XLSX) kütüphanesi yüklenmemiş!');
     }
 
+    if (!pivotData || typeof pivotData.getRowKeys !== 'function' || typeof pivotData.getColKeys !== 'function') {
+        throw new Error('Geçerli bir PivotTable.js pivotData objesi gerekli!');
+    }
+
     try {
-        // PivotData'yı 2D array'e dönüştür
+        const opts = options || {};
+        const includeRowLabels = opts.includeRowLabels !== false; // Varsayılan: true
+        const includeColLabels = opts.includeColLabels !== false; // Varsayılan: true
+        
+        // PivotData'yı 2D array'e dönüştür (PivotTable.js resmi API'sine uygun)
         const rows = [];
         
-        // Başlık satırı
-        const headerRow = [];
-        pivotData.getColKeys().forEach(colKey => {
-            headerRow.push(colKey.join('-'));
-        });
-        rows.push(headerRow);
+        // Sütun başlıkları
+        const colKeys = pivotData.getColKeys();
+        const rowKeys = pivotData.getRowKeys();
         
-        // Veri satırları
-        pivotData.getRowKeys().forEach(rowKey => {
+        if (colKeys.length === 0 && rowKeys.length === 0) {
+            throw new Error('Pivot tablo boş!');
+        }
+        
+        // Başlık satırı oluştur
+        const headerRow = [];
+        if (includeRowLabels && rowKeys.length > 0) {
+            // İlk sütun boş (row label'lar için)
+            headerRow.push('');
+        }
+        
+        if (includeColLabels) {
+            colKeys.forEach(colKey => {
+                // PivotTable.js'de colKey bir array olabilir
+                const label = Array.isArray(colKey) ? colKey.join(' - ') : String(colKey);
+                headerRow.push(label || '');
+            });
+        }
+        
+        if (headerRow.length > 0) {
+            rows.push(headerRow);
+        }
+        
+        // Veri satırları (PivotTable.js resmi API pattern'ine uygun)
+        rowKeys.forEach(rowKey => {
             const row = [];
-            row.push(rowKey.join('-'));
             
-            pivotData.getColKeys().forEach(colKey => {
-                const value = pivotData.getAggregator(rowKey, colKey).value();
-                row.push(value || 0);
+            // Row label ekle
+            if (includeRowLabels) {
+                const rowLabel = Array.isArray(rowKey) ? rowKey.join(' - ') : String(rowKey);
+                row.push(rowLabel || '');
+            }
+            
+            // Her sütun için değer al
+            colKeys.forEach(colKey => {
+                try {
+                    const aggregator = pivotData.getAggregator(rowKey, colKey);
+                    const value = aggregator ? aggregator.value() : null;
+                    // Null/undefined değerleri boş string veya 0 olarak göster
+                    row.push(value !== null && value !== undefined ? value : '');
+                } catch (e) {
+                    console.warn('Aggregator hatası:', e);
+                    row.push('');
+                }
             });
             
             rows.push(row);
         });
+        
+        // Eğer hiç veri yoksa uyar
+        if (rows.length === 0) {
+            throw new Error('Dışa aktarılacak veri bulunamadı!');
+        }
         
         // 2D array'i worksheet'e dönüştür
         const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -256,7 +312,9 @@ function exportPivotDataToExcel(pivotData, fileName, sheetName) {
         
         return {
             success: true,
-            fileName: finalFileName
+            fileName: finalFileName,
+            rowCount: rows.length,
+            colCount: rows.length > 0 ? rows[0].length : 0
         };
     } catch (error) {
         console.error("Excel export hatası:", error);
