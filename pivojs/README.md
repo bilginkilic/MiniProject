@@ -1,6 +1,8 @@
 # PivotJS Excel Export Örnekleri
 
-Bu klasör, PivotJS (PivotTable.js) ile oluşturulan pivot tabloları Excel formatına aktarmak için örnek kodlar içerir.
+Bu klasör, [PivotTable.js](https://pivottable.js.org/examples/) ile oluşturulan pivot tabloları Excel formatına aktarmak için örnek kodlar içerir.
+
+**Resmi Örnekler:** [https://pivottable.js.org/examples/](https://pivottable.js.org/examples/)
 
 ## Dosyalar
 
@@ -108,19 +110,21 @@ function exportPivotData() {
 
 ## Gereksinimler
 
-### CDN Linkleri
+### CDN Linkleri (Resmi PivotTable.js CDN'leri)
 
 ```html
 <!-- jQuery (PivotTable.js için gerekli) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- PivotTable.js -->
-<script src="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.css">
+<!-- PivotTable.js (Resmi CDN) -->
+<script src="https://pivottable.js.org/dist/pivot.min.js"></script>
+<link rel="stylesheet" href="https://pivottable.js.org/dist/pivot.css">
 
 <!-- SheetJS (Excel export için) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 ```
+
+**Not:** Bu örnek, [PivotTable.js resmi örneklerine](https://pivottable.js.org/examples/) uygun olarak hazırlanmıştır.
 
 ### NPM ile Kurulum (Alternatif)
 

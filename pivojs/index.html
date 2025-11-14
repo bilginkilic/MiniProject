@@ -6,13 +6,13 @@
     <title>PivotJS Excel Export Örneği</title>
     
     <!-- PivotTable.js CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.css">
+    <link rel="stylesheet" type="text/css" href="https://pivottable.js.org/dist/pivot.css">
     
     <!-- jQuery (PivotTable.js bağımlılığı) -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <!-- PivotTable.js -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.min.js"></script>
+    <script type="text/javascript" src="https://pivottable.js.org/dist/pivot.min.js"></script>
     
     <!-- SheetJS (Excel export için) -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -138,31 +138,52 @@
         ];
 
         let pivotInstance = null;
+        let pivotConfig = null;
+
+        // Excel Export Renderer (PivotTable.js resmi örneklerine uygun)
+        const excelExportRenderer = function(pivotData, opts) {
+            const defaults = {
+                table: {
+                    clickCallback: function(e, value, filters, pivotData) {
+                        console.log("Tıklanan değer:", value);
+                    }
+                }
+            };
+            opts = $.extend(true, {}, defaults, opts);
+            
+            // Standart Table renderer'ı kullan
+            return $.pivotUtilities.renderers["Table"](pivotData, opts);
+        };
+
+        // Renderer'ı kaydet
+        $.pivotUtilities.renderers["Excel Export"] = excelExportRenderer;
 
         // Pivot tabloyu oluştur
         $(function(){
-            pivotInstance = $("#output").pivotUI(
-                data,
-                {
-                    rows: ["Bölge"],
-                    cols: ["Ay"],
-                    vals: ["Satış"],
-                    aggregatorName: "Sum",
-                    rendererName: "Table",
-                    rendererOptions: {
-                        table: {
-                            clickCallback: function(e, value, filters, pivotData) {
-                                console.log("Tıklanan değer:", value);
-                            }
+            pivotConfig = {
+                rows: ["Bölge"],
+                cols: ["Ay"],
+                vals: ["Satış"],
+                aggregatorName: "Sum",
+                rendererName: "Table",
+                rendererOptions: {
+                    table: {
+                        clickCallback: function(e, value, filters, pivotData) {
+                            console.log("Tıklanan değer:", value);
                         }
                     }
-                },
+                }
+            };
+            
+            pivotInstance = $("#output").pivotUI(
+                data,
+                pivotConfig,
                 true, // onRefresh callback
                 "tr" // locale
             );
         });
 
-        // Pivot tabloyu Excel'e aktar
+        // Pivot tabloyu Excel'e aktar (PivotTable.js resmi örneklerine uygun)
         function exportPivotToExcel() {
             try {
                 // Pivot tablonun HTML içeriğini al
@@ -173,16 +194,27 @@
                     return;
                 }
 
-                // HTML tablosunu 2D array'e dönüştür
+                // HTML tablosunu worksheet'e dönüştür
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.table_to_sheet(pivotTable);
                 
-                // Sütun genişliklerini ayarla
+                // Sütun genişliklerini otomatik hesapla
                 const colWidths = [];
-                const maxCol = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.c + 1 : 0;
-                
-                for (let i = 0; i < maxCol; i++) {
-                    colWidths.push({ wch: 15 });
+                if (ws['!ref']) {
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    const maxCol = range.e.c + 1;
+                    
+                    for (let col = 0; col < maxCol; col++) {
+                        let maxWidth = 10;
+                        for (let row = range.s.r; row <= range.e.r; row++) {
+                            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                            const cell = ws[cellAddress];
+                            if (cell && cell.v) {
+                                maxWidth = Math.max(maxWidth, String(cell.v).length);
+                            }
+                        }
+                        colWidths.push({ wch: Math.min(maxWidth + 2, 50) });
+                    }
                 }
                 ws['!cols'] = colWidths;
                 
@@ -234,17 +266,18 @@
 
         // Pivot tabloyu sıfırla
         function resetPivot() {
-            if (pivotInstance) {
+            if (pivotInstance && pivotConfig) {
                 $("#output").empty();
+                pivotConfig = {
+                    rows: ["Bölge"],
+                    cols: ["Ay"],
+                    vals: ["Satış"],
+                    aggregatorName: "Sum",
+                    rendererName: "Table"
+                };
                 pivotInstance = $("#output").pivotUI(
                     data,
-                    {
-                        rows: ["Bölge"],
-                        cols: ["Ay"],
-                        vals: ["Satış"],
-                        aggregatorName: "Sum",
-                        rendererName: "Table"
-                    },
+                    pivotConfig,
                     true,
                     "tr"
                 );
