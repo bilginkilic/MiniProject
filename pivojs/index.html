@@ -14,8 +14,11 @@
     <!-- PivotTable.js -->
     <script type="text/javascript" src="https://pivottable.js.org/dist/pivot.min.js"></script>
     
-    <!-- SheetJS (Excel export için) -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- SheetJS (Excel export için - opsiyonel, artık sunucu tabanlı export kullanılıyor) -->
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> -->
+    
+    <!-- Export Helper (IE uyumlu, sunucu tabanlı) -->
+    <script type="text/javascript" src="export-helper.js"></script>
     
     <style>
         body {
@@ -183,81 +186,44 @@
             );
         });
 
-        // Pivot tabloyu Excel'e aktar (PivotTable.js resmi örneklerine uygun)
+        // Pivot tabloyu Excel'e aktar (SUNUCU TABANLI - IE UYUMLU)
         function exportPivotToExcel() {
             try {
-                // Pivot tablonun HTML içeriğini al
-                const pivotTable = document.querySelector("#output table.pvtTable");
+                // Sunucu tabanlı export kullan (IE uyumlu)
+                var serverUrl = "ExcelExport.ashx"; // Sunucu URL'i
+                var fileName = "Pivot_Tablo_" + formatDateForFileName() + ".xlsx";
                 
-                if (!pivotTable) {
-                    alert("Pivot tablo bulunamadı!");
-                    return;
-                }
-
-                // HTML tablosunu worksheet'e dönüştür
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.table_to_sheet(pivotTable);
-                
-                // Sütun genişliklerini otomatik hesapla
-                const colWidths = [];
-                if (ws['!ref']) {
-                    const range = XLSX.utils.decode_range(ws['!ref']);
-                    const maxCol = range.e.c + 1;
-                    
-                    for (let col = 0; col < maxCol; col++) {
-                        let maxWidth = 10;
-                        for (let row = range.s.r; row <= range.e.r; row++) {
-                            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                            const cell = ws[cellAddress];
-                            if (cell && cell.v) {
-                                maxWidth = Math.max(maxWidth, String(cell.v).length);
-                            }
-                        }
-                        colWidths.push({ wch: Math.min(maxWidth + 2, 50) });
-                    }
-                }
-                ws['!cols'] = colWidths;
-                
-                // Çalışma sayfasını workbook'a ekle
-                XLSX.utils.book_append_sheet(wb, ws, "Pivot Tablo");
-                
-                // Excel dosyasını indir
-                const fileName = "Pivot_Tablo_" + new Date().toISOString().slice(0,10) + ".xlsx";
-                XLSX.writeFile(wb, fileName);
-                
-                console.log("Excel dosyası başarıyla oluşturuldu:", fileName);
+                exportPivotTableToExcel("#output table.pvtTable", fileName, "Pivot Tablo", serverUrl, true)
+                    .then(function(result) {
+                        console.log("Excel dosyası başarıyla oluşturuldu:", result.fileName);
+                        alert("Excel dosyası başarıyla oluşturuldu: " + result.fileName);
+                    })
+                    .catch(function(error) {
+                        console.error("Excel export hatası:", error);
+                        alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
+                    });
             } catch (error) {
                 console.error("Excel export hatası:", error);
                 alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
             }
         }
 
-        // Ham veriyi Excel'e aktar
+        // Ham veriyi Excel'e aktar (SUNUCU TABANLI - IE UYUMLU)
         function exportRawDataToExcel() {
             try {
-                const wb = XLSX.utils.book_new();
+                // Sunucu tabanlı export kullan (IE uyumlu)
+                var serverUrl = "ExcelExport.ashx"; // Sunucu URL'i
+                var fileName = "Ham_Veri_" + formatDateForFileName() + ".xlsx";
                 
-                // Veriyi worksheet'e dönüştür
-                const ws = XLSX.utils.json_to_sheet(data);
-                
-                // Sütun genişliklerini ayarla
-                const colWidths = [
-                    { wch: 12 }, // Bölge
-                    { wch: 12 }, // Ürün
-                    { wch: 10 }, // Ay
-                    { wch: 12 }, // Satış
-                    { wch: 12 }  // Miktar
-                ];
-                ws['!cols'] = colWidths;
-                
-                // Çalışma sayfasını workbook'a ekle
-                XLSX.utils.book_append_sheet(wb, ws, "Ham Veri");
-                
-                // Excel dosyasını indir
-                const fileName = "Ham_Veri_" + new Date().toISOString().slice(0,10) + ".xlsx";
-                XLSX.writeFile(wb, fileName);
-                
-                console.log("Excel dosyası başarıyla oluşturuldu:", fileName);
+                exportJsonToExcel(data, fileName, "Ham Veri", null, serverUrl, true)
+                    .then(function(result) {
+                        console.log("Excel dosyası başarıyla oluşturuldu:", result.fileName);
+                        alert("Excel dosyası başarıyla oluşturuldu: " + result.fileName);
+                    })
+                    .catch(function(error) {
+                        console.error("Excel export hatası:", error);
+                        alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
+                    });
             } catch (error) {
                 console.error("Excel export hatası:", error);
                 alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
