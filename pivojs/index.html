@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PivotJS Excel Export Örneği</title>
+    
+    <!-- PivotTable.js CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.css">
+    
+    <!-- jQuery (PivotTable.js bağımlılığı) -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <!-- PivotTable.js -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pivottable@2.0.0/dist/pivot.min.js"></script>
+    
+    <!-- SheetJS (Excel export için) -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .button-group {
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button.export-btn {
+            background-color: #2196F3;
+        }
+        
+        button.export-btn:hover {
+            background-color: #0b7dda;
+        }
+        
+        #output {
+            margin-top: 20px;
+            overflow: auto;
+        }
+        
+        .info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .info p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PivotJS Excel Export Örneği</h1>
+        
+        <div class="info">
+            <p><strong>Kullanım:</strong></p>
+            <p>1. Pivot tabloyu oluşturun ve istediğiniz şekilde yapılandırın</p>
+            <p>2. "Excel'e Aktar" butonuna tıklayarak pivot tabloyu Excel dosyası olarak indirin</p>
+            <p>3. "Ham Veriyi Excel'e Aktar" butonu ile orijinal veriyi Excel'e aktarabilirsiniz</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="export-btn" onclick="exportPivotToExcel()">Excel'e Aktar (Pivot Tablo)</button>
+            <button class="export-btn" onclick="exportRawDataToExcel()">Ham Veriyi Excel'e Aktar</button>
+            <button onclick="resetPivot()">Pivot Tabloyu Sıfırla</button>
+        </div>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Örnek veri
+        const data = [
+            { Bölge: "İstanbul", Ürün: "Laptop", Ay: "Ocak", Satış: 150, Miktar: 30 },
+            { Bölge: "İstanbul", Ürün: "Mouse", Ay: "Ocak", Satış: 50, Miktar: 100 },
+            { Bölge: "İstanbul", Ürün: "Klavye", Ay: "Ocak", Satış: 80, Miktar: 40 },
+            { Bölge: "Ankara", Ürün: "Laptop", Ay: "Ocak", Satış: 120, Miktar: 25 },
+            { Bölge: "Ankara", Ürün: "Mouse", Ay: "Ocak", Satış: 40, Miktar: 80 },
+            { Bölge: "Ankara", Ürün: "Klavye", Ay: "Ocak", Satış: 60, Miktar: 30 },
+            { Bölge: "İzmir", Ürün: "Laptop", Ay: "Ocak", Satış: 100, Miktar: 20 },
+            { Bölge: "İzmir", Ürün: "Mouse", Ay: "Ocak", Satış: 30, Miktar: 60 },
+            { Bölge: "İzmir", Ürün: "Klavye", Ay: "Ocak", Satış: 50, Miktar: 25 },
+            
+            { Bölge: "İstanbul", Ürün: "Laptop", Ay: "Şubat", Satış: 180, Miktar: 35 },
+            { Bölge: "İstanbul", Ürün: "Mouse", Ay: "Şubat", Satış: 60, Miktar: 120 },
+            { Bölge: "İstanbul", Ürün: "Klavye", Ay: "Şubat", Satış: 90, Miktar: 45 },
+            { Bölge: "Ankara", Ürün: "Laptop", Ay: "Şubat", Satış: 140, Miktar: 28 },
+            { Bölge: "Ankara", Ürün: "Mouse", Ay: "Şubat", Satış: 45, Miktar: 90 },
+            { Bölge: "Ankara", Ürün: "Klavye", Ay: "Şubat", Satış: 70, Miktar: 35 },
+            { Bölge: "İzmir", Ürün: "Laptop", Ay: "Şubat", Satış: 120, Miktar: 24 },
+            { Bölge: "İzmir", Ürün: "Mouse", Ay: "Şubat", Satış: 35, Miktar: 70 },
+            { Bölge: "İzmir", Ürün: "Klavye", Ay: "Şubat", Satış: 60, Miktar: 30 },
+            
+            { Bölge: "İstanbul", Ürün: "Laptop", Ay: "Mart", Satış: 200, Miktar: 40 },
+            { Bölge: "İstanbul", Ürün: "Mouse", Ay: "Mart", Satış: 70, Miktar: 140 },
+            { Bölge: "İstanbul", Ürün: "Klavye", Ay: "Mart", Satış: 100, Miktar: 50 },
+            { Bölge: "Ankara", Ürün: "Laptop", Ay: "Mart", Satış: 160, Miktar: 32 },
+            { Bölge: "Ankara", Ürün: "Mouse", Ay: "Mart", Satış: 50, Miktar: 100 },
+            { Bölge: "Ankara", Ürün: "Klavye", Ay: "Mart", Satış: 80, Miktar: 40 },
+            { Bölge: "İzmir", Ürün: "Laptop", Ay: "Mart", Satış: 140, Miktar: 28 },
+            { Bölge: "İzmir", Ürün: "Mouse", Ay: "Mart", Satış: 40, Miktar: 80 },
+            { Bölge: "İzmir", Ürün: "Klavye", Ay: "Mart", Satış: 70, Miktar: 35 }
+        ];
+
+        let pivotInstance = null;
+
+        // Pivot tabloyu oluştur
+        $(function(){
+            pivotInstance = $("#output").pivotUI(
+                data,
+                {
+                    rows: ["Bölge"],
+                    cols: ["Ay"],
+                    vals: ["Satış"],
+                    aggregatorName: "Sum",
+                    rendererName: "Table",
+                    rendererOptions: {
+                        table: {
+                            clickCallback: function(e, value, filters, pivotData) {
+                                console.log("Tıklanan değer:", value);
+                            }
+                        }
+                    }
+                },
+                true, // onRefresh callback
+                "tr" // locale
+            );
+        });
+
+        // Pivot tabloyu Excel'e aktar
+        function exportPivotToExcel() {
+            try {
+                // Pivot tablonun HTML içeriğini al
+                const pivotTable = document.querySelector("#output table.pvtTable");
+                
+                if (!pivotTable) {
+                    alert("Pivot tablo bulunamadı!");
+                    return;
+                }
+
+                // HTML tablosunu 2D array'e dönüştür
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.table_to_sheet(pivotTable);
+                
+                // Sütun genişliklerini ayarla
+                const colWidths = [];
+                const maxCol = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.c + 1 : 0;
+                
+                for (let i = 0; i < maxCol; i++) {
+                    colWidths.push({ wch: 15 });
+                }
+                ws['!cols'] = colWidths;
+                
+                // Çalışma sayfasını workbook'a ekle
+                XLSX.utils.book_append_sheet(wb, ws, "Pivot Tablo");
+                
+                // Excel dosyasını indir
+                const fileName = "Pivot_Tablo_" + new Date().toISOString().slice(0,10) + ".xlsx";
+                XLSX.writeFile(wb, fileName);
+                
+                console.log("Excel dosyası başarıyla oluşturuldu:", fileName);
+            } catch (error) {
+                console.error("Excel export hatası:", error);
+                alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
+            }
+        }
+
+        // Ham veriyi Excel'e aktar
+        function exportRawDataToExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                // Veriyi worksheet'e dönüştür
+                const ws = XLSX.utils.json_to_sheet(data);
+                
+                // Sütun genişliklerini ayarla
+                const colWidths = [
+                    { wch: 12 }, // Bölge
+                    { wch: 12 }, // Ürün
+                    { wch: 10 }, // Ay
+                    { wch: 12 }, // Satış
+                    { wch: 12 }  // Miktar
+                ];
+                ws['!cols'] = colWidths;
+                
+                // Çalışma sayfasını workbook'a ekle
+                XLSX.utils.book_append_sheet(wb, ws, "Ham Veri");
+                
+                // Excel dosyasını indir
+                const fileName = "Ham_Veri_" + new Date().toISOString().slice(0,10) + ".xlsx";
+                XLSX.writeFile(wb, fileName);
+                
+                console.log("Excel dosyası başarıyla oluşturuldu:", fileName);
+            } catch (error) {
+                console.error("Excel export hatası:", error);
+                alert("Excel dosyası oluşturulurken hata oluştu: " + error.message);
+            }
+        }
+
+        // Pivot tabloyu sıfırla
+        function resetPivot() {
+            if (pivotInstance) {
+                $("#output").empty();
+                pivotInstance = $("#output").pivotUI(
+                    data,
+                    {
+                        rows: ["Bölge"],
+                        cols: ["Ay"],
+                        vals: ["Satış"],
+                        aggregatorName: "Sum",
+                        rendererName: "Table"
+                    },
+                    true,
+                    "tr"
+                );
+            }
+        }
+    </script>
+</body>
+</html>
+
