@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pivot Table Viewer</title>
+    
+    <!-- Pivot.js CSS -->
+    <link rel="stylesheet" type="text/css" href="css/pivot.min.css">
+    
+    <!-- jQuery (pivot.js dependency) -->
+    <script src="js/jquery-3.6.0.min.js"></script>
+    
+    <!-- Pivot.js -->
+    <script src="js/pivot.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .date-group label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .date-group input {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .pivot-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pivot-panel {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #fff;
+        }
+        
+        .pivot-panel h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .pivot-panel select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .pivot-output {
+            flex: 2;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #fff;
+            overflow: auto;
+        }
+        
+        .pvtTable {
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .pvtTable th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .pvtTable td {
+            padding: 6px;
+            text-align: right;
+        }
+        
+        .pvtTable tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .footer-text {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-panel">
+            <div class="date-group">
+                <label>Pivot Data From:</label>
+                <input type="date" id="dateFrom" value="2025-01-10" />
+            </div>
+            <div class="date-group">
+                <label>Pivot Data to:</label>
+                <input type="date" id="dateTo" value="2025-11-18" />
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="loadData()">Load Data</button>
+                <button class="btn btn-success" onclick="exportToExcel()">Excel Data</button>
+            </div>
+        </div>
+        
+        <div class="pivot-container">
+            <div id="output" style="flex: 1; overflow: auto;"></div>
+        </div>
+        
+        <div class="footer-text">
+            Kayıtlar listelendi. Total time süreleri dakika türünden sunulmaktadır.
+        </div>
+    </div>
+
+    <script>
+        // Örnek veri seti
+        var data = [
+            {CustomerName: "Müşteri A", OrderTypeCbd: "Sipariş", OrderTypeOps: "İşlem", Amount: 1500, Urgency: "Yüksek", CreateDate: "2025-01-10", CBD: "CBD1", OrderCount: 5, CbdEntryUser: "User1", CbdApprovalUser: "Approver1", OpsEntryUser: "OpsUser1", OpsApprovaUser: "OpsApprover1", CbdEntryTotalTime: 30, CbdApprovalTotalTime: 15, OpsEntryTotalTime: 20, OpsApprovalTotalTime: 10, Currency: "TRY"},
+            {CustomerName: "Müşteri B", OrderTypeCbd: "Sipariş", OrderTypeOps: "İşlem", Amount: 2500, Urgency: "Orta", CreateDate: "2025-01-11", CBD: "CBD2", OrderCount: 3, CbdEntryUser: "User2", CbdApprovalUser: "Approver2", OpsEntryUser: "OpsUser2", OpsApprovaUser: "OpsApprover2", CbdEntryTotalTime: 25, CbdApprovalTotalTime: 12, OpsEntryTotalTime: 18, OpsApprovalTotalTime: 8, Currency: "USD"},
+            {CustomerName: "Müşteri A", OrderTypeCbd: "İptal", OrderTypeOps: "İşlem", Amount: 800, Urgency: "Düşük", CreateDate: "2025-01-12", CBD: "CBD1", OrderCount: 2, CbdEntryUser: "User1", CbdApprovalUser: "Approver1", OpsEntryUser: "OpsUser1", OpsApprovaUser: "OpsApprover1", CbdEntryTotalTime: 20, CbdApprovalTotalTime: 10, OpsEntryTotalTime: 15, OpsApprovalTotalTime: 5, Currency: "TRY"},
+            {CustomerName: "Müşteri C", OrderTypeCbd: "Sipariş", OrderTypeOps: "Beklemede", Amount: 3200, Urgency: "Yüksek", CreateDate: "2025-01-13", CBD: "CBD3", OrderCount: 7, CbdEntryUser: "User3", CbdApprovalUser: "Approver3", OpsEntryUser: "OpsUser3", OpsApprovaUser: "OpsApprover3", CbdEntryTotalTime: 35, CbdApprovalTotalTime: 18, OpsEntryTotalTime: 25, OpsApprovalTotalTime: 12, Currency: "EUR"},
+            {CustomerName: "Müşteri B", OrderTypeCbd: "Sipariş", OrderTypeOps: "İşlem", Amount: 1800, Urgency: "Orta", CreateDate: "2025-01-14", CBD: "CBD2", OrderCount: 4, CbdEntryUser: "User2", CbdApprovalUser: "Approver2", OpsEntryUser: "OpsUser2", OpsApprovaUser: "OpsApprover2", CbdEntryTotalTime: 28, CbdApprovalTotalTime: 14, OpsEntryTotalTime: 22, OpsApprovalTotalTime: 9, Currency: "USD"},
+            {CustomerName: "Müşteri A", OrderTypeCbd: "Sipariş", OrderTypeOps: "İşlem", Amount: 2100, Urgency: "Yüksek", CreateDate: "2025-01-15", CBD: "CBD1", OrderCount: 6, CbdEntryUser: "User1", CbdApprovalUser: "Approver1", OpsEntryUser: "OpsUser1", OpsApprovaUser: "OpsApprover1", CbdEntryTotalTime: 32, CbdApprovalTotalTime: 16, OpsEntryTotalTime: 24, OpsApprovalTotalTime: 11, Currency: "TRY"},
+            {CustomerName: "Müşteri D", OrderTypeCbd: "İptal", OrderTypeOps: "İşlem", Amount: 950, Urgency: "Düşük", CreateDate: "2025-01-16", CBD: "CBD4", OrderCount: 1, CbdEntryUser: "User4", CbdApprovalUser: "Approver4", OpsEntryUser: "OpsUser4", OpsApprovaUser: "OpsApprover4", CbdEntryTotalTime: 15, CbdApprovalTotalTime: 8, OpsEntryTotalTime: 12, OpsApprovalTotalTime: 4, Currency: "TRY"},
+            {CustomerName: "Müşteri C", OrderTypeCbd: "Sipariş", OrderTypeOps: "İşlem", Amount: 4100, Urgency: "Yüksek", CreateDate: "2025-01-17", CBD: "CBD3", OrderCount: 8, CbdEntryUser: "User3", CbdApprovalUser: "Approver3", OpsEntryUser: "OpsUser3", OpsApprovaUser: "OpsApprover3", CbdEntryTotalTime: 40, CbdApprovalTotalTime: 20, OpsEntryTotalTime: 30, OpsApprovalTotalTime: 15, Currency: "EUR"}
+        ];
+
+        var pivotData = [];
+        var pivotInstance = null;
+
+        // Veri yükleme fonksiyonu
+        function loadData() {
+            var dateFrom = document.getElementById('dateFrom').value;
+            var dateTo = document.getElementById('dateTo').value;
+            
+            // Tarih filtresine göre veriyi filtrele
+            pivotData = data.filter(function(item) {
+                var itemDate = new Date(item.CreateDate);
+                var fromDate = new Date(dateFrom);
+                var toDate = new Date(dateTo);
+                return itemDate >= fromDate && itemDate <= toDate;
+            });
+            
+            // Pivot tablosunu oluştur/güncelle
+            if (pivotInstance) {
+                $("#output").empty();
+            }
+            
+            pivotInstance = $("#output").pivotUI(
+                pivotData,
+                {
+                    rows: ["Currency"],
+                    cols: [],
+                    vals: ["Amount"],
+                    aggregatorName: "Sum",
+                    rendererName: "Table",
+                    rendererOptions: {
+                        table: {
+                            clickCallback: function(e, value, filters, pivotData) {
+                                // Tıklama olayı (isteğe bağlı)
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        // Excel'e export fonksiyonu
+        function exportToExcel() {
+            try {
+                // Pivot tablosunu bul
+                var table = document.querySelector('table.pvtTable');
+                
+                if (!table) {
+                    alert('Pivot tablosu bulunamadı. Lütfen önce veri yükleyin.');
+                    return;
+                }
+                
+                // Tablo HTML'ini al
+                var tableHtml = table.outerHTML;
+                
+                // Windows Forms uygulaması için: window.external kullanarak C# tarafına sinyal gönder
+                if (window.external && typeof window.external.ExportToExcel === 'function') {
+                    // C# tarafında ExportToExcel metodu varsa onu çağır
+                    window.external.ExportToExcel(tableHtml);
+                } else {
+                    // Eski browser uyumluluğu için alternatif yöntem
+                    // Tablo HTML'ini global değişkene kaydet (C# tarafından erişilebilir)
+                    window.pivotTableHtml = tableHtml;
+                    
+                    // C# tarafından bu değişkeni okuyabilir veya alert göster
+                    alert('Excel export başlatılıyor...\n\nEğer export başlamazsa, üstteki "Excel\'e Aktar" butonunu kullanın.');
+                }
+            } catch (ex) {
+                alert('Excel export sırasında hata oluştu: ' + ex.message);
+            }
+        }
+
+        // Sayfa yüklendiğinde veriyi yükle
+        $(function(){
+            loadData();
+        });
+    </script>
+</body>
+</html>
+
