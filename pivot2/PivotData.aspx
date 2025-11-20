@@ -112,6 +112,7 @@
 </head>
 <body>
     <form id="form1" runat="server">
+        <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" />
         <div class="header-panel">
             <div class="date-group">
                 <label>Pivot Data From:</label>
@@ -197,7 +198,7 @@
                     // C# tarafında ExportToExcel metodu varsa onu çağır
                     window.external.ExportToExcel(tableHtml);
                 } else {
-                    // Alternatif: Server-side metod çağır
+                    // Server-side metod çağır - base64 string dönecek
                     PageMethods.ExportToExcel(tableHtml, onExportSuccess, onExportError);
                 }
             } catch (ex) {
@@ -205,14 +206,68 @@
             }
         }
 
-        function onExportSuccess(result) {
-            if (result) {
-                alert('Excel dosyası başarıyla oluşturuldu.');
+        function onExportSuccess(base64String) {
+            try {
+                if (!base64String || base64String === '') {
+                    alert('Excel dosyası oluşturulamadı. Lütfen tekrar deneyin.');
+                    return;
+                }
+
+                // Base64 string'i binary data'ya çevir
+                var binaryString = atob(base64String);
+                var bytes = new Uint8Array(binaryString.length);
+                for (var i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                // Dosya adını oluştur
+                var fileName = 'PivotTable_' + formatDateForFileName() + '.xlsx';
+
+                // Blob oluştur ve indir
+                if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                    // IE 10+ için
+                    var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    window.navigator.msSaveOrOpenBlob(blob, fileName);
+                } else if (window.Blob && window.URL && window.URL.createObjectURL) {
+                    // Modern tarayıcılar için
+                    var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    // Eski tarayıcılar için data URI kullan
+                    var dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64String;
+                    var link = document.createElement('a');
+                    link.href = dataUri;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            } catch (ex) {
+                alert('Excel dosyası indirilirken hata oluştu: ' + ex.message);
             }
         }
 
         function onExportError(error) {
-            alert('Excel export sırasında hata oluştu: ' + error.get_message());
+            var errorMessage = error.get_message ? error.get_message() : (error.message || 'Bilinmeyen hata');
+            alert('Excel export sırasında hata oluştu: ' + errorMessage);
+        }
+
+        // Tarih formatı için yardımcı fonksiyon
+        function formatDateForFileName() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            return year + month + day + '_' + hours + minutes;
         }
 
         // Sayfa yüklendiğinde
