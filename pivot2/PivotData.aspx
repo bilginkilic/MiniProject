@@ -259,14 +259,14 @@
             alert('Excel export sırasında hata oluştu: ' + errorMessage);
         }
 
-        // Tarih formatı için yardımcı fonksiyon
+        // Tarih formatı için yardımcı fonksiyon (v2 - eski tarayıcı uyumlu)
         function formatDateForFileName() {
             var now = new Date();
             var year = now.getFullYear();
-            var month = String(now.getMonth() + 1).padStart(2, '0');
-            var day = String(now.getDate()).padStart(2, '0');
-            var hours = String(now.getHours()).padStart(2, '0');
-            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var month = ('0' + (now.getMonth() + 1)).slice(-2);
+            var day = ('0' + now.getDate()).slice(-2);
+            var hours = ('0' + now.getHours()).slice(-2);
+            var minutes = ('0' + now.getMinutes()).slice(-2);
             return year + month + day + '_' + hours + minutes;
         }
 
