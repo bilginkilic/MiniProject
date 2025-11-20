@@ -27,21 +27,11 @@ namespace PivotViewer
         }
 
         /// <summary>
-        /// HTML tablo string'ini DataTable'a dönüştürür
+        /// HTML tablo string'ini DataTable'a dönüştürür (rowspan desteği ile)
         /// </summary>
         public static DataTable ParseHtmlTable(string tableHtml)
         {
             DataTable dt = new DataTable();
-
-            // Tbody içeriğini al (eğer varsa)
-            string tbodyPattern = @"<tbody[^>]*>(.*?)</tbody>";
-            Match tbodyMatch = Regex.Match(tableHtml, tbodyPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            string bodyContent = tbodyMatch.Success ? tbodyMatch.Groups[1].Value : tableHtml;
-
-            // Thead içeriğini al (eğer varsa)
-            string theadPattern = @"<thead[^>]*>(.*?)</thead>";
-            Match theadMatch = Regex.Match(tableHtml, theadPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            string headerContent = theadMatch.Success ? theadMatch.Groups[1].Value : string.Empty;
 
             // Tüm satırları bul
             string rowPattern = @"<tr[^>]*>(.*?)</tr>";
@@ -50,6 +40,9 @@ namespace PivotViewer
             if (rowMatches.Count == 0)
                 return dt;
 
+            // Rowspan tracking için: Her sütun için kaç satır daha devam edecek
+            System.Collections.Generic.List<int> rowspanTracker = new System.Collections.Generic.List<int>();
+
             // İlk satırı header olarak kullan
             bool isFirstRow = true;
             int maxColumns = 0;
@@ -57,7 +50,52 @@ namespace PivotViewer
             foreach (Match rowMatch in rowMatches)
             {
                 string rowHtml = rowMatch.Groups[1].Value;
-                string[] cells = ExtractCells(rowHtml);
+                var cellData = ExtractCellsWithSpan(rowHtml);
+
+                // Önceki satırlardan devam eden rowspan'leri kontrol et
+                System.Collections.Generic.List<string> cells = new System.Collections.Generic.List<string>();
+                int currentCol = 0;
+
+                // Rowspan tracker'dan devam eden hücreleri ekle
+                while (currentCol < rowspanTracker.Count && rowspanTracker[currentCol] > 0)
+                {
+                    // Bu sütunda rowspan devam ediyor, boş hücre ekle
+                    cells.Add(string.Empty);
+                    rowspanTracker[currentCol]--; // Rowspan sayacını azalt
+                    currentCol++;
+                }
+
+                // Yeni hücreleri ekle
+                foreach (var cell in cellData)
+                {
+                    // Eğer rowspan tracker'da bu sütun için yer yoksa, boş hücreler ekle
+                    while (currentCol >= rowspanTracker.Count)
+                    {
+                        rowspanTracker.Add(0);
+                    }
+
+                    cells.Add(cell.Content);
+
+                    // Colspan varsa boş hücreler ekle
+                    for (int i = 1; i < cell.Colspan; i++)
+                    {
+                        cells.Add(string.Empty);
+                        currentCol++;
+                        if (currentCol >= rowspanTracker.Count)
+                        {
+                            rowspanTracker.Add(0);
+                        }
+                    }
+
+                    // Rowspan varsa tracker'a ekle
+                    if (cell.Rowspan > 1)
+                    {
+                        // Bu sütundan sonraki rowspan-1 satır için boş hücre olacak
+                        rowspanTracker[currentCol] = cell.Rowspan - 1;
+                    }
+
+                    currentCol++;
+                }
 
                 if (isFirstRow)
                 {
@@ -76,13 +114,13 @@ namespace PivotViewer
                 {
                     // Data satırı
                     DataRow dr = dt.NewRow();
-                    for (int i = 0; i < cells.Length && i < maxColumns; i++)
+                    for (int i = 0; i < cells.Count && i < maxColumns; i++)
                     {
                         string cellText = CleanHtml(cells[i]);
                         dr[i] = cellText;
                     }
                     // Eksik hücreleri boş string ile doldur
-                    for (int i = cells.Length; i < maxColumns; i++)
+                    for (int i = cells.Count; i < maxColumns; i++)
                     {
                         dr[i] = string.Empty;
                     }
@@ -94,38 +132,70 @@ namespace PivotViewer
         }
 
         /// <summary>
-        /// Satır HTML'inden hücreleri çıkarır (th ve td etiketleri)
+        /// Hücre bilgisi için yardımcı sınıf
         /// </summary>
-        private static string[] ExtractCells(string rowHtml)
+        private class CellInfo
         {
-            System.Collections.Generic.List<string> cells = new System.Collections.Generic.List<string>();
+            public string Content { get; set; }
+            public int Colspan { get; set; }
+            public int Rowspan { get; set; }
+        }
 
-            // th ve td etiketlerini bul
-            string cellPattern = @"<(th|td)[^>]*(?:colspan\s*=\s*[""']?(\d+)[""']?)?[^>]*>(.*?)</\1>";
+        /// <summary>
+        /// Satır HTML'inden hücreleri çıkarır (th ve td etiketleri, rowspan ve colspan desteği ile)
+        /// </summary>
+        private static System.Collections.Generic.List<CellInfo> ExtractCellsWithSpan(string rowHtml)
+        {
+            System.Collections.Generic.List<CellInfo> cells = new System.Collections.Generic.List<CellInfo>();
+
+            // th ve td etiketlerini bul (rowspan ve colspan desteği ile)
+            // Pattern: rowspan ve colspan'in sırası önemli değil
+            string cellPattern = @"<(th|td)([^>]*)>(.*?)</\1>";
             MatchCollection cellMatches = Regex.Matches(rowHtml, cellPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
             foreach (Match cellMatch in cellMatches)
             {
                 string cellContent = cellMatch.Groups[3].Value;
-                string colspanStr = cellMatch.Groups[2].Value;
+                string attributes = cellMatch.Groups[2].Value;
+                
+                // Rowspan ve colspan'i attributes'tan çıkar
+                string rowspanStr = string.Empty;
+                string colspanStr = string.Empty;
+                
+                Match rowspanMatch = Regex.Match(attributes, @"rowspan\s*=\s*[""']?(\d+)[""']?", RegexOptions.IgnoreCase);
+                if (rowspanMatch.Success)
+                {
+                    rowspanStr = rowspanMatch.Groups[1].Value;
+                }
+                
+                Match colspanMatch = Regex.Match(attributes, @"colspan\s*=\s*[""']?(\d+)[""']?", RegexOptions.IgnoreCase);
+                if (colspanMatch.Success)
+                {
+                    colspanStr = colspanMatch.Groups[1].Value;
+                }
+                
+                int rowspan = 1;
                 int colspan = 1;
+
+                if (!string.IsNullOrEmpty(rowspanStr) && int.TryParse(rowspanStr, out int row))
+                {
+                    rowspan = row;
+                }
 
                 if (!string.IsNullOrEmpty(colspanStr) && int.TryParse(colspanStr, out int col))
                 {
                     colspan = col;
                 }
 
-                // Hücreyi ekle
-                cells.Add(cellContent);
-
-                // Colspan varsa boş hücreler ekle
-                for (int i = 1; i < colspan; i++)
+                cells.Add(new CellInfo
                 {
-                    cells.Add(string.Empty);
-                }
+                    Content = cellContent,
+                    Colspan = colspan,
+                    Rowspan = rowspan
+                });
             }
 
-            return cells.ToArray();
+            return cells;
         }
 
         /// <summary>
