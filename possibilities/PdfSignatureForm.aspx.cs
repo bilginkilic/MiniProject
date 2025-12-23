@@ -565,7 +565,7 @@ namespace AspxExamples
                 }
                 else
                 {
-                    ShowError("Lütfen bir PDF dosyası seçiniz.");
+                    ShowError("Lütfen bir PDF dosyası seçiniz. İmza sirkülerini yüklemek için dosya seçin.", true);
                 }
             }
             catch (Exception ex)

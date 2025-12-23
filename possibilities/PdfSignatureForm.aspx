@@ -942,7 +942,7 @@
                                    TextMode="Date"
                                    CssClass="form-control"
                                    min="2024-01-01" 
-                                   max="2030-12-31" />
+                                   max="2050-12-31" />
                             <div style="display: flex; align-items: center; margin-left: 10px;">
                                 <asp:CheckBox runat="server" ID="chkAksiKarar" 
                                        style="margin-right: 5px;" 
@@ -1024,8 +1024,12 @@
                 <asp:HiddenField ID="hdnYetkiliKayitlar" runat="server" EnableViewState="true" />
                 <asp:HiddenField ID="hdnIsReturnRequested" runat="server" Value="false" />
                 <asp:HiddenField ID="hdnYetkiliImzaEslesmesi" runat="server" />
-                <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
-                    CssClass="button" OnClientClick="return saveAndReturn();" />
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <asp:Button ID="btnSaveSignature" runat="server" Text="Kaydet ve Geri Dön" 
+                        CssClass="button" OnClientClick="return saveAndReturn();" />
+                    <asp:Button ID="btnCancel" runat="server" Text="İptal" 
+                        CssClass="button secondary" OnClientClick="return cancelForm();" />
+                </div>
                 
                 <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
             </div>
@@ -1239,6 +1243,34 @@
                 } catch (err) {
                     console.error('Kaydet ve geri dön hatası:', err);
                     showNotification('İşlem sırasında bir hata oluştu: ' + err.message, 'error');
+                    return false;
+                }
+            }
+
+            // İptal butonu fonksiyonu
+            function cancelForm() {
+                try {
+                    // Kullanıcıya onay sor
+                    if (confirm('Değişiklikler kaydedilmeden çıkmak istediğinize emin misiniz?')) {
+                        // Eğer popup penceresi ise kapat, değilse geri dön
+                        if (window.opener && !window.opener.closed) {
+                            window.close();
+                        } else {
+                            // Geri git veya ana sayfaya yönlendir
+                            if (document.referrer) {
+                                window.location.href = document.referrer;
+                            } else {
+                                window.history.back();
+                            }
+                        }
+                    }
+                    return false; // Form submit'i engelle
+                } catch (err) {
+                    console.error('İptal hatası:', err);
+                    // Hata durumunda da pencereyi kapatmayı dene
+                    if (window.opener && !window.opener.closed) {
+                        window.close();
+                    }
                     return false;
                 }
             }
@@ -3168,12 +3200,18 @@
             }
 
             function handleAksiKararChange(checkbox) {
+                // Eğer checkbox parametresi undefined/null geldiyse,
+                // her ihtimale karşı DOM'dan kendimiz bulalım
+                if (!checkbox) {
+                    checkbox = document.getElementById('chkAksiKarar');
+                }
+
                 const dateInput = document.getElementById('yetkiBitisTarihi');
                 
-                if (checkbox.checked) {
+                if (checkbox && checkbox.checked) {
                     // Aksi karara kadar seçiliyse
                     dateInput.disabled = true;
-                    dateInput.value = '2030-12-31'; // Maksimum tarih
+                    dateInput.value = '2050-12-31'; // Maksimum tarih
                 } else {
                     // Aksi karar seçili değilse
                     dateInput.disabled = false;
