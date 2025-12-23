@@ -39,6 +39,13 @@ namespace AspxExamples
                 // Mevcut PDF dosyalarını yükle
                 LoadExistingPdfs();
 
+                // Silinecek dosya varsa Kaydet/Vazgeç butonlarını görünür yap
+                if (SessionHelper.HasPendingDeletes())
+                {
+                    btnSave.Visible = true;
+                    btnCancel.Visible = true;
+                }
+
                 // Başlangıç mesajını göster
                 ShowMessage("PDF dosyanızı yükleyerek başlayabilirsiniz.", "info");
             }
@@ -103,7 +110,36 @@ namespace AspxExamples
         {
             try
             {
-                // Listedeki tüm PDF dosyalarını al
+                // Session'daki silinecek dosyaları fiziksel olarak sil
+                var pendingDeletes = SessionHelper.GetPendingDeletes();
+                if (pendingDeletes != null && pendingDeletes.Count > 0)
+                {
+                    int deletedCount = 0;
+                    foreach (var fileName in pendingDeletes)
+                    {
+                        try
+                        {
+                            string pdfPath = Path.Combine(_cdn, fileName);
+                            if (File.Exists(pdfPath))
+                            {
+                                File.Delete(pdfPath);
+                                deletedCount++;
+                                Debug.WriteLine(string.Format("PDF dosyası silindi: {0}", pdfPath));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(string.Format("PDF silme hatası ({0}): {1}", fileName, ex.Message));
+                        }
+                    }
+                    
+                    // Session'daki silinecek dosyalar listesini temizle
+                    SessionHelper.ClearPendingDeletes();
+                    
+                    Debug.WriteLine(string.Format("Toplam {0} PDF dosyası silindi.", deletedCount));
+                }
+
+                // Listedeki tüm PDF dosyalarını al (silinenler hariç)
                 var pdfListResult = GetCurrentPdfList();
                 
                 if (pdfListResult.PdfFiles.Count == 0)
@@ -148,7 +184,10 @@ namespace AspxExamples
         {
             try
             {
-                // Son yüklenen dosyayı sil (eğer varsa)
+                // Session'daki silinecek dosyalar listesini temizle (hiçbir dosya fiziksel olarak silinmeyecek)
+                SessionHelper.ClearPendingDeletes();
+
+                // Son yüklenen dosyayı sil (eğer varsa) - bu sadece yeni yüklenen dosya için geçerli
                 string lastPdfPath = SessionHelper.GetUploadedPdfPath();
                 if (!string.IsNullOrEmpty(lastPdfPath) && File.Exists(lastPdfPath))
                 {
@@ -163,7 +202,7 @@ namespace AspxExamples
                 btnSave.Visible = false;
                 btnCancel.Visible = false;
 
-                // Sayfayı yenile (liste güncellensin)
+                // Sayfayı yenile (liste güncellensin, işaretlemeler kalkacak)
                 Response.Redirect(Request.RawUrl);
             }
             catch (Exception ex)
@@ -173,11 +212,16 @@ namespace AspxExamples
             }
         }
 
-        private void AddPdfToList(string fileName, string filePath, bool addToTop = false)
+        private void AddPdfToList(string fileName, string filePath, bool addToTop = false, bool isPendingDelete = false)
         {
             // PDF listesi öğesi oluştur
             var pdfItem = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
             pdfItem.Attributes["class"] = "pdf-item";
+            if (isPendingDelete)
+            {
+                pdfItem.Attributes["class"] += " pending-delete";
+            }
+            pdfItem.Attributes["data-filename"] = fileName;
 
             // PDF adı ve link
             var nameLink = new System.Web.UI.HtmlControls.HtmlAnchor();
@@ -225,13 +269,20 @@ namespace AspxExamples
         {
             try
             {
-                string pdfPath = Path.Combine(@"\\trrgap3027\files\circular\cdn", fileName);
-                if (File.Exists(pdfPath))
+                // ÖNEMLİ: Dosyayı fiziksel olarak silmeyecek, sadece Session'daki array'e ekleyecek
+                var pendingDeletes = SessionHelper.GetPendingDeletes();
+                if (pendingDeletes == null)
                 {
-                    File.Delete(pdfPath);
-                    return new { success = true };
+                    pendingDeletes = new System.Collections.Generic.List<string>();
                 }
-                return new { success = false, error = "Dosya bulunamadı." };
+                
+                if (!pendingDeletes.Contains(fileName))
+                {
+                    pendingDeletes.Add(fileName);
+                    SessionHelper.SetPendingDeletes(pendingDeletes);
+                }
+                
+                return new { success = true, pendingDeletes = pendingDeletes.ToArray() };
             }
             catch (Exception ex)
             {
@@ -243,6 +294,9 @@ namespace AspxExamples
         {
             try
             {
+                // Session'daki silinecek dosyaları kontrol et
+                var pendingDeletes = SessionHelper.GetPendingDeletes();
+                
                 // CDN klasöründeki tüm PDF dosyalarını al
                 if (Directory.Exists(_cdn))
                 {
@@ -255,7 +309,8 @@ namespace AspxExamples
                         foreach (var pdfFile in pdfFiles)
                         {
                             string fileName = Path.GetFileName(pdfFile);
-                            AddPdfToList(fileName, pdfFile);
+                            bool isPendingDelete = pendingDeletes != null && pendingDeletes.Contains(fileName);
+                            AddPdfToList(fileName, pdfFile, false, isPendingDelete);
                         }
                         
                         Debug.WriteLine(string.Format("Toplam {0} PDF dosyası yüklendi.", pdfFiles.Length));

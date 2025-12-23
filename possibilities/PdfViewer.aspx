@@ -208,6 +208,20 @@
         .pdf-item-button.delete:hover {
             background: #c82333;
         }
+        /* Silinecek dosya işaretleme stili */
+        .pdf-item.pending-delete {
+            opacity: 0.6;
+            background: #f8f9fa;
+            border-color: #dc3545;
+        }
+        .pdf-item.pending-delete .pdf-item-name {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .pdf-item.pending-delete:hover {
+            background: #f8f9fa;
+            opacity: 0.7;
+        }
         
         /* Modal Styles */
         .modal {
@@ -430,7 +444,7 @@
 
         function deletePdf(fileName, element) {
             if (confirm('Bu PDF dosyasını silmek istediğinize emin misiniz?')) {
-                // AJAX ile silme işlemi
+                // AJAX ile Session'a ekleme işlemi (dosya fiziksel olarak silinmeyecek)
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', 'PdfViewer.aspx/DeletePdf', true);
                 xhr.setRequestHeader('Content-Type', 'application/json');
@@ -439,14 +453,22 @@
                     if (xhr.status === 200) {
                         var response = JSON.parse(xhr.responseText);
                         if (response.d && response.d.success) {
-                            // Başarılı silme işlemi
-                            element.closest('.pdf-item').remove();
-                            showNotification('PDF dosyası silindi.', 'success');
+                            // Dosyayı görsel olarak işaretle (gri + üstü çizili)
+                            var pdfItem = element.closest('.pdf-item');
+                            pdfItem.classList.add('pending-delete');
+                            
+                            // Kaydet/Vazgeç butonlarını göster
+                            var btnSave = document.getElementById('<%= btnSave.ClientID %>');
+                            var btnCancel = document.getElementById('<%= btnCancel.ClientID %>');
+                            if (btnSave) btnSave.style.display = 'inline-flex';
+                            if (btnCancel) btnCancel.style.display = 'inline-flex';
+                            
+                            showNotification('PDF dosyası silinmek üzere işaretlendi. Değişiklikleri kaydetmek için "Kaydet" butonuna basın.', 'success');
                         } else {
-                            showNotification(response.d.error || 'Silme işlemi başarısız.', 'error');
+                            showNotification(response.d.error || 'İşaretleme işlemi başarısız.', 'error');
                         }
                     } else {
-                        showNotification('Silme işlemi sırasında bir hata oluştu.', 'error');
+                        showNotification('İşaretleme işlemi sırasında bir hata oluştu.', 'error');
                     }
                 };
                 
@@ -458,6 +480,24 @@
         window.addEventListener('load', function() {
             // Yükleme butonu başlangıçta disabled
             document.getElementById('<%= btnUpload.ClientID %>').disabled = true;
+
+            // Session'daki silinecek dosyaları kontrol et ve görsel olarak işaretle
+            var pdfItems = document.querySelectorAll('.pdf-item[data-filename]');
+            pdfItems.forEach(function(item) {
+                var fileName = item.getAttribute('data-filename');
+                // Server-side'da zaten işaretlenmiş olabilir, ama kontrol edelim
+                if (item.classList.contains('pending-delete')) {
+                    // Kaydet/Vazgeç butonlarını göster
+                    var btnSave = document.getElementById('<%= btnSave.ClientID %>');
+                    var btnCancel = document.getElementById('<%= btnCancel.ClientID %>');
+                    if (btnSave && btnSave.style.display !== 'none') {
+                        btnSave.style.display = 'inline-flex';
+                    }
+                    if (btnCancel && btnCancel.style.display !== 'none') {
+                        btnCancel.style.display = 'inline-flex';
+                    }
+                }
+            });
 
             // Modal dışına tıklandığında kapatma
             window.onclick = function(event) {

@@ -39,6 +39,7 @@ namespace AspxExamples.Common.Models
         private const string SELECTED_PDF_KEY = "SelectedPdfFileName";
         private const string UPLOADED_PDF_PATH_KEY = "LastUploadedPdf";
         private const string PDF_LIST_KEY = "PdfListResult";
+        private const string PENDING_DELETES_KEY = "PendingPdfDeletes";
         
         public static void SetSignatureAuthData(SignatureAuthData data)
         {
@@ -239,6 +240,41 @@ namespace AspxExamples.Common.Models
                 HttpContext.Current.Session.Remove(UPLOADED_PDF_PATH_KEY);
                 HttpContext.Current.Session.Remove(PDF_LIST_KEY);
             }
+        }
+
+        // Silinecek PDF dosyaları için metodlar
+        public static void SetPendingDeletes(List<string> fileNames)
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session[PENDING_DELETES_KEY] = fileNames;
+                HttpContext.Current.Session.Timeout = 30; // 30 dakika
+            }
+        }
+
+        public static List<string> GetPendingDeletes()
+        {
+            if (HttpContext.Current != null && 
+                HttpContext.Current.Session != null && 
+                HttpContext.Current.Session[PENDING_DELETES_KEY] != null)
+            {
+                return (List<string>)HttpContext.Current.Session[PENDING_DELETES_KEY];
+            }
+            return null;
+        }
+
+        public static void ClearPendingDeletes()
+        {
+            if (HttpContext.Current != null && HttpContext.Current.Session != null)
+            {
+                HttpContext.Current.Session.Remove(PENDING_DELETES_KEY);
+            }
+        }
+
+        public static bool HasPendingDeletes()
+        {
+            var pendingDeletes = GetPendingDeletes();
+            return pendingDeletes != null && pendingDeletes.Count > 0;
         }
     }
 }
